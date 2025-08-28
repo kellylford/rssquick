@@ -29,30 +29,6 @@ A fast, accessible RSS reader built with WPF for efficient headline browsing. Fe
 - **External Browser**: Articles open in your preferred browser with full accessibility
 - **Feed Organization**: Hierarchical categories with clear navigation structure
 
-## User Interface
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│ [Import OPML File]                                              │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  ┌─────────────────┐ │ ┌─────────────────────────────────────┐  │
-│  │   RSS Feeds     │ │ │           Headlines                 │  │
-│  │                 │ │ │                                     │  │
-│  │ ▼ News          │ │ │  • Breaking: Major news story      │  │
-│  │   ├ BBC News    │ │ │  • Technology update available     │  │
-│  │   └ Reuters     │ │ │  • Sports: Team wins championship  │  │
-│  │ ▼ Tech          │ │ │  • Science breakthrough announced  │  │
-│  │   └ Ars Tech    │ │ │  • [Open in Browser (Alt+B)]       │  │
-│  │ ▼ Sports        │ │ │                                     │  │
-│  │   └ ESPN        │ │ │                                     │  │
-│  └─────────────────┘ │ └─────────────────────────────────────┘  │
-│                                                                 │
-├─────────────────────────────────────────────────────────────────┤
-│ Status: ESPN - 4 of 60 headlines                               │
-└─────────────────────────────────────────────────────────────────┘
-```
-
 ## Navigation & Keyboard Shortcuts
 
 ### Tab Navigation Flow
@@ -128,17 +104,6 @@ The application includes `RSS.opml` with curated feeds across categories:
 - **Logical Focus Flow**: Predictable Tab navigation between interface elements
 - **Live Regions**: Status updates announced automatically
 
-### Braille Display Optimization  
-- **Whitespace Normalization**: Removes problematic spacing that causes "blank" displays
-- **Special Character Cleaning**: Eliminates zero-width and non-printable characters
-- **Consistent Formatting**: Clean, readable headline presentation
-
-### Keyboard Navigation
-- **No Mouse Required**: Complete functionality via keyboard
-- **Standard Conventions**: Follows Windows accessibility guidelines
-- **Focus Indicators**: Clear visual and programmatic focus management
-- **Escape Routes**: Reliable ways to navigate between sections
-
 ## Technical Requirements
 
 - **Platform**: Windows 10/11 (WPF requirement)
@@ -190,10 +155,6 @@ dotnet run
 - Use Insert+Page Down (NVDA/JAWS) to read status bar
 - Verify focus is in expected panel
 
-**Braille showing excessive spacing**
-- Issue should be resolved in current version
-- Contact developer if specific feeds still problematic
-
 **Tab navigation issues**
 - Use standard Tab/Shift+Tab for panel navigation
 - Arrow keys for navigation within panels
@@ -241,7 +202,7 @@ Should show version 8.0.x or higher.
 The project includes convenient batch files for easy building:
 
 ##### `run.cmd` - Simple Build and Run
-**Just double-click to build and run:**
+**Just launch to build and run:**
 ```cmd
 run.cmd
 ```
