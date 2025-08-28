@@ -6,6 +6,7 @@ obj/
 
 # Distribution folders
 dist/
+dist-*/
 publish-test/
 
 # Visual Studio

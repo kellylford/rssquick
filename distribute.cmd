@@ -27,9 +27,17 @@ if exist "%PUBLISH_DIR%" (
 )
 
 echo [2/4] Building standalone executable...
+
+REM Detect system architecture
+set ARCH=win-x64
+if "%PROCESSOR_ARCHITECTURE%"=="ARM64" set ARCH=win-arm64
+if "%PROCESSOR_ARCHITEW6432%"=="ARM64" set ARCH=win-arm64
+
+echo Building for architecture: %ARCH%
+
 dotnet publish RSSReaderWPF.csproj ^
     --configuration Release ^
-    --runtime win-x64 ^
+    --runtime %ARCH% ^
     --self-contained true ^
     --output "%PUBLISH_DIR%"
 
