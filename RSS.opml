@@ -1,0 +1,297 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<opml version="2.0">
+    <head>
+        <title>Comprehensive News Feeds</title>
+    </head>
+    <body>
+        <outline text="Global News &amp; Current Affairs" title="Global News &amp; Current Affairs">
+            <outline text="The New York Times" title="The New York Times">
+                <outline text="News" title="News">
+                    <outline text="Homepage" type="rss" xmlUrl="https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml" />
+                    <outline text="World" type="rss" xmlUrl="https://rss.nytimes.com/services/xml/rss/nyt/World.xml" />
+                    <outline text="U.S." type="rss" xmlUrl="https://rss.nytimes.com/services/xml/rss/nyt/US.xml" />
+                    <outline text="Politics" type="rss" xmlUrl="https://rss.nytimes.com/services/xml/rss/nyt/Politics.xml" />
+                    <outline text="New York" type="rss" xmlUrl="https://rss.nytimes.com/services/xml/rss/nyt/NYRegion.xml" />
+                </outline>
+                <outline text="Business &amp; Tech" title="Business &amp; Tech">
+                    <outline text="Business" type="rss" xmlUrl="https://rss.nytimes.com/services/xml/rss/nyt/Business.xml" />
+                    <outline text="Economy" type="rss" xmlUrl="http://rss.nytimes.com/services/xml/rss/nyt/Economy.xml" />
+                    <outline text="Technology" type="rss" xmlUrl="https://rss.nytimes.com/services/xml/rss/nyt/Technology.xml" />
+                </outline>
+                <outline text="Culture &amp; Lifestyle" title="Culture &amp; Lifestyle">
+                    <outline text="Arts" type="rss" xmlUrl="https://rss.nytimes.com/services/xml/rss/nyt/Arts.xml" />
+                    <outline text="Books" type="rss" xmlUrl="https://rss.nytimes.com/services/xml/rss/nyt/Books.xml" />
+                    <outline text="Movies" type="rss" xmlUrl="https://rss.nytimes.com/services/xml/rss/nyt/Movies.xml" />
+                    <outline text="Music" type="rss" xmlUrl="https://rss.nytimes.com/services/xml/rss/nyt/Music.xml" />
+                    <outline text="Style" type="rss" xmlUrl="https://rss.nytimes.com/services/xml/rss/nyt/Style.xml" />
+                    <outline text="Health" type="rss" xmlUrl="https://rss.nytimes.com/services/xml/rss/nyt/Health.xml" />
+                    <outline text="Science" type="rss" xmlUrl="https://rss.nytimes.com/services/xml/rss/nyt/Science.xml" />
+                    <outline text="Sports" type="rss" xmlUrl="https://rss.nytimes.com/services/xml/rss/nyt/Sports.xml" />
+                </outline>
+                <outline text="Opinion" title="Opinion">
+                    <outline text="The Upshot" type="rss" xmlUrl="http://rss.nytimes.com/services/xml/rss/nyt/Upshot.xml" />
+                </outline>
+            </outline>
+            <outline text="The Guardian" title="The Guardian">
+                <outline text="Top Stories" title="Top Stories">
+                    <outline text="Top Stories" type="rss" xmlUrl="https://www.theguardian.com/rss" />
+                    <outline text="Most Viewed" type="rss" xmlUrl="https://www.theguardian.com/mostviewed/rss" />
+                </outline>
+                <outline text="By Region" title="By Region">
+                    <outline text="World" type="rss" xmlUrl="https://www.theguardian.com/world/rss" />
+                    <outline text="UK News" type="rss" xmlUrl="https://www.theguardian.com/uk-news/rss" />
+                    <outline text="US News" type="rss" xmlUrl="https://www.theguardian.com/us-news/rss" />
+                    <outline text="Europe" type="rss" xmlUrl="https://www.theguardian.com/world/europe-news/rss" />
+                    <outline text="Asia" type="rss" xmlUrl="https://www.theguardian.com/world/asia/rss" />
+                    <outline text="Australia" type="rss" xmlUrl="https://www.theguardian.com/australia-news/rss" />
+                    <outline text="Americas" type="rss" xmlUrl="https://www.theguardian.com/world/americas/rss" />
+                </outline>
+                <outline text="By Topic" title="By Topic">
+                    <outline text="Politics" type="rss" xmlUrl="https://www.theguardian.com/politics/rss" />
+                    <outline text="Business" type="rss" xmlUrl="https://www.theguardian.com/business/rss" />
+                    <outline text="Environment" type="rss" xmlUrl="https://www.theguardian.com/environment/rss" />
+                    <outline text="Technology" type="rss" xmlUrl="https://www.theguardian.com/technology/rss" />
+                    <outline text="Science" type="rss" xmlUrl="https://www.theguardian.com/science/rss" />
+                    <outline text="Culture" type="rss" xmlUrl="https://www.theguardian.com/culture/rss" />
+                    <outline text="Sports" type="rss" xmlUrl="https://www.theguardian.com/sport/rss" />
+                </outline>
+                <outline text="By Content Type" title="By Content Type">
+                    <outline text="Opinion (Comment is Free)" type="rss" xmlUrl="https://www.theguardian.com/tone/comment/rss" />
+                    <outline text="Audio (Podcasts)" type="rss" xmlUrl="https://www.theguardian.com/audio/rss" />
+                    <outline text="In Pictures (Galleries)" type="rss" xmlUrl="https://www.theguardian.com/inpictures/rss" />
+                </outline>
+            </outline>
+            <outline text="BBC News" title="BBC News">
+                <outline text="UK &amp; World Editions" title="UK &amp; World Editions">
+                    <outline text="Top Stories (UK)" type="rss" xmlUrl="http://feeds.bbci.co.uk/news/rss.xml" />
+                    <outline text="World" type="rss" xmlUrl="http://feeds.bbci.co.uk/news/world/rss.xml" />
+                    <outline text="UK" type="rss" xmlUrl="http://feeds.bbci.co.uk/news/uk/rss.xml" />
+                </outline>
+                <outline text="By Topic" title="By Topic">
+                    <outline text="Business" type="rss" xmlUrl="http://feeds.bbci.co.uk/news/business/rss.xml" />
+                    <outline text="Politics" type="rss" xmlUrl="http://feeds.bbci.co.uk/news/politics/rss.xml" />
+                    <outline text="Health" type="rss" xmlUrl="http://feeds.bbci.co.uk/news/health/rss.xml" />
+                    <outline text="Science &amp; Environment" type="rss" xmlUrl="http://feeds.bbci.co.uk/news/science_and_environment/rss.xml" />
+                    <outline text="Technology" type="rss" xmlUrl="http://feeds.bbci.co.uk/news/technology/rss.xml" />
+                    <outline text="Entertainment &amp; Arts" type="rss" xmlUrl="http://feeds.bbci.co.uk/news/entertainment_and_arts/rss.xml" />
+                </outline>
+                <outline text="By Region" title="By Region">
+                    <outline text="Africa" type="rss" xmlUrl="http://feeds.bbci.co.uk/news/world/africa/rss.xml" />
+                    <outline text="Asia" type="rss" xmlUrl="http://feeds.bbci.co.uk/news/world/asia/rss.xml" />
+                    <outline text="Europe" type="rss" xmlUrl="http://feeds.bbci.co.uk/news/world/europe/rss.xml" />
+                    <outline text="Latin America" type="rss" xmlUrl="http://feeds.bbci.co.uk/news/world/latin_america/rss.xml" />
+                    <outline text="Middle East" type="rss" xmlUrl="http://feeds.bbci.co.uk/news/world/middle_east/rss.xml" />
+                    <outline text="US &amp; Canada" type="rss" xmlUrl="http://feeds.bbci.co.uk/news/world/us_and_canada/rss.xml" />
+                </outline>
+            </outline>
+            <outline text="Reuters" title="Reuters">
+                <outline text="Top News" type="rss" xmlUrl="http://feeds.reuters.com/reuters/topNews" />
+                <outline text="World News" type="rss" xmlUrl="http://feeds.reuters.com/Reuters/worldNews" />
+                <outline text="U.S. News" type="rss" xmlUrl="http://feeds.reuters.com/Reuters/domesticNews" />
+                <outline text="Politics" type="rss" xmlUrl="http://feeds.reuters.com/Reuters/PoliticsNews" />
+                <outline text="Business" type="rss" xmlUrl="http://feeds.reuters.com/reuters/businessNews" />
+                <outline text="Technology" type="rss" xmlUrl="http://feeds.reuters.com/reuters/technologyNews" />
+                <outline text="Science" type="rss" xmlUrl="http://feeds.reuters.com/reuters/scienceNews" />
+                <outline text="Sports" type="rss" xmlUrl="http://feeds.reuters.com/reuters/sportsNews" />
+                <outline text="Arts &amp; Culture" type="rss" xmlUrl="http://feeds.reuters.com/news/artsculture" />
+            </outline>
+            <outline text="Associated Press (AP)" title="Associated Press (AP)">
+                <outline text="AP Top News" type="rss" xmlUrl="https://apnews.com/hub/ap-top-news/rss" />
+                <outline text="World News" type="rss" xmlUrl="https://apnews.com/hub/world-news/rss" />
+                <outline text="U.S. News" type="rss" xmlUrl="https://apnews.com/hub/us-news/rss" />
+                <outline text="Politics" type="rss" xmlUrl="https://apnews.com/hub/politics/rss" />
+                <outline text="Business" type="rss" xmlUrl="https://apnews.com/hub/business/rss" />
+                <outline text="Technology" type="rss" xmlUrl="https://apnews.com/hub/technology/rss" />
+                <outline text="Science" type="rss" xmlUrl="https://apnews.com/hub/science/rss" />
+                <outline text="Health" type="rss" xmlUrl="https://apnews.com/hub/health/rss" />
+                <outline text="Sports" type="rss" xmlUrl="https://apnews.com/hub/sports/rss" />
+                <outline text="Entertainment" type="rss" xmlUrl="https://apnews.com/hub/entertainment/rss" />
+                <outline text="Fact Check" type="rss" xmlUrl="https://apnews.com/hub/ap-fact-check/rss" />
+            </outline>
+            <outline text="Yahoo" title="Yahoo">
+                <outline text="News" title="News">
+                    <outline text="Top Stories" type="rss" xmlUrl="https://news.yahoo.com/rss/" />
+                    <outline text="U.S." type="rss" xmlUrl="https://news.yahoo.com/rss/us" />
+                    <outline text="World" type="rss" xmlUrl="https://news.yahoo.com/rss/world" />
+                </outline>
+                <outline text="Finance" title="Finance">
+                    <outline text="Top Stories" type="rss" xmlUrl="https://finance.yahoo.com/news/rssindex" />
+                </outline>
+                <outline text="Sports" title="Sports">
+                    <outline text="Top Stories" type="rss" xmlUrl="https://sports.yahoo.com/rss/" />
+                    <outline text="NFL" type="rss" xmlUrl="https://sports.yahoo.com/nfl/rss/" />
+                    <outline text="NBA" type="rss" xmlUrl="https://sports.yahoo.com/nba/rss/" />
+                    <outline text="College Football" type="rss" xmlUrl="https://sports.yahoo.com/college-football/rss/" />
+                    <outline text="Soccer" type="rss" xmlUrl="https://sports.yahoo.com/soccer/rss/" />
+                </outline>
+                <outline text="Lifestyle" title="Lifestyle">
+                    <outline text="Entertainment" type="rss" xmlUrl="https://www.yahoo.com/entertainment/rss" />
+                    <outline text="Lifestyle" type="rss" xmlUrl="https://www.yahoo.com/lifestyle/rss" />
+                </outline>
+            </outline>
+            <outline text="Los Angeles Times" title="Los Angeles Times">
+                <outline text="News" title="News">
+                    <outline text="World &amp; Nation" type="rss" xmlUrl="https://www.latimes.com/world-nation/rss2.0.xml" />
+                    <outline text="California" type="rss" xmlUrl="https://www.latimes.com/california/orange-county/rss2.0.xml" />
+                    <outline text="Politics" type="rss" xmlUrl="https://www.latimes.com/politics/rss2.0.xml" />
+                    <outline text="Obituaries" type="rss" xmlUrl="https://www.latimes.com/obituaries/rss2.0.xml" />
+                </outline>
+                <outline text="Business &amp; Science" title="Business &amp; Science">
+                    <outline text="Business" type="rss" xmlUrl="https://www.latimes.com/business/rss2.0.xml" />
+                    <outline text="Technology" type="rss" xmlUrl="https://www.latimes.com/business/technology/rss2.0.xml" />
+                    <outline text="Science" type="rss" xmlUrl="https://www.latimes.com/science/rss2.0.xml" />
+                    <outline text="Climate &amp; Environment" type="rss" xmlUrl="https://www.latimes.com/environment/rss2.0.xml" />
+                </outline>
+                <outline text="Culture &amp; Lifestyle" title="Culture &amp; Lifestyle">
+                    <outline text="Entertainment &amp; Arts" type="rss" xmlUrl="https://www.latimes.com/entertainment-arts/rss2.0.xml" />
+                    <outline text="Movies" type="rss" xmlUrl="https://www.latimes.com/entertainment-arts/movies/rss2.0.xml" />
+                    <outline text="TV" type="rss" xmlUrl="https://www.latimes.com/entertainment-arts/tv/rss2.0.xml" />
+                    <outline text="Music" type="rss" xmlUrl="https://www.latimes.com/entertainment-arts/music/rss2.0.xml" />
+                    <outline text="Books" type="rss" xmlUrl="https://www.latimes.com/entertainment-arts/books/rss2.0.xml" />
+                    <outline text="Food" type="rss" xmlUrl="https://www.latimes.com/food/rss2.0.xml" />
+                    <outline text="Lifestyle" type="rss" xmlUrl="https://www.latimes.com/lifestyle/rss2.0.xml" />
+                    <outline text="Travel" type="rss" xmlUrl="https://www.latimes.com/travel/rss2.0.xml" />
+                </outline>
+                <outline text="Sports" title="Sports">
+                    <outline text="All Sports" type="rss" xmlUrl="https://www.latimes.com/sports/rss2.0.xml" />
+                    <outline text="Lakers" type="rss" xmlUrl="https://www.latimes.com/sports/lakers/rss2.0.xml" />
+                    <outline text="Dodgers" type="rss" xmlUrl="https://www.latimes.com/sports/dodgers/rss2.0.xml" />
+                    <outline text="Clippers" type="rss" xmlUrl="https://www.latimes.com/sports/clippers/rss2.0.xml" />
+                    <outline text="Rams" type="rss" xmlUrl="https://www.latimes.com/sports/rams/rss2.0.xml" />
+                    <outline text="Chargers" type="rss" xmlUrl="https://www.latimes.com/sports/chargers/rss2.0.xml" />
+                    <outline text="Angels" type="rss" xmlUrl="https://www.latimes.com/sports/angels/rss2.0.xml" />
+                    <outline text="Soccer" type="rss" xmlUrl="https://www.latimes.com/sports/soccer/rss2.0.xml" />
+                </outline>
+                <outline text="Opinion" title="Opinion">
+                    <outline text="Opinion" type="rss" xmlUrl="https://www.latimes.com/opinion/rss2.0.xml" />
+                </outline>
+            </outline>
+        </outline>
+        <outline text="Business &amp; Finance" title="Business &amp; Finance">
+            <outline text="The Wall Street Journal" title="The Wall Street Journal">
+                <outline text="World News" type="rss" xmlUrl="https://feeds.content.dowjones.io/public/rss/RSSWorldNews" />
+                <outline text="U.S. Business" type="rss" xmlUrl="https://feeds.content.dowjones.io/public/rss/WSJcomUSBusiness" />
+                <outline text="Markets" type="rss" xmlUrl="https://feeds.content.dowjones.io/public/rss/RSSMarketsMain" />
+                <outline text="Technology" type="rss" xmlUrl="https://feeds.content.dowjones.io/public/rss/RSSWSJD" />
+                <outline text="Opinion" type="rss" xmlUrl="https://feeds.content.dowjones.io/public/rss/RSSOpinion" />
+                <outline text="Personal Finance" type="rss" xmlUrl="https://feeds.content.dowjones.io/public/rss/RSSPersonalFinance" />
+            </outline>
+            <outline text="Bloomberg" title="Bloomberg">
+                <outline text="Markets" type="rss" xmlUrl="https://feeds.bloomberg.com/markets/news.rss" />
+                <outline text="Technology" type="rss" xmlUrl="https://feeds.bloomberg.com/technology/news.rss" />
+                <outline text="Politics" type="rss" xmlUrl="https://feeds.bloomberg.com/politics/news.rss" />
+                <outline text="Wealth" type="rss" xmlUrl="https://feeds.bloomberg.com/wealth/news.rss" />
+                <outline text="Radio" type="rss" xmlUrl="https://www.bloomberg.com/feeds/podcasts/featured.xml" />
+            </outline>
+            <outline text="The Economist" title="The Economist">
+                <outline text="Finance and Economics" type="rss" xmlUrl="https://www.economist.com/finance-and-economics/rss.xml" />
+                <outline text="Business" type="rss" xmlUrl="https://www.economist.com/business/rss.xml" />
+                <outline text="Leaders" type="rss" xmlUrl="https://www.economist.com/leaders/rss.xml" />
+                <outline text="The Americas" type="rss" xmlUrl="https://www.economist.com/the-americas/rss.xml" />
+                <outline text="Asia" type="rss" xmlUrl="https://www.economist.com/asia/rss.xml" />
+                <outline text="China" type="rss" xmlUrl="https://www.economist.com/china/rss.xml" />
+                <outline text="Europe" type="rss" xmlUrl="https://www.economist.com/europe/rss.xml" />
+            </outline>
+            <outline text="Financial Times" title="Financial Times">
+                <outline text="Homepage" type="rss" xmlUrl="https://www.ft.com/?format=rss" />
+            </outline>
+            <outline text="Forbes" title="Forbes">
+                <outline text="Business" type="rss" xmlUrl="https://www.forbes.com/business/feed/" />
+                <outline text="Entrepreneurs" type="rss" xmlUrl="http://www.forbes.com/entrepreneurs/index.xml" />
+                <outline text="Leadership" type="rss" xmlUrl="https://www.forbes.com/leadership/feed/" />
+            </outline>
+        </outline>
+        <outline text="Technology" title="Technology">
+            <outline text="General Tech News" title="General Tech News">
+                <outline text="The Verge" type="rss" xmlUrl="https://www.theverge.com/rss/index.xml" />
+                <outline text="WIRED" type="rss" xmlUrl="https://www.wired.com/feed/rss" />
+                <outline text="Engadget" type="rss" xmlUrl="https://www.engadget.com/rss.xml" />
+                <outline text="Gizmodo" type="rss" xmlUrl="https://gizmodo.com/rss" />
+                <outline text="Mashable" type="rss" xmlUrl="http://feeds.mashable.com/Mashable" />
+            </outline>
+            <outline text="Startups &amp; Venture Capital" title="Startups &amp; Venture Capital">
+                <outline text="TechCrunch" type="rss" xmlUrl="https://techcrunch.com/feed/" />
+                <outline text="TechCrunch - Startups" type="rss" xmlUrl="https://techcrunch.com/category/startups/feed/" />
+                <outline text="TechCrunch - Venture" type="rss" xmlUrl="https://techcrunch.com/category/venture/feed/" />
+                <outline text="Hacker News" type="rss" xmlUrl="https://news.ycombinator.com/rss" />
+                <outline text="VentureBeat" type="rss" xmlUrl="https://venturebeat.com/feed/" />
+            </outline>
+            <outline text="In-depth Analysis" title="In-depth Analysis">
+                <outline text="Ars Technica" type="rss" xmlUrl="https://feeds.arstechnica.com/arstechnica/index" />
+                <outline text="Ars Technica - Tech" type="rss" xmlUrl="https://arstechnica.com/gadgets/feed/" />
+                <outline text="Ars Technica - AI" type="rss" xmlUrl="https://arstechnica.com/ai/feed/" />
+                <outline text="Ars Technica - Security" type="rss" xmlUrl="https://arstechnica.com/security/feed/" />
+            </outline>
+        </outline>
+        <outline text="Science &amp; Health" title="Science &amp; Health">
+            <outline text="Academic Journals" title="Academic Journals">
+                <outline text="Nature" type="rss" xmlUrl="https://www.nature.com/nature.rss" />
+                <outline text="Science Magazine" type="rss" xmlUrl="https://www.sciencemag.org/rss/current.xml" />
+            </outline>
+            <outline text="Health &amp; Medicine" title="Health &amp; Medicine">
+                <outline text="STAT News" type="rss" xmlUrl="https://www.statnews.com/feed/" />
+                <outline text="World Health Organization (WHO) - News" type="rss" xmlUrl="https://www.who.int/feeds/entity/mediacentre/news/en/rss.xml" />
+                <outline text="MedlinePlus - Health News" type="rss" xmlUrl="https://medlineplus.gov/feeds/whatsnew_en.xml" />
+                <outline text="Modern Healthcare" type="rss" xmlUrl="https://www.modernhealthcare.com/section/rss/news?days=7&amp;topics=81631" />
+                <outline text="Medical News Today" type="rss" xmlUrl="https://www.medicalnewstoday.com/rss" />
+            </outline>
+            <outline text="General Science" title="General Science">
+                <outline text="Scientific American" type="rss" xmlUrl="https://www.scientificamerican.com/feed/" />
+                <outline text="Popular Science" type="rss" xmlUrl="https://www.popsci.com/arcio/rss/" />
+                <outline text="Live Science" type="rss" xmlUrl="https://www.livescience.com/feeds/all" />
+                <outline text="New Scientist" type="rss" xmlUrl="https://www.newscientist.com/feed/home/" />
+                <outline text="ScienceDaily - Top News" type="rss" xmlUrl="https://www.sciencedaily.com/rss/top.xml" />
+                <outline text="Phys.org" type="rss" xmlUrl="https://phys.org/rss-feed/" />
+                <outline text="NASA - Breaking News" type="rss" xmlUrl="https://www.nasa.gov/rss/dyn/breaking_news.rss" />
+            </outline>
+        </outline>
+        <outline text="Arts, Culture &amp; Entertainment" title="Arts, Culture &amp; Entertainment">
+            <outline text="Film &amp; TV" title="Film &amp; TV">
+                <outline text="The Hollywood Reporter" type="rss" xmlUrl="https://www.hollywoodreporter.com/feed/" />
+                <outline text="Variety" type="rss" xmlUrl="https://variety.com/feed/" />
+                <outline text="Deadline" type="rss" xmlUrl="https://deadline.com/feed/" />
+            </outline>
+            <outline text="Music" title="Music">
+                <outline text="Pitchfork" type="rss" xmlUrl="https://pitchfork.com/rss/news/" />
+                <outline text="Pitchfork - Album Reviews" type="rss" xmlUrl="https://pitchfork.com/rss/reviews/albums/" />
+                <outline text="Rolling Stone" type="rss" xmlUrl="https://www.rollingstone.com/feed/" />
+                <outline text="Billboard" type="rss" xmlUrl="https://www.billboard.com/feed/" />
+            </outline>
+            <outline text="General Culture" title="General Culture">
+                <outline text="Open Culture" type="rss" xmlUrl="http://www.openculture.com/feed" />
+                <outline text="Smithsonian Magazine" type="rss" xmlUrl="https://www.smithsonianmag.com/rss/" />
+                <outline text="Americans for the Arts - News" type="rss" xmlUrl="http://www.americansforthearts.org/feeds/afta-news" />
+            </outline>
+        </outline>
+        <outline text="Sports" title="Sports">
+            <outline text="General" title="General">
+                <outline text="ESPN" type="rss" xmlUrl="https://www.espn.com/espn/rss/news" />
+                <outline text="SB Nation" type="rss" xmlUrl="https://www.sbnation.com/rss/current.xml" />
+                <outline text="Bleacher Report" type="rss" xmlUrl="https://bleacherreport.com/articles/feed" />
+                <outline text="CBS Sports" type="rss" xmlUrl="https://www.cbssports.com/rss/headlines/" />
+                <outline text="The Athletic" type="rss" xmlUrl="https://theathletic.com/feed/" />
+                <outline text="Sports Illustrated" type="rss" xmlUrl="https://www.si.com/rss/si_topstories.rss" />
+            </outline>
+            <outline text="By League" title="By League">
+                <outline text="NFL" type="rss" xmlUrl="https://www.espn.com/espn/rss/nfl/news" />
+                <outline text="NBA" type="rss" xmlUrl="https://www.espn.com/espn/rss/nba/news" />
+                <outline text="MLB" type="rss" xmlUrl="https://www.espn.com/espn/rss/mlb/news" />
+                <outline text="NHL" type="rss" xmlUrl="https://www.espn.com/espn/rss/nhl/news" />
+                <outline text="Soccer" type="rss" xmlUrl="https://www.espn.com/espn/rss/soccer/news" />
+                <outline text="Formula 1" type="rss" xmlUrl="https://www.formula1.com/rss/news/headlines.rss" />
+            </outline>
+        </outline>
+        <outline text="Accessibility (Custom)" title="Accessibility (Custom)">
+            <outline text="General Accessibility" type="rss" xmlUrl="https://news.google.com/rss/search?q=%22accessibility+news%22" />
+            <outline text="Digital Accessibility" type="rss" xmlUrl="https://news.google.com/rss/search?q=%22web+accessibility%22+OR+%22WCAG%22+OR+%22Section+508%22" />
+            <outline text="Assistive Technology" type="rss" xmlUrl="https://news.google.com/rss/search?q=%22assistive+technology%22+OR+%22adaptive+tech%22" />
+            <outline text="Universal &amp; Inclusive Design" type="rss" xmlUrl="https://news.google.com/rss/search?q=%22universal+design%22+OR+%22inclusive+design%22" />
+            <outline text="Disability Rights" type="rss" xmlUrl="https://news.google.com/rss/search?q=%22disability+rights%22+OR+%22disability+advocacy%22" />
+            <outline text="Physical Accessibility" type="rss" xmlUrl="https://news.google.com/rss/search?q=%22physical+accessibility%22+OR+%22ADA+compliance%22" />
+            <outline text="Neurodiversity" type="rss" xmlUrl="https://news.google.com/rss/search?q=%22neurodiversity%22+OR+%22neurodivergent%22" />
+            <outline text="Gaming Accessibility" type="rss" xmlUrl="https://news.google.com/rss/search?q=%22gaming+accessibility%22+OR+%22accessible+gaming%22" />
+            <outline text="Accessible Travel" type="rss" xmlUrl="https://news.google.com/rss/search?q=%22accessible+travel%22+OR+%22accessible+tourism%22" />
+            <outline text="Workplace Accessibility" type="rss" xmlUrl="https://news.google.com/rss/search?q=%22workplace+accessibility%22+OR+%22accessible+employment%22" />
+        </outline>
+    </body>
+</opml>

@@ -1,0 +1,33 @@
+# Build results
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+
+# Visual Studio
+.vs/
+.vscode/
+
+# User files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Build results
+*.log
+*.vspscc
+*.vssscc
+.builds
+*.pidb
+*.svclog
+*.scc
+
+# Backup files
+*.backup
+*~
+*_backup.*
+
+# Temporary files
+*.tmp
+*.temp

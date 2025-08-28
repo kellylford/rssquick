@@ -1,0 +1,106 @@
+<Window x:Class="RSSReaderWPF.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:RSSReaderWPF"
+        Title="RSSQuick" Height="800" Width="1400"
+        WindowStartupLocation="CenterScreen">
+    
+    <Window.DataContext>
+        <local:MainViewModel/>
+    </Window.DataContext>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Top Controls -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="10">
+            <Button Name="ImportOpmlButton" Content="Import OPML File" 
+                    Click="ImportOpml_Click" Margin="0,0,10,0" Padding="10,5"
+                    TabIndex="0"/>
+        </StackPanel>
+
+        <!-- Main Content -->
+        <Grid Grid.Row="1" Margin="10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="400"/>
+                <ColumnDefinition Width="5"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Feed Tree -->
+            <TreeView Grid.Column="0" Name="FeedTree"
+                      SelectedItemChanged="FeedTree_SelectedItemChanged"
+                      KeyDown="FeedTree_KeyDown"
+                      GotFocus="FeedTree_GotFocus"
+                      TabIndex="1"
+                      IsTabStop="True"
+                      AutomationProperties.Name="RSS Feed Tree"
+                      AutomationProperties.HelpText="Navigate with arrow keys, press Enter to load headlines">
+                <TreeView.ItemTemplate>
+                    <HierarchicalDataTemplate ItemsSource="{Binding Children}">
+                        <TextBlock Text="{Binding Title}" 
+                                  FontWeight="{Binding IsCategory, Converter={x:Static local:BoolToFontWeightConverter.Instance}}"
+                                  Foreground="{Binding IsCategory, Converter={x:Static local:BoolToForegroundConverter.Instance}}"/>
+                    </HierarchicalDataTemplate>
+                </TreeView.ItemTemplate>
+            </TreeView>
+
+            <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch" Background="LightGray" IsTabStop="False" Focusable="False"/>
+
+            <!-- Headlines -->
+            <Grid Grid.Column="2" Margin="5">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                
+                <ListBox Grid.Row="0" Name="HeadlinesList"
+                         ItemsSource="{Binding Headlines}"
+                         SelectionChanged="HeadlinesList_SelectionChanged"
+                         KeyDown="HeadlinesList_KeyDown"
+                         GotFocus="HeadlinesList_GotFocus"
+                         Loaded="HeadlinesList_Loaded"
+                         TabIndex="2"
+                         IsTabStop="True"
+                         AutomationProperties.Name="Headlines List"
+                         AutomationProperties.HelpText="Browse headlines with arrow keys, press Enter or Alt+B to open in browser">
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="ListBoxItem">
+                            <Setter Property="AutomationProperties.Name" Value="{Binding Title}"/>
+                            <Setter Property="AutomationProperties.HelpText" Value="{Binding Published}"/>
+                        </Style>
+                    </ListBox.ItemContainerStyle>
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Margin="5">
+                                <TextBlock Text="{Binding Title}" FontWeight="Bold" TextWrapping="Wrap"
+                                          Foreground="{Binding IsRead, Converter={x:Static local:BoolToForegroundConverter.Instance}}"/>
+                                <TextBlock Text="{Binding Published}" Foreground="Gray" FontSize="11"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+                
+                <!-- Headline Controls -->
+                <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,5,0,0">
+                    <Button Name="OpenInBrowserButton" Content="Open in _Browser (Alt+B)" 
+                            Click="OpenInBrowser_Click" Padding="8,3"
+                            TabIndex="3" IsEnabled="False"
+                            ToolTip="Open the selected headline in your default web browser (Alt+B)"/>
+                </StackPanel>
+            </Grid>
+        </Grid>
+        
+        <!-- Status Bar -->
+        <StatusBar Grid.Row="2" Name="MainStatusBar" Background="LightGray">
+            <StatusBarItem>
+                <TextBlock Name="StatusText" Text="{Binding StatusMessage}" 
+                          AutomationProperties.LiveSetting="Polite"/>
+            </StatusBarItem>
+        </StatusBar>
+    </Grid>
+</Window>
