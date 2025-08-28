@@ -18,18 +18,21 @@ This creates a complete, ready-to-distribute package in the `dist/` folder.
 **Command:** `distribute.cmd`
 
 **What it creates:**
-- `dist/RSSQuick.exe` - Standalone executable (no .NET required)
+- `dist/RSSQuick.exe` - Main executable
+- `dist/*.dll` - Required runtime libraries  
 - `dist/Run-RSSQuick.cmd` - Convenient launcher for users
 - `dist/RSS.opml` - Sample RSS feeds
 - `dist/README.md` - Full documentation
 - `dist/DISTRIBUTION-README.txt` - Simple user instructions
 
 **Features:**
-- ✅ Single-file executable (everything bundled)
-- ✅ Trimmed for smaller size
+- ✅ Self-contained deployment (includes .NET runtime)
 - ✅ No .NET required on user machines
+- ✅ All dependencies included
 - ✅ Complete user package with instructions
 - ✅ Automatic testing and folder opening options
+
+**Important**: Keep all files together - the application needs the DLL files to run.
 
 ### Method 2: Advanced Build Script
 
@@ -52,7 +55,8 @@ When you run `distribute.cmd`, you get a complete package in the `dist/` folder:
 
 ```
 dist/
-├── RSSQuick.exe              # Main application (standalone)
+├── RSSQuick.exe              # Main application executable
+├── *.dll                    # Required runtime libraries
 ├── Run-RSSQuick.cmd          # Launcher script for users
 ├── RSS.opml                  # Sample RSS feeds to import
 ├── README.md                 # Full documentation
@@ -69,8 +73,9 @@ dist/
 
 ### How to Run
 1. **Extract** the distribution package to any folder
-2. **Double-click** `RSSQuick.exe` OR
-3. **Double-click** `Run-RSSQuick.cmd` (convenient launcher)
+2. **Keep all files together** (don't move just the .exe)
+3. **Double-click** `RSSQuick.exe` OR
+4. **Double-click** `Run-RSSQuick.cmd` (convenient launcher)
 
 ### Getting Started
 1. **Launch** the application
@@ -117,13 +122,14 @@ Before distributing, verify:
 
 The `distribute.cmd` script uses these optimizations:
 
-- **PublishSingleFile=true**: Bundles everything into one executable
-- **PublishTrimmed=true**: Removes unused .NET code
-- **TrimMode=partial**: Safer trimming (preserves WPF requirements)
+- **Self-contained=true**: Includes .NET runtime (no installation required)
+- **Release configuration**: Optimized build
+
+**Note**: Single-file packaging is disabled for WPF compatibility.
 
 **Typical file sizes:**
 - Debug build: ~200+ MB (with .NET runtime)
-- Release trimmed: ~50-80 MB (standalone)
+- Release self-contained: ~150+ MB (all files combined)
 - Original source: <1 MB
 
 ## Troubleshooting Distribution

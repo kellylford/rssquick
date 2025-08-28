@@ -31,8 +31,7 @@ dotnet publish RSSReaderWPF.csproj ^
     --configuration Release ^
     --runtime win-x64 ^
     --self-contained true ^
-    --output "%PUBLISH_DIR%" ^
-    /p:PublishSingleFile=true
+    --output "%PUBLISH_DIR%"
 
 if %ERRORLEVEL% neq 0 (
     echo.
@@ -45,10 +44,10 @@ if %ERRORLEVEL% neq 0 (
 echo [3/4] Creating distribution package...
 mkdir "%DIST_DIR%"
 
-REM Copy the standalone executable
-copy "%PUBLISH_DIR%\RSSQuick.exe" "%DIST_DIR%\"
+REM Copy all the published files (not single-file, so we need everything)
+xcopy "%PUBLISH_DIR%\*" "%DIST_DIR%\" /E /I /Y
 
-REM Copy essential files for users
+REM Copy essential files for users (these will overwrite if they exist)
 copy "RSS.opml" "%DIST_DIR%\"
 copy "README.md" "%DIST_DIR%\"
 
@@ -68,8 +67,12 @@ echo HOW TO RUN: >> "%DIST_DIR%\DISTRIBUTION-README.txt"
 echo 1. Double-click "RSSQuick.exe" OR >> "%DIST_DIR%\DISTRIBUTION-README.txt"
 echo 2. Double-click "Run-RSSQuick.cmd" >> "%DIST_DIR%\DISTRIBUTION-README.txt"
 echo. >> "%DIST_DIR%\DISTRIBUTION-README.txt"
+echo IMPORTANT: Keep all files together! The application needs >> "%DIST_DIR%\DISTRIBUTION-README.txt"
+echo all the accompanying DLL files to run properly. >> "%DIST_DIR%\DISTRIBUTION-README.txt"
+echo. >> "%DIST_DIR%\DISTRIBUTION-README.txt"
 echo INCLUDED FILES: >> "%DIST_DIR%\DISTRIBUTION-README.txt"
-echo - RSSQuick.exe           (Main application - standalone) >> "%DIST_DIR%\DISTRIBUTION-README.txt"
+echo - RSSQuick.exe           (Main application executable) >> "%DIST_DIR%\DISTRIBUTION-README.txt"
+echo - Various .dll files     (Required runtime libraries) >> "%DIST_DIR%\DISTRIBUTION-README.txt"
 echo - Run-RSSQuick.cmd       (Convenient launcher script) >> "%DIST_DIR%\DISTRIBUTION-README.txt"
 echo - RSS.opml               (Sample RSS feeds to import) >> "%DIST_DIR%\DISTRIBUTION-README.txt"
 echo - README.md              (Full documentation) >> "%DIST_DIR%\DISTRIBUTION-README.txt"

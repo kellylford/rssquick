@@ -4,6 +4,10 @@ obj/
 [Dd]ebug/
 [Rr]elease/
 
+# Distribution folders
+dist/
+publish-test/
+
 # Visual Studio
 .vs/
 .vscode/
