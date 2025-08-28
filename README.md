@@ -113,17 +113,78 @@ The application includes `RSS.opml` with curated feeds across categories:
 
 ## Building from Source
 
+### 🎯 Quick Start (What Most People Do)
+
+**Double-click: `build-simple.cmd`**
+- Creates standard .NET distribution (~400 KB)
+- Users need .NET 8.0 Runtime (standard requirement)
+- Works on Intel/AMD computers (most common)
+
+### 📦 Distribution Options
+
+#### For File Explorer Users (Just Double-Click):
+
+| Script | Output | Size | User Needs | Best For |
+|--------|--------|------|------------|----------|
+| **`build-simple.cmd`** ⭐ | `dist-simple/` | ~400 KB | .NET 8.0 Runtime | Standard distribution |
+| `build-multi-small.cmd` | `dist-multi-small/` | ~750 KB | .NET 8.0 Runtime | Intel + ARM support |
+| `distribute.cmd` | `dist/` | ~162 MB | Nothing | Zero-setup users |
+
+#### For Command Line Users:
+
 ```bash
-# Clone repository
-git clone https://github.com/kellylford/AppExperimentation.git
-cd AppExperimentation/RSSReaderWPF
+# Standard approach (what 90% of .NET developers do)
+dotnet publish --configuration Release --runtime win-x64 --self-contained false
 
-# Build application
-dotnet build
+# Self-contained (larger but works everywhere)  
+dotnet publish --configuration Release --runtime win-x64 --self-contained true
 
-# Run application  
+# Development/testing
 dotnet run
 ```
+
+### 🛠️ Development Workflow
+
+#### Daily Development:
+```bash
+# Quick test
+run.cmd
+
+# Or manual
+dotnet run
+```
+
+#### For Distribution:
+1. **Most common**: Double-click `build-simple.cmd`
+2. **Multi-platform**: Double-click `build-multi-small.cmd` 
+3. **Zero-setup**: Double-click `distribute.cmd`
+
+### 📋 Requirements
+
+#### For Building:
+- **Windows 10/11** (WPF requirement)
+- **.NET 8.0 SDK** (for development)
+- **Internet connection** (to restore packages)
+
+#### For End Users:
+- **Windows 10/11**
+- **.NET 8.0 Runtime** (for small distributions)
+- **Nothing additional** (for self-contained distributions)
+
+**Get .NET 8.0:** https://dotnet.microsoft.com/download/dotnet/8.0
+
+### 🚀 Complete Build Reference
+
+All build scripts work from File Explorer (double-click) or command line:
+
+- `run.cmd` - Quick development testing
+- `build.cmd` - Advanced development options
+- **`build-simple.cmd`** - Standard distribution (recommended)
+- `build-multi-small.cmd` - Multi-platform small distribution  
+- `distribute.cmd` - Self-contained distribution
+- `distribute-small.cmd` - Single-platform small distribution
+
+**See `HOW-TO-BUILD.md` for detailed instructions.**
 
 ## Troubleshooting
 
