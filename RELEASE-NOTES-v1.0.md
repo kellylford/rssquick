@@ -1,8 +1,9 @@
 # RSS Quick v1.0 Release Notes
 
-**Accessible, fast, and simple RSS reader for Windows.**
+**Initial public release of RSS Quick!**
 
 ## Highlights
+- Accessible, fast, and simple RSS reader for Windows
 - Multi-platform: x64 and ARM64 builds
 - No installation required: just unzip and run
 - Loads any `rss.opml` in the launch folder (default file included)

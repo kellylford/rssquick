@@ -6,9 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [1.0.0] - 2025-08-29
 ### Added
-- First public release of RSS Quick
-- Multi-platform (x64, ARM64) Windows support
-- Accessible WPF interface, screen reader optimized
-- OPML import, default rss.opml included
-- No installation required, just unzip and run
-- Release notes and automation templates
+- Initial public release
+- Accessible, fast, and simple RSS reader for Windows
+- Multi-platform: x64 and ARM64 builds
+- No installation required: just unzip and run
+- Loads any `rss.opml` in the launch folder (default file included)
+- Optimized for screen readers and keyboard navigation
+- OPML import, clean 2-panel interface, external browser support
