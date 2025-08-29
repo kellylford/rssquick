@@ -5,7 +5,7 @@ echo Building the standard way (what most .NET developers do)...
 echo.
 
 echo [1/2] Building for x64 (Intel/AMD)...
-dotnet publish --configuration Release --runtime win-x64 --self-contained false --output "dist-simple"
+dotnet publish --configuration Release --runtime win-x64 --self-contained false --output "dist-simple" RSSQuick.sln
 
 if %ERRORLEVEL% neq 0 (
     echo.

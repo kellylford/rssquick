@@ -285,6 +285,7 @@
             <outline text="General Accessibility" type="rss" xmlUrl="https://news.google.com/rss/search?q=%22accessibility+news%22" />
             <outline text="Digital Accessibility" type="rss" xmlUrl="https://news.google.com/rss/search?q=%22web+accessibility%22+OR+%22WCAG%22+OR+%22Section+508%22" />
             <outline text="Assistive Technology" type="rss" xmlUrl="https://news.google.com/rss/search?q=%22assistive+technology%22+OR+%22adaptive+tech%22" />
+            <outline text="braille" type="rss" xmlUrl="https://news.google.com/rss/search?q=%22braille%22" />
             <outline text="Universal &amp; Inclusive Design" type="rss" xmlUrl="https://news.google.com/rss/search?q=%22universal+design%22+OR+%22inclusive+design%22" />
             <outline text="Disability Rights" type="rss" xmlUrl="https://news.google.com/rss/search?q=%22disability+rights%22+OR+%22disability+advocacy%22" />
             <outline text="Physical Accessibility" type="rss" xmlUrl="https://news.google.com/rss/search?q=%22physical+accessibility%22+OR+%22ADA+compliance%22" />
