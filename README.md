@@ -1,4 +1,15 @@
+
 # RSS Quick - Accessible WPF RSS Reader
+
+## Get Involved / Feedback
+
+We welcome feedback, suggestions, and contributions! If you have ideas, bug reports, or want to help improve RSS Quick, please visit our [GitHub Issues page](https://github.com/kellylford/rssquick/issues).
+
+- Suggest features or improvements
+- Report bugs or accessibility issues
+- Ask questions or get help
+
+Your input helps make RSS Quick better for everyone!
 
 A fast, accessible RSS reader built with WPF for efficient headline browsing. Features a clean 2-panel interface optimized for screen readers and keyboard navigation.
 
