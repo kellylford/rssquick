@@ -21,7 +21,8 @@ echo Building for ARM64 (Surface/newer laptops)...
 dotnet publish RSSReaderWPF.csproj --configuration Release --runtime win-arm64 --self-contained false --output "%BASE_DIR%\win-arm64"
 if %ERRORLEVEL% neq 0 goto :error
 
-echo [3/3] Adding documentation and samples...
+
+echo [3/3] Adding documentation, samples, and zipping outputs...
 
 REM Copy files to both platforms
 copy "RSS.opml" "%BASE_DIR%\win-x64\"
@@ -43,12 +44,21 @@ echo. >> "%BASE_DIR%\README.txt"
 echo Both require .NET 8.0 Runtime to be installed. >> "%BASE_DIR%\README.txt"
 echo Download from: https://dotnet.microsoft.com/download/dotnet/8.0 >> "%BASE_DIR%\README.txt"
 
+REM Zip each platform's output into its own folder
+echo Zipping win-x64 output...
+if exist "%BASE_DIR%\win-x64" powershell -Command "Compress-Archive -Path '%BASE_DIR%/win-x64/*' -DestinationPath '%BASE_DIR%/win-x64/RSSQuick-win-x64.zip' -Force"
+
+echo Zipping win-arm64 output...
+if exist "%BASE_DIR%\win-arm64" powershell -Command "Compress-Archive -Path '%BASE_DIR%/win-arm64/*' -DestinationPath '%BASE_DIR%/win-arm64/RSSQuick-win-arm64.zip' -Force"
+
 echo.
 echo *** SUCCESS! ***
 echo.
 echo Created: %BASE_DIR%\
 echo   win-x64\     - For Intel/AMD computers
-echo   win-arm64\   - For ARM computers  
+echo     RSSQuick-win-x64.zip (ready for release)
+echo   win-arm64\   - For ARM computers
+echo     RSSQuick-win-arm64.zip (ready for release)
 echo   README.txt   - Instructions
 echo.
 
