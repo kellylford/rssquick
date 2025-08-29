@@ -6,6 +6,10 @@
     <UseWPF>true</UseWPF>
     <Nullable>enable</Nullable>
     <AssemblyName>RSSQuick</AssemblyName>
+
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>true</SelfContained>
+
   </PropertyGroup>
 
   <ItemGroup>

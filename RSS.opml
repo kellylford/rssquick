@@ -293,6 +293,7 @@
             <outline text="Gaming Accessibility" type="rss" xmlUrl="https://news.google.com/rss/search?q=%22gaming+accessibility%22+OR+%22accessible+gaming%22" />
             <outline text="Accessible Travel" type="rss" xmlUrl="https://news.google.com/rss/search?q=%22accessible+travel%22+OR+%22accessible+tourism%22" />
             <outline text="Workplace Accessibility" type="rss" xmlUrl="https://news.google.com/rss/search?q=%22workplace+accessibility%22+OR+%22accessible+employment%22" />
+    <outline text="Braille" type="rss" xmlUrl="https://news.google.com/rss/search?q=braille" />
         </outline>
     </body>
 </opml>
