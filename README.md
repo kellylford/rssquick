@@ -2,21 +2,41 @@
 
 A fast, accessible RSS reader built with WPF for efficient headline browsing. Features a clean 2-panel interface optimized for screen readers and keyboard navigation.
 
+
+## Getting RSS Quick
+
+You can download the latest version of RSS Quick in two ways:
+
+- **GitHub Releases:**
+  - Visit the [Releases page](https://github.com/kellylford/rssquick/releases) for official packages.
+- **Direct Download:**
+  - Download from OneDrive: [RSS Quick Packages](https://1drv.ms/f/c/a7b1bd807b044bbc/EuVL5TCSlyJNrqWJJ0SzPsEBXkHTELkLBeeIwKCwNP8epA?e=DVNkcT)
+
+### Which Package Should I Use?
+
+- **win-x64**: For most Intel/AMD Windows computers
+- **win-arm64**: For ARM-based Windows devices (Surface Pro X, etc)
+
+### How to Run
+
+1. **Download** the ZIP file for your computer's architecture.
+2. **Unzip** the contents to any folder (e.g., your Desktop or Documents).
+3. **Run** `RSSQuick.exe` inside the unzipped folder.
+   - If you do not have the .NET 8.0 Runtime installed, Windows will prompt you to download it automatically.
+   - No installation is required—just unzip and run!
+
+---
 ## Quick Start
 
+
 1. **Run** the application (`RSSQuick.exe` or `dotnet run`)
-2. **Import feeds**: Click "Import OPML File" button 
+  - By default, RSS Quick will automatically load any file named `rss.opml` in the same directory where the program is launched.
+  - A default `rss.opml` file is included for you to try out right away.
+2. **Import feeds**: Activate "Import OPML File" button 
 3. **Browse feeds**: Use arrow keys to navigate, Enter to load headlines
 4. **Read articles**: Tab to headlines, browse with arrows, Alt+B to open in browser
 
 ## Key Features
-
-### Accessibility First
-- **Screen Reader Optimized**: Clean announcements without verbose clutter
-- **Braille Display Friendly**: Eliminates problematic whitespace and special characters
-- **Keyboard Navigation**: Complete functionality without mouse dependency
-- **Status Bar Integration**: Live updates accessible via screen reader status commands
-- **Proper Focus Management**: Reliable Tab/Shift+Tab navigation between panels
 
 ### Simple & Fast
 - **2-Panel Layout**: Feeds list → Headlines list → External browser
@@ -110,38 +130,6 @@ The application includes `RSS.opml` with curated feeds across categories:
 - **Runtime**: .NET 8.0 or later
 - **Network**: Internet connection for RSS feed fetching
 - **Browser**: Default web browser for article viewing
-
-## Building from Source
-
-### 🎯 Quick Start (What Most People Do)
-
-**Double-click: `build-simple.cmd`**
-- Creates standard .NET distribution (~400 KB)
-- Users need .NET 8.0 Runtime (standard requirement)
-- Works on Intel/AMD computers (most common)
-
-### 📦 Distribution Options
-
-#### For File Explorer Users (Just Double-Click):
-
-| Script | Output | Size | User Needs | Best For |
-|--------|--------|------|------------|----------|
-| **`build-simple.cmd`** ⭐ | `dist-simple/` | ~400 KB | .NET 8.0 Runtime | Standard distribution |
-| `build-multi-small.cmd` | `dist-multi-small/` | ~750 KB | .NET 8.0 Runtime | Intel + ARM support |
-| `distribute.cmd` | `dist/` | ~162 MB | Nothing | Zero-setup users |
-
-#### For Command Line Users:
-
-```bash
-# Standard approach (what 90% of .NET developers do)
-dotnet publish --configuration Release --runtime win-x64 --self-contained false
-
-# Self-contained (larger but works everywhere)  
-dotnet publish --configuration Release --runtime win-x64 --self-contained true
-
-# Development/testing
-dotnet run
-```
 
 ### 🛠️ Development Workflow
 
