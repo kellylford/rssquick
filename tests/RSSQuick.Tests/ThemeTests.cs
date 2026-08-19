@@ -18,6 +18,7 @@ namespace RSSQuick.Tests;
 /// shows up in a screenshot taken on the developer's machine, so it is asserted here instead.
 /// These tests fail against the pre-1.1.0 window, which hardcoded DarkBlue, Gray and LightGray.
 /// </remarks>
+[Collection(WpfCollection.Name)]
 public class ThemeTests
 {
     [WpfFact]

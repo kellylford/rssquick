@@ -11,6 +11,7 @@ namespace RSSQuick.Tests;
 /// the TreeView and the ListBox were each <c>IsTabStop="True"</c> and so were tab stops in their
 /// own right, on top of the item inside them.</para>
 /// </summary>
+[Collection(WpfCollection.Name)]
 public class TabOrderTests
 {
     // ── the reported bug ──────────────────────────────────────────────────────

@@ -8,6 +8,7 @@ namespace RSSQuick.Tests;
 /// <summary>
 /// What the window has done by the time it is on screen.
 /// </summary>
+[Collection(WpfCollection.Name)]
 public class StartupTests
 {
     [WpfFact]
