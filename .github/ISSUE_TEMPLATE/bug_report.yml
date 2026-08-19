@@ -1,0 +1,56 @@
+name: Bug report
+description: Something does not work the way it should.
+labels: [bug]
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What did you do, and what did RSS Quick do instead of what you expected?
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open RSS Quick
+        2. Arrow to the Technology folder
+        3. Press Enter
+        4. ...
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: RSS Quick version
+      description: Shown on the Releases page you downloaded from, or in the installer's Add/Remove Programs entry.
+      placeholder: "1.1.0"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: package
+    attributes:
+      label: Which package are you running?
+      options:
+        - Installer (setup .exe)
+        - Portable (ZIP)
+        - Built from source
+        - Not sure
+    validations:
+      required: true
+
+  - type: input
+    id: feed
+    attributes:
+      label: Feed URL
+      description: If the problem happens with one particular feed, the URL helps a lot.
+
+  - type: input
+    id: windows
+    attributes:
+      label: Windows version
+      placeholder: "Windows 11 24H2"

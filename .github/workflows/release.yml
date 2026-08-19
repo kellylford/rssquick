@@ -1,0 +1,77 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      architecture:
+        description: 'Architectures to build'
+        type: choice
+        options: [both, x64, arm64]
+        default: both
+
+permissions:
+  contents: write   # create the draft release
+
+jobs:
+  package:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
+
+      # Never ship a build the tests have not passed.
+      - name: Test
+        run: dotnet test tests/RSSQuick.Tests/RSSQuick.Tests.csproj --configuration Release
+
+      # Present on the windows-latest image, but pinning it here means a change to the image
+      # fails loudly at this step instead of silently producing a release with no installer.
+      - name: Check for Inno Setup
+        shell: pwsh
+        run: |
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) {
+            throw "Inno Setup 6 is not on this runner; the installer cannot be built."
+          }
+          Write-Host "Found $iscc"
+
+      # The tag is authoritative: a v1.2.0 tag must not publish artefacts stamped 1.1.0.
+      - name: Check the tag matches VERSION
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: pwsh
+        run: |
+          $tag  = "${{ github.ref_name }}" -replace '^v', ''
+          $file = (Get-Content VERSION -Raw).Trim()
+          if ($tag -ne $file) {
+            throw "Tag v$tag does not match VERSION ($file). Run build/prepare-release.ps1 $tag and re-tag."
+          }
+          Write-Host "Version $file"
+
+      - name: Build the installer and portable ZIP
+        shell: pwsh
+        run: ./build/publish.ps1 -Architecture ${{ inputs.architecture || 'both' }}
+
+      - name: Upload artefacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: rssquick-packages
+          path: |
+            artifacts/*.zip
+            artifacts/*.exe
+
+      # Draft, not published: the artefacts want a manual check with a screen reader before
+      # anyone downloads them, and the release notes want reading before they go out.
+      - name: Create draft release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          generate_release_notes: true
+          files: |
+            artifacts/*.zip
+            artifacts/*.exe

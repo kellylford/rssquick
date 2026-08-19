@@ -1,0 +1,57 @@
+name: Accessibility issue
+description: Something is unusable or awkward with a screen reader, braille display, magnifier, or the keyboard.
+labels: [accessibility]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Accessibility reports are treated as bugs, not enhancements. Please do not feel you need
+        to diagnose the cause — describing what you heard, felt on the braille display, or could
+        not reach with the keyboard is exactly the useful part.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What was announced or displayed, and what did you expect instead?
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Where in the app
+      description: Which panel or control, and how you got there.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: assistive-tech
+    attributes:
+      label: What are you using?
+      multiple: true
+      options:
+        - NVDA
+        - JAWS
+        - Narrator
+        - A braille display
+        - Windows Magnifier
+        - Keyboard only, no screen reader
+        - Voice control (Dragon, Windows Speech Recognition)
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: at-version
+    attributes:
+      label: Screen reader / braille display version and model
+      placeholder: "NVDA 2026.1, Focus 40 Blue"
+
+  - type: input
+    id: version
+    attributes:
+      label: RSS Quick version
+      placeholder: "1.1.0"
+    validations:
+      required: true

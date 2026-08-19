@@ -1,0 +1,31 @@
+version: 2
+updates:
+  - package-ecosystem: nuget
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 10
+    reviewers:
+      - kellylford
+    assignees:
+      - kellylford
+    groups:
+      # The test stack moves together; one PR rather than five.
+      test-tooling:
+        patterns:
+          - "xunit*"
+          - "Xunit*"
+          - "Microsoft.NET.Test.Sdk"
+          - "coverlet.*"
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    reviewers:
+      - kellylford
+    assignees:
+      - kellylford

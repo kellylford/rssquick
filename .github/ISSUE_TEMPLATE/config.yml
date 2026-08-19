@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Question or general feedback
+    url: https://github.com/kellylford/rssquick/discussions
+    about: Ask a question or share an idea that is not a bug report.
