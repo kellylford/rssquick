@@ -57,7 +57,7 @@ jobs:
         run: ./build/publish.ps1 -Architecture ${{ inputs.architecture || 'both' }}
 
       - name: Upload artefacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: rssquick-packages
           path: |
