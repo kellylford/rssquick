@@ -3,11 +3,12 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Runtime.CompilerServices;
-using System.ServiceModel.Syndication;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -16,117 +17,12 @@ using System.Windows.Media;
 using System.Windows.Media.Media3D;
 using System.Windows.Navigation;
 using System.Windows.Threading;
-using System.Xml;
 using System.Xml.Linq;
 using Microsoft.Win32;
+using RSSReaderWPF.Services;
 
 namespace RSSReaderWPF
 {
-    /// <summary>
-    /// RSS Feed item for data binding
-    /// </summary>
-    public class FeedItem : INotifyPropertyChanged
-    {
-        private string _title = string.Empty;
-        private string _url = string.Empty;
-        private string _category = string.Empty;
-        private bool _isCategory = false;
-
-        public string Title
-        {
-            get => _title;
-            set { _title = value; OnPropertyChanged(); }
-        }
-
-        public string Url
-        {
-            get => _url;
-            set { _url = value; OnPropertyChanged(); }
-        }
-
-        public string Category
-        {
-            get => _category;
-            set { _category = value; OnPropertyChanged(); }
-        }
-
-        public bool IsCategory
-        {
-            get => _isCategory;
-            set { _isCategory = value; OnPropertyChanged(); }
-        }
-
-        public ObservableCollection<FeedItem> Children { get; } = new();
-
-        public event PropertyChangedEventHandler? PropertyChanged;
-        protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
-    }
-
-    /// <summary>
-    /// RSS Article item for data binding
-    /// </summary>
-    public class ArticleItem : INotifyPropertyChanged
-    {
-        private string _title = string.Empty;
-        private string _link = string.Empty;
-        private string _summary = string.Empty;
-        private string _content = string.Empty;
-        private string _published = string.Empty;
-        private string _author = string.Empty;
-        private string _feedTitle = string.Empty;
-
-        public string Title
-        {
-            get => _title;
-            set { _title = value; OnPropertyChanged(); }
-        }
-
-        public string Link
-        {
-            get => _link;
-            set { _link = value; OnPropertyChanged(); }
-        }
-
-        public string Summary
-        {
-            get => _summary;
-            set { _summary = value; OnPropertyChanged(); }
-        }
-
-        public string Content
-        {
-            get => _content;
-            set { _content = value; OnPropertyChanged(); }
-        }
-
-        public string Published
-        {
-            get => _published;
-            set { _published = value; OnPropertyChanged(); }
-        }
-
-        public string Author
-        {
-            get => _author;
-            set { _author = value; OnPropertyChanged(); }
-        }
-
-        public string FeedTitle
-        {
-            get => _feedTitle;
-            set { _feedTitle = value; OnPropertyChanged(); }
-        }
-
-        public event PropertyChangedEventHandler? PropertyChanged;
-        protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
-    }
-
     /// <summary>
     /// Main Window ViewModel
     /// </summary>
@@ -167,11 +63,25 @@ namespace RSSReaderWPF
     /// <summary>
     /// Main Window Code-behind
     /// </summary>
+    [SuppressMessage("Design", "CA1001:Types that own disposable fields should be disposable",
+        Justification = "A Window's disposal point is OnClosed, which cancels and disposes the " +
+                        "token source. Implementing IDisposable would add a method nothing calls.")]
     public partial class MainWindow : Window
     {
         private readonly MainViewModel _viewModel;
         private readonly Dictionary<string, Dictionary<string, FeedItem>> _feedCategories = new();
-        private bool _isLoadingFeed = false; // Flag to prevent unwanted focus changes during feed loading
+        private bool _isLoadingFeed; // Suppresses focus side effects while a load is in progress
+
+        /// <summary>
+        /// Cancels the load in flight.
+        /// </summary>
+        /// <remarks>
+        /// Without this, pressing Enter on a second feed before the first returned left both
+        /// completions appending to the same list: the headlines interleaved, and the status bar
+        /// reported whichever finished last. Easy to hit with a slow feed, which is exactly when
+        /// someone is most likely to give up and try a different one.
+        /// </remarks>
+        private CancellationTokenSource? _loadCancellation;
         private int _lastSelectedHeadlineIndex = -1; // Track last selected headline for focus retention
         private FeedItem? _currentlyLoadedFeed = null; // Track which feed is currently loaded
 
@@ -212,6 +122,11 @@ namespace RSSReaderWPF
             // Alt+B for opening article in browser
             var openBrowserBinding = new KeyBinding(new RelayCommand(OpenInBrowserCommand), Key.B, ModifierKeys.Alt);
             InputBindings.Add(openBrowserBinding);
+
+            // Escape stops a load. A folder of feeds can take a while even now that they are
+            // fetched concurrently, and waiting with no way out is the thing being fixed.
+            var cancelBinding = new KeyBinding(new RelayCommand(CancelLoad), Key.Escape, ModifierKeys.None);
+            InputBindings.Add(cancelBinding);
         }
 
         private void LoadDefaultOpml()
@@ -487,194 +402,183 @@ namespace RSSReaderWPF
             return null;
         }
 
+        /// <summary>
+        /// Begins a load, cancelling whatever was already running.
+        /// </summary>
+        /// <returns>The token for this load; results carrying a cancelled one must be discarded.</returns>
+        private CancellationToken BeginLoad(FeedItem target)
+        {
+            _loadCancellation?.Cancel();
+            _loadCancellation?.Dispose();
+            _loadCancellation = new CancellationTokenSource();
+
+            _isLoadingFeed = true;
+            _currentlyLoadedFeed = target;
+            _viewModel.Headlines.Clear();
+            _lastSelectedHeadlineIndex = -1;
+            OpenInBrowserButton.IsEnabled = false;
+
+            return _loadCancellation.Token;
+        }
+
+        /// <summary>
+        /// Stops any load still running when the window closes, so its continuation does not try
+        /// to touch a window that has gone.
+        /// </summary>
+        protected override void OnClosed(EventArgs e)
+        {
+            _loadCancellation?.Cancel();
+            _loadCancellation?.Dispose();
+            _loadCancellation = null;
+            base.OnClosed(e);
+        }
+
+        /// <summary>Escape: abandon the load in progress.</summary>
+        private void CancelLoad()
+        {
+            if (_loadCancellation is not { IsCancellationRequested: false }) return;
+
+            _loadCancellation.Cancel();
+            _viewModel.StatusMessage = "Loading cancelled";
+        }
+
+        /// <summary>Puts articles on screen and hands focus to the first of them.</summary>
+        private void ShowArticles(IReadOnlyList<ArticleItem> articles, string status)
+        {
+            foreach (var article in articles) _viewModel.Headlines.Add(article);
+
+            _viewModel.StatusMessage = status;
+
+            // Cleared before focusing, so the selection this makes is allowed to reach the status
+            // bar rather than being suppressed as part of the load.
+            _isLoadingFeed = false;
+
+            if (articles.Count > 0) FocusSelectedHeadline();
+        }
+
+        /// <summary>
+        /// Loads every feed under a folder and merges the headlines.
+        /// </summary>
         private async Task LoadAllFeedsInCategoryAsync(FeedItem categoryItem)
         {
+            var token = BeginLoad(categoryItem);
+            var feeds = GetAllFeedsRecursive(categoryItem);
+
+            if (feeds.Count == 0)
+            {
+                _isLoadingFeed = false;
+                _viewModel.StatusMessage = $"{categoryItem.Title} has no feeds in it";
+                return;
+            }
+
+            _viewModel.StatusMessage = $"Loading {feeds.Count} feeds in {categoryItem.Title}...";
+
+            // Marshalled back to the UI thread by the progress object, which captures the
+            // synchronization context where it is constructed - here.
+            var progress = new Progress<int>(done =>
+            {
+                if (!token.IsCancellationRequested)
+                    _viewModel.StatusMessage = $"Loading {categoryItem.Title} - {done} of {feeds.Count} feeds...";
+            });
+
             try
             {
-                _isLoadingFeed = true;
-                _currentlyLoadedFeed = categoryItem; // Track the currently loaded category/folder
+                var result = await FeedLoader.LoadFolderAsync(feeds, progress, token);
 
-                // Update UI on main thread
-                Dispatcher.Invoke(() =>
-                {
-                    _viewModel.StatusMessage = $"Loading all feeds in category: {categoryItem.Title}...";
-                    _viewModel.Headlines.Clear();
-                    _lastSelectedHeadlineIndex = -1;
-                    OpenInBrowserButton.IsEnabled = false;
-                    // ArticleContent.NavigateToString("<html><body style='font-family: Segoe UI; padding: 20px; color: #666;'><h3>Loading articles from all feeds...</h3></body></html>");
-                });
+                if (token.IsCancellationRequested) return;
 
-                // Collect all feeds under this category (including nested categories)
-                var allFeeds = GetAllFeedsRecursive(categoryItem);
-                var allArticles = new List<ArticleItem>();
-
-                foreach (var feed in allFeeds)
-                {
-                    try
-                    {
-                        // Update status for each feed
-                        Dispatcher.Invoke(() =>
-                        {
-                            _viewModel.StatusMessage = $"Loading feed: {feed.Title}...";
-                        });
-
-                        // Load articles from this feed
-                        var articles = await Task.Run(() =>
-                        {
-                            using var reader = XmlReader.Create(feed.Url);
-                            var syndicationFeed = SyndicationFeed.Load(reader);
-
-                            var feedArticles = new List<ArticleItem>();
-                            foreach (var item in syndicationFeed.Items)
-                            {
-                                feedArticles.Add(new ArticleItem
-                                {
-                                    Title = CleanTitleText(item.Title?.Text ?? "No Title"),
-                                    Content = item.Content?.ToString() ?? item.Summary?.Text ?? "No content available",
-                                    Link = item.Links?.FirstOrDefault()?.Uri?.ToString() ?? "",
-                                    Published = item.PublishDate.ToString("MMM dd, yyyy HH:mm"),
-                                    FeedTitle = feed.Title // Track which feed this came from
-                                });
-                            }
-                            return feedArticles;
-                        });
-
-                        allArticles.AddRange(articles);
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"Failed to load feed {feed.Title}: {ex.Message}");
-                        // Continue with other feeds even if one fails
-                    }
-                }
-
-                // Sort all articles by publication date (newest first)
-                var sortedArticles = allArticles.OrderByDescending(a =>
-                {
-                    // Try to parse the date for proper sorting
-                    if (DateTime.TryParse(a.Published, out DateTime date))
-                        return date;
-                    return DateTime.MinValue;
-                }).ToList();
-
-                // Update UI with all articles
-                Dispatcher.Invoke(() =>
-                {
-                    foreach (var article in sortedArticles)
-                    {
-                        _viewModel.Headlines.Add(article);
-                    }
-
-                    _viewModel.StatusMessage = $"Loaded {allArticles.Count} articles from {allFeeds.Count} feeds in category: {categoryItem.Title}";
-
-                    _isLoadingFeed = false;
-
-                    if (sortedArticles.Count > 0) FocusSelectedHeadline();
-                });
+                ShowArticles(result.Articles, DescribeFolderLoad(categoryItem, result));
+            }
+            // Filtered on our own token: an HttpClient timeout arrives as a TaskCanceledException
+            // too, and swallowing that would report nothing at all for a feed that timed out.
+            catch (OperationCanceledException) when (token.IsCancellationRequested)
+            {
+                // Escape, or a newer load superseding this one. Either way the status bar has
+                // already been given something better to say.
+                _isLoadingFeed = false;
             }
             catch (Exception ex)
             {
-                Dispatcher.Invoke(() =>
-                {
-                    _viewModel.StatusMessage = $"Error loading category feeds: {ex.Message}";
-                    MessageBox.Show($"Failed to load feeds in category:\n{ex.Message}", "Feed Load Error",
-                                   MessageBoxButton.OK, MessageBoxImage.Warning);
-                    _isLoadingFeed = false;
-                });
+                if (token.IsCancellationRequested) return;
+
+                _isLoadingFeed = false;
+                _viewModel.StatusMessage = $"Could not load {categoryItem.Title}: {ex.Message}";
             }
         }
 
-        private List<FeedItem> GetAllFeedsRecursive(FeedItem categoryItem)
+        /// <summary>
+        /// One line covering how much of a folder arrived, and what did not.
+        /// </summary>
+        /// <remarks>
+        /// Partial failure is reported here rather than in a message box. A folder of twenty feeds
+        /// where one publisher is down is a normal morning, and it does not warrant a modal dialog
+        /// standing between the reader and the nineteen that worked.
+        /// </remarks>
+        private static string DescribeFolderLoad(FeedItem category, FolderLoadResult result)
+        {
+            if (result.Failures.Count == 0)
+                return $"Loaded {result.Articles.Count} headlines from {result.FeedsAttempted} feeds in {category.Title}";
+
+            if (result.FeedsSucceeded == 0)
+                return $"None of the {result.FeedsAttempted} feeds in {category.Title} could be loaded";
+
+            // Name them while the list is short enough to be useful rather than a wall of text.
+            var named = result.Failures.Count <= 3
+                ? ": " + string.Join(", ", result.Failures.Select(f => $"{f.FeedTitle} {f.Reason}"))
+                : string.Empty;
+
+            return $"Loaded {result.Articles.Count} headlines from {result.FeedsSucceeded} of "
+                 + $"{result.FeedsAttempted} feeds in {category.Title}; "
+                 + $"{result.Failures.Count} failed{named}";
+        }
+
+        /// <summary>Every feed under a folder, at any depth.</summary>
+        private static List<FeedItem> GetAllFeedsRecursive(FeedItem categoryItem)
         {
             var feeds = new List<FeedItem>();
 
-            if (categoryItem.Children != null)
+            foreach (var child in categoryItem.Children)
             {
-                foreach (var child in categoryItem.Children)
-                {
-                    if (child.IsCategory)
-                    {
-                        // Recursively get feeds from subcategories
-                        feeds.AddRange(GetAllFeedsRecursive(child));
-                    }
-                    else
-                    {
-                        // This is a feed, add it to the list
-                        feeds.Add(child);
-                    }
-                }
+                if (child.IsCategory) feeds.AddRange(GetAllFeedsRecursive(child));
+                else feeds.Add(child);
             }
 
             return feeds;
         }
 
+        /// <summary>Loads a single feed's headlines.</summary>
         private async Task LoadFeedAsync(FeedItem feedItem)
         {
+            var token = BeginLoad(feedItem);
+
+            _viewModel.StatusMessage = $"Loading feed: {feedItem.Title}...";
+
             try
             {
-                _isLoadingFeed = true; // Set flag to prevent unwanted focus changes
-                _currentlyLoadedFeed = feedItem; // Track the currently loaded feed
+                var articles = await FeedLoader.LoadFeedAsync(feedItem, token);
 
-                // Update UI on main thread
-                Dispatcher.Invoke(() =>
-                {
-                    _viewModel.StatusMessage = $"Loading feed: {feedItem.Title}...";
-                    _viewModel.Headlines.Clear();
-                    _lastSelectedHeadlineIndex = -1;
-                    // ArticleContent.NavigateToString("<html><body style='font-family: Segoe UI; padding: 20px; color: #666;'><h3>Select an article to view its content...</h3></body></html>");
-                });
+                if (token.IsCancellationRequested) return;
 
-                // Load RSS feed on background thread
-                var articles = await Task.Run(() =>
-                {
-                    using var reader = XmlReader.Create(feedItem.Url);
-                    var feed = SyndicationFeed.Load(reader);
-
-                    var articleList = new List<ArticleItem>();
-                    foreach (var item in feed.Items)
-                    {
-                        var article = new ArticleItem
-                        {
-                            Title = CleanTitleText(item.Title?.Text ?? "No Title"),
-                            Link = item.Links.FirstOrDefault()?.Uri?.ToString() ?? string.Empty,
-                            Summary = item.Summary?.Text ?? string.Empty,
-                            Content = item.Content?.ToString() ?? item.Summary?.Text ?? string.Empty,
-                            Published = item.PublishDate.ToString("yyyy-MM-dd HH:mm"),
-                            Author = item.Authors.FirstOrDefault()?.Name ?? string.Empty,
-                            FeedTitle = feedItem.Title
-                        };
-                        articleList.Add(article);
-                    }
-                    return articleList;
-                });
-
-                // Update UI with results on main thread
-                Dispatcher.Invoke(() =>
-                {
-                    foreach (var article in articles)
-                    {
-                        _viewModel.Headlines.Add(article);
-                    }
-
-                    _viewModel.StatusMessage = $"Loaded {articles.Count} articles from {feedItem.Title}";
-
-                    // Clear the flag first, so the selection this makes is allowed to update the
-                    // status bar rather than being suppressed as part of the load.
-                    _isLoadingFeed = false;
-
-                    if (articles.Count > 0) FocusSelectedHeadline();
-                });
+                ShowArticles(articles, articles.Count > 0
+                    ? $"Loaded {articles.Count} headlines from {feedItem.Title}"
+                    : $"{feedItem.Title} has no headlines right now");
+            }
+            catch (OperationCanceledException) when (token.IsCancellationRequested)
+            {
+                _isLoadingFeed = false;
             }
             catch (Exception ex)
             {
-                // Update UI with error on main thread
-                Dispatcher.Invoke(() =>
-                {
-                    _viewModel.StatusMessage = $"Error loading feed: {ex.Message}";
-                    MessageBox.Show($"Failed to load feed:\n{ex.Message}", "Feed Load Error",
-                                   MessageBoxButton.OK, MessageBoxImage.Warning);
-                    _isLoadingFeed = false; // Clear flag on error too
-                });
+                if (token.IsCancellationRequested) return;
+
+                _isLoadingFeed = false;
+                _viewModel.StatusMessage = $"Could not load {feedItem.Title}: {ex.Message}";
+
+                // A modal box only where the user asked for one specific thing and got nothing.
+                // The folder path deliberately does not do this; see DescribeFolderLoad.
+                MessageBox.Show(
+                    $"Could not load {feedItem.Title}.\n\n{ex.Message}",
+                    "Feed Load Error", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
         }
 

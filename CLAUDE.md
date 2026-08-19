@@ -29,24 +29,27 @@ Version lives in `VERSION` and nowhere else. `Directory.Build.props` reads it in
 
 ## Architecture
 
-Everything except the value converters lives in `MainWindow.xaml.cs` (~1060 lines): both models, the view model, the window code-behind, and a `RelayCommand`. `Converters.cs` holds `IValueConverter`s exposed as static `Instance` singletons and referenced from XAML via `{x:Static}`. Splitting this up is item 2.1 in the improvement plan.
+`Models/` holds `FeedItem` and `ArticleItem`. `Services/` holds `FeedLoader` (fetching and parsing) and `FeedText` (headline cleaning). `Converters.cs` holds `IValueConverter`s exposed as static `Instance` singletons and referenced from XAML via `{x:Static}`. What remains in `MainWindow.xaml.cs` (~940 lines) is `MainViewModel`, `RelayCommand`, OPML parsing, and all the focus management — finishing that split is item 2.1 in the improvement plan.
 
 Flow:
 
 1. **Startup** — `LoadDefaultOpml()` calls `FindDefaultOpml()`, which checks the working directory first (so a portable copy uses the list beside it) then `AppContext.BaseDirectory` (so a Start Menu shortcut, whose working directory is not guaranteed, still finds the installed list). Missing file is not an error; focus goes to the Import button.
 2. **OPML → tree** — `ParseOpml()` / `ProcessOutlines()` walk `<outline>` elements recursively into a `FeedItem` tree. `IsCategory` distinguishes folders from feeds; nesting is arbitrary depth.
-3. **Feed → headlines** — Enter in the tree calls `LoadFeedAsync` (one feed) or `LoadAllFeedsInCategoryAsync` (every feed under a folder, merged and sorted newest-first). Both use `SyndicationFeed.Load(XmlReader.Create(url))` on a background `Task.Run`, then marshal back with `Dispatcher.Invoke`.
+3. **Feed → headlines** — Enter in the tree calls `LoadFeedAsync` (one feed) or `LoadAllFeedsInCategoryAsync` (a folder). Both call `BeginLoad`, which cancels whatever load was already running, then hand off to `FeedLoader`. A folder fetches six feeds at a time and reports per-feed failures rather than failing as a whole.
 4. **Headline → browser** — Enter or Alt+B runs `Process.Start` on the article link.
 
-### The dual-load-path invariant
+### Traps this codebase has already fallen into
 
-`LoadFeedAsync` and `LoadAllFeedsInCategoryAsync` build `ArticleItem`s independently. Any change to how article fields are produced must be made in **both**, or the two diverge in ways that only show up on a braille display. This has already bitten the project twice — `CleanTitleText` was applied in one path only, and the two still disagree on `Published` format. Improvement-plan item 1.5 is to extract a shared factory and close this for good.
+- **The two load paths used to build articles independently** and drifted every time either was touched — title cleaning applied on one path only (the original braille bug), then differing date formats. `ArticleItem.FromSyndication` is now the only place a syndication item becomes an article. Keep it that way.
+- **`SyndicationItem.PublishDate` throws from its getter** when the feed's date is malformed, rather than returning a default. `PickDate` catches it. Reading any syndication date property unguarded reintroduces "one bad entry loses the whole feed".
+- **`HttpClient` reports its own timeout as `TaskCanceledException`**, which derives from `OperationCanceledException`. Every `catch (OperationCanceledException)` here is filtered on `IsCancellationRequested` for our own token, so a timeout is reported as a failure rather than swallowed as a user cancellation. Dropping that filter brings back "one slow feed kills the folder".
+- **Control characters in headline text are replaced with a space, not deleted.** Tabs and newlines fall in that range and are usually separating words.
 
 ### Accessibility constraints — treat these as load-bearing
 
 - **Neither items control is its own tab stop.** `IsTabStop="False"` on both `FeedTree` and `HeadlinesList`, plus an `ItemContainerStyle` that sets `IsTabStop="True"` on `TreeViewItem` (unlike `ListBoxItem`, it is not one by default). With `TabNavigation="Once"` each panel is a single stop that lands on an item. Setting `IsTabStop="True"` on a container reintroduces the 1.1.0 Shift+Tab bug: focus lands on a container that reports no name, value or state, and the `GotFocus` handler pushes it straight back in, so Shift+Tab appears to do nothing. `tests/RSSQuick.Tests/TabOrderTests.cs` measures this — every test there was verified to fail against the unfixed window.
 - **The `GotFocus` handlers are guarded on `e.OriginalSource`.** They redirect only focus that landed on the container itself. Without the guard they run for every focus change bubbling through the panel, so each arrow-key step re-focuses the row it just left.
-- `CleanTitleText()` strips zero-width characters (U+200B/C/D, U+FEFF, U+2060), normalizes exotic spaces (U+00A0, U+2009, U+202F) to plain spaces, removes control ranges, and collapses whitespace. Invisible characters and stray whitespace render as confusing blank cells on a braille display. Do not bypass it for text that reaches a headline.
+- `FeedText.CleanTitle()` strips zero-width characters (U+200B/C/D, U+FEFF, U+2060), normalizes exotic spaces (U+00A0, U+2009, U+202F) to plain spaces, replaces control characters with a space, and collapses whitespace. Invisible characters and stray whitespace render as confusing blank cells on a braille display. Do not bypass it for text that reaches a headline.
 - Tab order is explicit and fixed: Import (0) → FeedTree (1) → HeadlinesList (2) → Open in Browser (3). Adding a focusable control means renumbering deliberately and updating `TabOrderTests`.
 - The status bar `TextBlock` is the **only** live region (`AutomationProperties.LiveSetting="Polite"`). Update `_viewModel.StatusMessage` rather than adding announcement channels. It reports position as `<feed> - <n> of <m>`, named from the article's own `FeedTitle` so merged folder views stay readable.
 - Focus is managed by hand. `_isLoadingFeed` suppresses `SelectionChanged` side effects during a load, `_lastSelectedHeadlineIndex` restores the user's place on return, `_currentlyLoadedFeed` is what F5 reloads. Startup focus is set through `Dispatcher.BeginInvoke` at `ApplicationIdle` because WPF containers are not realized when the data arrives — removing that deferral breaks focus silently. After a load, `FocusSelectedHeadline()` lays out and scrolls the row into view before focusing it, which replaced a 100 ms `DispatcherTimer` that was guessing at the same thing.

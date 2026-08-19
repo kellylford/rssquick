@@ -14,11 +14,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - The installed build opened with an empty feed tree, because it looked for `RSS.opml` only in the working directory and a Start Menu shortcut does not reliably set one. It now falls back to the folder holding the executable.
 - Removed a headline colour binding to a property that does not exist, and a click handler for a button that is not in the window.
 
+- **A slow feed no longer freezes the app.** Feeds were fetched synchronously on the default 100-second network timeout, and a folder loaded its feeds strictly one at a time — twenty feeds with three unresponsive servers took five minutes with no way out. Fetching now times out after 15 seconds, a folder fetches six feeds at once, and Escape cancels.
+- **Loading a second feed while the first was still going no longer mixes the two.** Both completions appended to the same list, interleaving the headlines. Each load now cancels the one before it.
+- **Feeds that fail inside a folder now say so.** They were written to a console that a windowed application does not have, so the list was simply short with no explanation. The status bar now reports "Loaded 380 headlines from 17 of 20 feeds; 3 failed" and names them. The modal error box now appears only when a single feed you asked for produced nothing.
+- **Headlines sort by their real date.** Sorting parsed back a date string this code had just formatted, in a format that changed with your regional settings, so an article whose date failed to re-parse sank to the bottom regardless of when it was published. Articles with no date now sort below dated ones and show nothing, rather than announcing "0001-01-01 00:00" on every headline.
+- **A single malformed date no longer loses the whole feed.** Reading an unparseable date threw, and one bad entry among fifty took the feed down with it.
+- **Words no longer run together in headlines.** Tab and newline characters were deleted rather than replaced, so a title separated by tabs was announced with its words joined.
+- **Enter on a podcast episode opens the episode page,** not the audio file. The first link in an item is often an enclosure.
+
 ### Added
 - **An installer.** Per-user by default, so no administrator prompt, with Start Menu and optional desktop shortcuts and a proper Add/Remove Programs entry. An upgrade replaces the previous install and leaves an edited `RSS.opml` alone.
 - **A portable package.** Unzip and run; nothing is installed and nothing is written outside the folder.
 - Neither package needs .NET installed — both carry their own copy.
-- A test suite (`build.cmd test`), currently covering the tab ring.
+- A test suite (`build.cmd test`) covering the tab ring, startup, headline text cleaning, and feed parsing including malformed and hostile input. Four network tests run against real feeds behind `RSSQUICK_RUN_NETWORK_TESTS=1`.
 - Continuous integration, CodeQL scanning, and Dependabot.
 - `CONTRIBUTING.md`, `SECURITY.md`, `CODE_OF_CONDUCT.md`, a `LICENSE` file, and issue templates including one for accessibility reports.
 

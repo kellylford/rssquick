@@ -30,14 +30,15 @@ Then:
 Most of what can break here is invisible in a screenshot, so it is measured instead:
 
 - **Tab order** is asserted in `tests/RSSQuick.Tests/TabOrderTests.cs` by walking focus the same way Tab and Shift+Tab do. If you add, remove, or reorder a focusable control, that file should change with it.
-- **Headline text** goes through `CleanTitleText`, which strips zero-width and exotic-space characters that render as confusing blank cells on a braille display. Text that reaches a headline must go through it.
+- **Headline text** goes through `FeedText.CleanTitle`, which strips zero-width and exotic-space characters that render as confusing blank cells on a braille display. Text that reaches a headline must go through it. `FeedTextTests` writes its inputs as `\uXXXX` escapes rather than pasting them in: a test for invisible characters whose inputs are themselves invisible is one careless save away from testing nothing.
 
 If you change anything touching focus, tab order, status-bar announcements, or headline text, please also try it with a screen reader before opening the PR, and say in the PR which one you used.
 
 Two details that have caused real bugs and are easy to reintroduce:
 
 - **A list or tree container should not be its own tab stop.** `IsTabStop="True"` on an items control puts a stop on the container as well as the item — a stop that reports no name, value or state. That was the Shift+Tab bug fixed in 1.1.0. The comments in `MainWindow.xaml` explain the arrangement that replaced it.
-- **There are two feed-loading paths.** `LoadFeedAsync` handles one feed, `LoadAllFeedsInCategoryAsync` handles a folder, and they build `ArticleItem`s independently. A change to how article fields are produced has to be made in both, or the two diverge in ways that only show up on a braille display.
+- **There is one place a feed item becomes a headline**, `ArticleItem.FromSyndication`. There used to be two, and they drifted every time either was touched — which is how headline cleaning ended up applied on one path only. Add fields there, not in a load path.
+- **Feed XML is third-party input.** `FeedParsingTests` covers the malformed, hostile and merely unusual shapes it arrives in. Assume none of it is well-formed.
 
 ## Pull requests
 

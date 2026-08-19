@@ -18,13 +18,13 @@ namespace RSSReaderWPF
         /// Deliberately not used to enforce a single instance. Two copies running at once is
         /// harmless here, and an installed copy should not stop a portable one on a USB stick.
         /// </remarks>
-        private Mutex? _runningMarker;
+        private static readonly Mutex RunningMarker = new(initiallyOwned: false, name: "RSSQuick.SingleInstance");
 
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
 
-            _runningMarker = new Mutex(initiallyOwned: false, name: "RSSQuick.SingleInstance");
+            GC.KeepAlive(RunningMarker);
 
             MainWindow = new MainWindow();
             MainWindow.Show();
@@ -32,8 +32,7 @@ namespace RSSReaderWPF
 
         protected override void OnExit(ExitEventArgs e)
         {
-            _runningMarker?.Dispose();
-            _runningMarker = null;
+            RunningMarker.Dispose();
             base.OnExit(e);
         }
     }
