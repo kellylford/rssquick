@@ -2,18 +2,31 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net8.0-windows</TargetFramework>
+    <TargetFramework>net10.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
-    <Nullable>enable</Nullable>
     <AssemblyName>RSSQuick</AssemblyName>
+    <RootNamespace>RSSReaderWPF</RootNamespace>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
 
-    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
-    <SelfContained>true</SelfContained>
-
+    <!-- No RuntimeIdentifier or SelfContained here on purpose. Pinning them made a plain
+         `dotnet build` produce a ~160 MB self-contained win-x64 tree, which is not what the
+         dev loop wants and not what any of the publish scripts ask for: every one of them
+         passes the runtime and self-contained switches explicitly. Both x64 and arm64
+         publishes go through those scripts, so the RIDs live there. -->
+    <PublishSingleFile>false</PublishSingleFile>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.ServiceModel.Syndication" Version="8.0.0" />
+    <PackageReference Include="System.ServiceModel.Syndication" Version="10.0.11" />
+  </ItemGroup>
+
+  <!-- The sample feed list ships beside the executable so a Start Menu shortcut, whose working
+       directory is not guaranteed, still finds a feed list on first run. -->
+  <ItemGroup>
+    <Content Include="RSS.opml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
 </Project>

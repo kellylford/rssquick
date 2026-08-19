@@ -1,0 +1,30 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = crlf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+[*.{json,yml,yaml,xml,csproj,props,targets,xaml}]
+indent_size = 2
+
+[*.md]
+trim_trailing_whitespace = false
+
+[*.{cmd,bat}]
+end_of_line = crlf
+
+[*.cs]
+# Analyzer severities that are worth a build failure rather than a warning.
+dotnet_diagnostic.CA1305.severity = warning
+dotnet_diagnostic.CA1822.severity = suggestion
+dotnet_diagnostic.CA1805.severity = suggestion
+
+[tests/**/*.cs]
+# Test names read as sentences on purpose; underscores are the point.
+dotnet_diagnostic.CA1707.severity = none
+# Inline literal arrays are clearer than a field when they are the expected value.
+dotnet_diagnostic.CA1861.severity = none

@@ -1,0 +1,21 @@
+* text=auto eol=lf
+
+# Windows-only scripts: CRLF or the shell mis-parses them.
+*.cmd  text eol=crlf
+*.bat  text eol=crlf
+*.ps1  text eol=crlf
+*.iss  text eol=crlf
+
+# Treated as text so diffs are reviewable.
+*.cs      text diff=csharp
+*.xaml    text
+*.csproj  text
+*.props   text
+*.opml    text
+*.md      text
+*.sln     text eol=crlf
+
+# Never normalised.
+*.png binary
+*.ico binary
+*.zip binary

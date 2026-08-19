@@ -4,7 +4,10 @@ obj/
 [Dd]ebug/
 [Rr]elease/
 
-# Distribution folders
+# Build artefacts produced by build/publish.ps1
+artifacts/
+
+# Distribution folders from the retired build scripts
 dist/
 dist-*/
 publish-test/
