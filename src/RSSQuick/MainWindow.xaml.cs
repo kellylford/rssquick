@@ -35,6 +35,18 @@ namespace RSSReaderWPF
         private bool _isLoadingFeed; // Suppresses focus side effects while a load is in progress
 
         /// <summary>
+        /// Set while a load hands focus to its first headline, so the selection that causes does
+        /// not overwrite the summary the load just put in the status bar.
+        /// </summary>
+        /// <remarks>
+        /// The status bar is the only live region in the window, and two things want it at the
+        /// same moment: what the load did, and where you now are in the list. The load summary
+        /// was losing, silently — including "3 of 20 feeds failed", which is the one message
+        /// there is no other way to discover. Position takes over from the first arrow key.
+        /// </remarks>
+        private bool _keepLoadSummary;
+
+        /// <summary>
         /// Cancels the load in flight.
         /// </summary>
         /// <remarks>
@@ -338,11 +350,22 @@ namespace RSSReaderWPF
 
             _viewModel.StatusMessage = status;
 
-            // Cleared before focusing, so the selection this makes is allowed to reach the status
-            // bar rather than being suppressed as part of the load.
+            // Cleared before focusing, so the selection this makes is allowed to do its other
+            // work - tracking the row, enabling the browser button - rather than being suppressed
+            // as part of the load.
             _isLoadingFeed = false;
 
-            if (articles.Count > 0) FocusSelectedHeadline();
+            if (articles.Count == 0) return;
+
+            _keepLoadSummary = true;
+            try
+            {
+                FocusSelectedHeadline();
+            }
+            finally
+            {
+                _keepLoadSummary = false;
+            }
         }
 
         /// <summary>
@@ -505,7 +528,7 @@ namespace RSSReaderWPF
             // user. The name comes from the article rather than from the tree selection: after a
             // folder load the list holds headlines from many feeds, and arrowing around the tree
             // does not change which feed the headlines came from.
-            if (HeadlinesList.SelectedIndex >= 0)
+            if (HeadlinesList.SelectedIndex >= 0 && !_keepLoadSummary)
             {
                 var position = HeadlinesList.SelectedIndex + 1;
                 var total = HeadlinesList.Items.Count;

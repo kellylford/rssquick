@@ -50,20 +50,41 @@ Extracting the OPML parser turned up a real hole: `XDocument.Parse` accepts a DO
 
 ---
 
-## Priority 2 — structure
+### Priority 2.2 — the loopback stub and the focus tests
 
-### 2.2 Test coverage gaps
+`LocalFeedServer` is a `TcpListener` serving canned feeds on a loopback port, so the real loader runs against a server the test controls. No interface and no fake were needed on production code, and the focus tests exercise the genuine load path — Enter raised as a real routed event, a real fetch, a real dispatcher continuation.
 
-67 tests cover the tab ring, startup, theming, text scaling, title cleaning, OPML parsing, and feed parsing including malformed and hostile input. Still uncovered:
+81 tests now. What the new ones cover: focus lands on the first headline after a load, returns to the right headline after Tab away and back, and starts from the top when a second feed replaces the first; a folder keeps going when a feed fails and says which; fetching is concurrent and capped at six; cancellation stops the work.
 
-- **Focus after a load**: that focus lands on the first headline, and that Tab away and back returns to the same one. This is the most valuable gap left, and the hardest to write — it needs a fake `FeedLoader`, which means putting one behind an interface.
-- The four network tests are opt-in behind `RSSQUICK_RUN_NETWORK_TESTS=1` because they reach third-party servers. A local HTTP stub would let the timeout, concurrency, and partial-failure paths run on every build, and would unblock the focus tests above.
+Two of them found real faults:
+
+- **The load summary was never heard.** `ShowArticles` wrote it to the status bar and then focused the first headline, whose `SelectionChanged` immediately overwrote it with the position announcement. So "3 of 20 feeds failed" — the message with no other route to the user — was replaced within microseconds by "BBC News - 1 of 45". The summary now holds until the reader moves off the first headline.
+- **A test passing for the wrong reason.** The original status assertion checked that the text contained "News" and "2", which "News - 1 of 2" satisfies — so it passed against the summary being wiped out entirely. It asserts the whole string now.
+
+Still uncovered, and worth knowing:
+
+- **A single feed that fails puts up a modal `MessageBox`**, which no test can drive past and which behaves differently on a machine with no interactive session. That path is tested at folder level instead, where failures report into the status bar. See the open question below.
 
 ### 2.3 Dead and oversized state
 
 `Summary`, `Content` and `Author` on `ArticleItem` are populated and never read — no binding touches them. `Content` holds the full article body, so a twenty-feed folder retains around a thousand article bodies for nothing. Either drop them or use them (see 3.1).
 
 **Size:** under an hour, but decide 3.1 first.
+
+---
+
+## Open question — the modal dialog on a failed feed
+
+Pressing Enter on a single feed that is down puts up a modal `MessageBox` that has to be dismissed before anything else can happen. Loading a folder does not: failures go to the status bar, which is a polite live region and announces without interrupting.
+
+The inconsistency was deliberate — the reasoning was that a single feed is something the user explicitly asked for, so silence would be wrong. Having now tested both, the modal looks like the wrong call:
+
+- Feeds go down routinely. A dialog per outage is friction on a common event.
+- The status bar already carries the failure, and a screen reader announces it.
+- Focus stays in the feed tree on failure, so nothing loading is itself a signal.
+- It makes the failure path untestable, and it behaves differently where there is no interactive session.
+
+Dropping it would leave OPML import and browser-launch failures as the only modal dialogs, both of which are rare and follow a deliberate action. This is a judgement call about how the application should feel, so it is recorded here rather than changed.
 
 ---
 
@@ -105,7 +126,7 @@ Feeds are refetched in full every time. Sending `If-Modified-Since` and `If-None
 
 ## Suggested order
 
-1. **2.2** a local HTTP stub, which also unblocks the focus-after-load tests
+1. Settle the modal-dialog question above — a few minutes to decide, minutes to change
 2. **3.7** conditional GET — small, and the loader is now the one place to put it
 3. **3.1** decide on a reading pane, which settles 2.3
 4. **3.3, 3.4, 3.5, 3.6** as appetite allows
