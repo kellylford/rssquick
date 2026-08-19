@@ -95,6 +95,11 @@ namespace RSSReaderWPF
             _viewModel = new MainViewModel();
             DataContext = _viewModel;
 
+            // Windows' "Make text bigger" setting. WPF ignores it on its own, so a user who has
+            // asked for 200% text would otherwise get none of it here. Everything in the window
+            // inherits from this, so one line covers the whole UI.
+            FontSize = SystemFonts.MessageFontSize * TextScale.Current;
+
             // Set up simplified interface (WebBrowser removed)
             // ArticleContent.Navigated += ArticleContent_Navigated;
 

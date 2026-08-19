@@ -21,6 +21,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - **A single malformed date no longer loses the whole feed.** Reading an unparseable date threw, and one bad entry among fifty took the feed down with it.
 - **Words no longer run together in headlines.** Tab and newline characters were deleted rather than replaced, so a title separated by tabs was announced with its words joined.
 - **Enter on a podcast episode opens the episode page,** not the audio file. The first link in an item is often an enclosure.
+- **The window now works in a Windows high contrast theme.** Folder names were dark blue, headline dates a fixed grey, and the status bar and splitter light grey, all of which sit unreadably against a high contrast background. Colours now come from Windows. Folders are marked out by bold weight alone, which also means something to a colour-blind user and to a screen reader, where colour never did.
+- **The Windows "Make text bigger" setting is now honoured.** WPF ignores it entirely on its own, so a reader who had asked for 200% text got none of it here. Applied at startup; changing the setting takes effect next launch.
 
 ### Added
 - **An installer.** Per-user by default, so no administrator prompt, with Start Menu and optional desktop shortcuts and a proper Add/Remove Programs entry. An upgrade replaces the previous install and leaves an edited `RSS.opml` alone.

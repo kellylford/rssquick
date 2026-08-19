@@ -3,7 +3,9 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:RSSReaderWPF"
         Title="RSSQuick" Height="800" Width="1400"
-        WindowStartupLocation="CenterScreen">
+        WindowStartupLocation="CenterScreen"
+        Foreground="{DynamicResource {x:Static SystemColors.WindowTextBrushKey}}"
+        Background="{DynamicResource {x:Static SystemColors.WindowBrushKey}}">
 
     <Grid>
         <Grid.RowDefinitions>
@@ -55,14 +57,20 @@
                 </TreeView.ItemContainerStyle>
                 <TreeView.ItemTemplate>
                     <HierarchicalDataTemplate ItemsSource="{Binding Children}">
+                        <!-- Folders are distinguished by weight alone. They used to be dark blue
+                             as well, which is unreadable against the black background of a Windows
+                             high contrast theme, and conveys nothing to a colour-blind user or a
+                             screen reader in any theme. The tree structure already says which
+                             nodes are folders. -->
                         <TextBlock Text="{Binding Title}"
-                                  FontWeight="{Binding IsCategory, Converter={x:Static local:BoolToFontWeightConverter.Instance}}"
-                                  Foreground="{Binding IsCategory, Converter={x:Static local:BoolToForegroundConverter.Instance}}"/>
+                                  FontWeight="{Binding IsCategory, Converter={x:Static local:BoolToFontWeightConverter.Instance}}"/>
                     </HierarchicalDataTemplate>
                 </TreeView.ItemTemplate>
             </TreeView>
 
-            <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch" Background="LightGray" IsTabStop="False" Focusable="False"/>
+            <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch"
+                          Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}"
+                          IsTabStop="False" Focusable="False"/>
 
             <!-- Headlines -->
             <Grid Grid.Column="2" Margin="5">
@@ -92,7 +100,13 @@
                         <DataTemplate>
                             <StackPanel Margin="5">
                                 <TextBlock Text="{Binding Title}" FontWeight="Bold" TextWrapping="Wrap"/>
-                                <TextBlock Text="{Binding Published}" Foreground="Gray" FontSize="11"/>
+                                <!-- GrayText rather than a literal grey: the system dims this
+                                     colour in a normal theme and makes it fully legible in a high
+                                     contrast one, where a fixed grey would be near-invisible. No
+                                     FontSize, so the date follows the Windows text size like
+                                     everything else rather than staying at 11pt. -->
+                                <TextBlock Text="{Binding Published}"
+                                           Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"/>
                             </StackPanel>
                         </DataTemplate>
                     </ListBox.ItemTemplate>
@@ -109,7 +123,9 @@
         </Grid>
 
         <!-- Status Bar -->
-        <StatusBar Grid.Row="2" Name="MainStatusBar" Background="LightGray">
+        <StatusBar Grid.Row="2" Name="MainStatusBar"
+                   Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}"
+                   Foreground="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}">
             <StatusBarItem>
                 <TextBlock Name="StatusText" Text="{Binding StatusMessage}"
                           AutomationProperties.LiveSetting="Polite"/>

@@ -21,6 +21,12 @@
     <PackageReference Include="System.ServiceModel.Syndication" Version="10.0.11" />
   </ItemGroup>
 
+  <!-- So helpers that are internal because nothing outside the app should call them can still be
+       tested directly, rather than being made public purely to be reachable. -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="RSSQuick.Tests" />
+  </ItemGroup>
+
   <!-- The sample feed list ships beside the executable so a Start Menu shortcut, whose working
        directory is not guaranteed, still finds a feed list on first run. -->
   <ItemGroup>

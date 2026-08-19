@@ -32,6 +32,14 @@ Three bugs surfaced while writing the tests for this, none of which were in the 
 
 Article links now prefer the `alternate` relationship over the first link, so Enter on a podcast episode opens the episode page rather than the MP3.
 
+### Priority 3.2 — high contrast and text scaling
+
+Hardcoded brushes are gone: folder names, headline dates, the status bar and the splitter all take their colours from Windows now, so a high contrast theme works. Folders are distinguished by weight alone — colour conveyed nothing to a screen reader or a colour-blind user and was actively wrong in high contrast.
+
+The Windows Accessibility text scale ("Make text bigger") is read at startup and applied to the window font size. WPF does not honour it on its own — unlike display scaling, which the manifest's per-monitor DPI awareness covers.
+
+`ThemeTests` asserts all of this against the live visual tree, and every test there was checked to fail against a reintroduced hardcoded colour. Two earlier versions of those tests were silently vacuous, which is worth knowing if you write more: `ReadLocalValue` returns unset for content inside a `DataTemplate` (the value source is `ParentTemplate`, not `Local`), and indexing into a row's visual tree finds container chrome rather than the row's own text.
+
 ---
 
 ## Priority 2 — structure
@@ -57,7 +65,7 @@ ViewModels/     MainViewModel, RelayCommand    (still in the window)
 
 ### 2.2 Test coverage gaps
 
-41 tests now cover the tab ring, startup, title cleaning, and feed parsing including malformed and hostile input. Still uncovered:
+54 tests now cover the tab ring, startup, theming, text scaling, title cleaning, and feed parsing including malformed and hostile input. Still uncovered:
 
 - **OPML parsing**: nesting, missing `xmlUrl`, missing `text` with `title` present, an empty body, malformed XML. Needs 2.1 first.
 - **Focus after a load**: that focus lands on the first headline, and that Tab away and back returns to the same one.
@@ -66,10 +74,11 @@ ViewModels/     MainViewModel, RelayCommand    (still in the window)
 ### 2.3 Dead and oversized state
 
 - `Summary`, `Content` and `Author` on `ArticleItem` are populated and never read — no binding touches them. `Content` holds the full article body, so a twenty-feed folder retains around a thousand article bodies for nothing. Either drop them or use them (see 3.1).
-- `BoolToMarginConverter` in `Converters.cs` is referenced by nothing.
 - `_feedCategories` is a `Dictionary<string, Dictionary<string, FeedItem>>` populated on every parse and read only to produce a total count.
 
-**Size:** an hour.
+`BoolToMarginConverter` and `BoolToForegroundConverter` are gone, removed alongside 3.2.
+
+**Size:** under an hour.
 
 ---
 
@@ -81,13 +90,11 @@ Every article's summary is already fetched and thrown away. Opening the browser 
 
 If you add it: a read-only multiline `TextBox`, not a `WebBrowser` or `WebView2`. The 3-panel layout was removed for good reasons recorded in `DEVELOPMENT-NOTES.md`, and an embedded browser brings all of them back.
 
-### 3.2 High contrast and text scaling are ignored
+### 3.2a Live theme and text-size changes
 
-`Converters.cs` hardcodes `Brushes.DarkBlue` and `Brushes.Black`, and `MainWindow.xaml` hardcodes `Foreground="Gray"` and `FontSize="11"` on the date line. In a Windows high contrast theme those foregrounds sit on a system-coloured background, at best looking wrong and at worst unreadable. The fixed 11pt ignores the Windows text size setting.
+Done in the pass above, with one limitation worth recording. Colours are `DynamicResource` lookups and so follow a theme switch while the app is running, but the text scale is read once at startup, so changing "Make text bigger" needs a restart to take effect. Watching `HKCU\Software\Microsoft\Accessibility` for changes would close that, if it turns out to matter.
 
-**Do:** `SystemColors.*Brush` dynamic resources instead of literal brushes, drop the fixed `FontSize`, and check the window in high contrast and at 200% text scaling.
-
-**Size:** a few hours, and it matters to low-vision users who are not screen reader users — a group this project currently serves poorly. This is the highest-value item left.
+Neither has been checked by eye in an actual high contrast theme yet — the assertions are structural. Worth one manual pass.
 
 ### 3.3 Feed management in the app
 
@@ -113,11 +120,10 @@ Feeds are refetched in full every time. Sending `If-Modified-Since` and `If-None
 
 ## Suggested order
 
-1. **3.2** high contrast and scaling — small, and it opens the app to a group it currently fails
-2. **2.1** finish the split, extract `OpmlParser`, move to `src/`
-3. **2.2** OPML tests and a local HTTP stub, once 2.1 makes them cheap
-4. **2.3** dead state
-5. **3.7** conditional GET
-6. **3.1, 3.3, 3.4, 3.5, 3.6** as appetite allows
+1. **2.1** finish the split, extract `OpmlParser`, move to `src/`
+2. **2.2** OPML tests and a local HTTP stub, once 2.1 makes them cheap
+3. **2.3** dead state
+4. **3.7** conditional GET
+5. **3.1, 3.3, 3.4, 3.5, 3.6** as appetite allows
 
-Nothing left is urgent. The application is in a state where it can be used daily without hitting the things that used to make it unusable.
+Nothing left is urgent. The application can now be used daily without hitting the things that used to make it unusable, and the remaining work is about keeping it easy to change rather than about fixing it.
