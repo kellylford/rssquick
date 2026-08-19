@@ -27,7 +27,7 @@ jobs:
 
       # Never ship a build the tests have not passed.
       - name: Test
-        run: dotnet test tests/RSSQuick.Tests/RSSQuick.Tests.csproj --configuration Release
+        run: dotnet test --project tests/RSSQuick.Tests/RSSQuick.Tests.csproj --configuration Release
 
       # Present on the windows-latest image, but pinning it here means a change to the image
       # fails loudly at this step instead of silently producing a release with no installer.

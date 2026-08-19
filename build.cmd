@@ -27,7 +27,7 @@ goto :done
 
 :test
 echo Running tests...
-dotnet test tests\RSSQuick.Tests\RSSQuick.Tests.csproj
+dotnet test --project tests\RSSQuick.Tests\RSSQuick.Tests.csproj
 goto :done
 
 :clean

@@ -9,15 +9,11 @@
     <IsTestProject>true</IsTestProject>
     <!-- WPF objects can only be constructed on an STA thread. -->
     <ApartmentState>STA</ApartmentState>
-    <!-- Run through Microsoft.Testing.Platform rather than VSTest. xunit.v3 4.x drops VSTest on
-         the .NET 10 SDK, so opting in now keeps `dotnet test` working across that upgrade. -->
-    <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
-    <UseVSTest>false</UseVSTest>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="coverlet.collector" Version="10.0.1" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.8.1" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.9.0" />
     <!-- No xunit.runner.visualstudio: that is the VSTest adapter, which Microsoft.Testing.Platform
          does not use and warns about (MTP0001). -->
     <PackageReference Include="xunit.v3" Version="3.2.2" />

@@ -63,6 +63,10 @@ Key bindings are registered in `SetupKeyboardNavigation()` as `InputBindings`: F
 
 It reads focus through `FocusManager`, not `Keyboard.FocusedElement`: logical focus is what the window's `GotFocus` handlers respond to, and unlike keyboard focus it does not require the window to be foreground, which it never is under a test runner or on CI.
 
+`global.json` selects the Microsoft.Testing.Platform runner for `dotnet test`. That is required rather than preferred — MTP 2.x, which xunit.v3 4.x pulls in, refuses to run under the VSTest target on the .NET 10 SDK. It changes the command line: pass the project with `--project`, and use `-- --report-xunit-trx` in place of `--logger trx`. VSTest spellings are silently ignored rather than failing, so a broken invocation looks like a passing run that reported nothing.
+
+`xunit.v3` is held at 3.x by a Dependabot ignore. 4.x changes internals `Xunit.StaFact` compiles against, and every `[WpfFact]` fails discovery with `MissingMethodException` — that is all eight focus and startup tests. `Xunit.StaFact 4.0.5-beta` does not fix it. Lift the ignore when a stable StaFact supports xunit.v3 4.x.
+
 The app project sits at the repository root, so its default `**/*.cs` glob would otherwise compile the test sources into the app. `Directory.Build.props` excludes `tests/**` and `installer/**` for that reason — and it has to live there, not in the csproj, because the SDK computes default items before the project body is evaluated.
 
 ## Packaging

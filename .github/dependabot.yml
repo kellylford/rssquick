@@ -18,6 +18,13 @@ updates:
           - "Xunit*"
           - "Microsoft.NET.Test.Sdk"
           - "coverlet.*"
+    ignore:
+      # xunit.v3 4.x changes internals that Xunit.StaFact compiles against, and every [WpfFact]
+      # fails discovery with MissingMethodException - which is all eight focus and startup tests,
+      # the ones that matter most here. Xunit.StaFact 4.0.5-beta does not fix it either; checked
+      # 19 August 2026. Lift this once a stable Xunit.StaFact supports xunit.v3 4.x.
+      - dependency-name: "xunit.v3"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: github-actions
     directory: /

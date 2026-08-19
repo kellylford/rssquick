@@ -1,0 +1,24 @@
+{
+  "//": [
+    "Runs `dotnet test` in Microsoft.Testing.Platform mode rather than VSTest mode.",
+    "",
+    "Required, not preference: Microsoft.Testing.Platform 2.x - which xunit.v3 4.x brings in -",
+    "refuses to run under the VSTest target at all on the .NET 10 SDK. Without this, every test",
+    "run fails with 'Testing with VSTest target is no longer supported'.",
+    "",
+    "It has to be here. The TestingPlatformDotnetTestSupport property in the test project was the",
+    ".NET 9 opt-in and is ignored by MTP 2.x; the SDK reads the runner choice from global.json",
+    "before any project is evaluated.",
+    "",
+    "What this changes for callers: the VSTest-only switches are gone. Use --report-trx in place",
+    "of --logger trx, --results-directory is replaced by --results-directory on the runner itself,",
+    "--filter-method in place of --filter, and pass a project with --project rather than",
+    "positionally. No extra -- separator is needed.",
+    "",
+    "No sdk section on purpose: pinning an SDK version here would make every machine and runner",
+    "that does not have that exact band fail to build at all."
+  ],
+  "test": {
+    "runner": "Microsoft.Testing.Platform"
+  }
+}

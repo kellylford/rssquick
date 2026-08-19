@@ -35,12 +35,18 @@ jobs:
 
       # The focus tests create real WPF windows. They read logical focus rather than keyboard
       # focus precisely so they do not need the window to be foreground, which it never is here.
+      #
+      # Microsoft.Testing.Platform switches, not VSTest ones: global.json selects the MTP runner,
+      # where the project is passed with --project and reporting is --report-xunit-trx rather than
+      # --logger trx. The VSTest spellings are silently ignored rather than failing loudly.
       - name: Test
         run: >
-          dotnet test tests/RSSQuick.Tests/RSSQuick.Tests.csproj
+          dotnet test --project tests/RSSQuick.Tests/RSSQuick.Tests.csproj
           --configuration Release
           --no-build
-          --logger "trx;LogFileName=test-results.trx"
+          --
+          --report-xunit-trx
+          --report-xunit-trx-filename test-results.trx
           --results-directory ${{ github.workspace }}/test-results
 
       - name: Upload test results
