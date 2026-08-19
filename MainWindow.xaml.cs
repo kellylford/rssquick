@@ -24,43 +24,6 @@ using RSSReaderWPF.Services;
 namespace RSSReaderWPF
 {
     /// <summary>
-    /// Main Window ViewModel
-    /// </summary>
-    public class MainViewModel : INotifyPropertyChanged
-    {
-        private string _statusMessage = "Ready - Import an OPML file or select a feed from the default list";
-        private ArticleItem? _selectedArticle;
-        private FeedItem? _selectedFeed;
-
-        public ObservableCollection<FeedItem> FeedCategories { get; } = new();
-        public ObservableCollection<ArticleItem> Headlines { get; } = new();
-
-        public string StatusMessage
-        {
-            get => _statusMessage;
-            set { _statusMessage = value; OnPropertyChanged(); }
-        }
-
-        public ArticleItem? SelectedArticle
-        {
-            get => _selectedArticle;
-            set { _selectedArticle = value; OnPropertyChanged(); }
-        }
-
-        public FeedItem? SelectedFeed
-        {
-            get => _selectedFeed;
-            set { _selectedFeed = value; OnPropertyChanged(); }
-        }
-
-        public event PropertyChangedEventHandler? PropertyChanged;
-        protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
-    }
-
-    /// <summary>
     /// Main Window Code-behind
     /// </summary>
     [SuppressMessage("Design", "CA1001:Types that own disposable fields should be disposable",
@@ -69,7 +32,6 @@ namespace RSSReaderWPF
     public partial class MainWindow : Window
     {
         private readonly MainViewModel _viewModel;
-        private readonly Dictionary<string, Dictionary<string, FeedItem>> _feedCategories = new();
         private bool _isLoadingFeed; // Suppresses focus side effects while a load is in progress
 
         /// <summary>
@@ -213,100 +175,22 @@ namespace RSSReaderWPF
             return candidates.FirstOrDefault(File.Exists);
         }
 
+        /// <summary>
+        /// Replaces the feed tree with the contents of an OPML file.
+        /// </summary>
+        /// <exception cref="InvalidOperationException">The content is not usable OPML.</exception>
         private void ParseOpml(string opmlContent)
         {
-            try
-            {
-                var doc = XDocument.Parse(opmlContent);
-                var body = doc.Descendants("body").FirstOrDefault();
+            var opml = OpmlParser.Parse(opmlContent);
 
-                if (body == null)
-                    throw new InvalidOperationException("Invalid OPML format - no body element found");
+            _viewModel.FeedCategories.Clear();
+            foreach (var root in opml.Roots) _viewModel.FeedCategories.Add(root);
 
-                _viewModel.FeedCategories.Clear();
-                _feedCategories.Clear();
+            _viewModel.StatusMessage = opml.FeedCount == 1
+                ? "Loaded 1 feed from OPML file"
+                : $"Loaded {opml.FeedCount} feeds from OPML file";
 
-                ProcessOutlines(body.Elements("outline"), null);
-
-                int totalFeeds = _feedCategories.Values.Sum(category => category.Count);
-                _viewModel.StatusMessage = $"Loaded {totalFeeds} feeds from OPML file";
-
-                // Set TreeView ItemsSource
-                FeedTree.ItemsSource = _viewModel.FeedCategories;
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException($"OPML parsing error: {ex.Message}");
-            }
-        }
-
-        private void ProcessOutlines(IEnumerable<XElement> outlines, FeedItem? parentItem)
-        {
-            foreach (var outline in outlines)
-            {
-                string text = outline.Attribute("text")?.Value ??
-                             outline.Attribute("title")?.Value ??
-                             "Unknown";
-
-                string? xmlUrl = outline.Attribute("xmlUrl")?.Value;
-
-                if (!string.IsNullOrEmpty(xmlUrl))
-                {
-                    // This is a feed
-                    var feedItem = new FeedItem
-                    {
-                        Title = text,
-                        Url = xmlUrl,
-                        Category = parentItem?.Title ?? "Uncategorized",
-                        IsCategory = false
-                    };
-
-                    if (parentItem != null)
-                    {
-                        parentItem.Children.Add(feedItem);
-                    }
-                    else
-                    {
-                        // Add to "Uncategorized" category
-                        var uncategorized = _viewModel.FeedCategories.FirstOrDefault(c => c.Title == "Uncategorized");
-                        if (uncategorized == null)
-                        {
-                            uncategorized = new FeedItem { Title = "Uncategorized", IsCategory = true };
-                            _viewModel.FeedCategories.Add(uncategorized);
-                        }
-                        uncategorized.Children.Add(feedItem);
-                    }
-
-                    // Store in categories dictionary
-                    string categoryName = parentItem?.Title ?? "Uncategorized";
-                    if (!_feedCategories.ContainsKey(categoryName))
-                        _feedCategories[categoryName] = new Dictionary<string, FeedItem>();
-
-                    _feedCategories[categoryName][text] = feedItem;
-                }
-                else
-                {
-                    // This is a category
-                    var categoryItem = new FeedItem
-                    {
-                        Title = text,
-                        Category = text,
-                        IsCategory = true
-                    };
-
-                    if (parentItem != null)
-                    {
-                        parentItem.Children.Add(categoryItem);
-                    }
-                    else
-                    {
-                        _viewModel.FeedCategories.Add(categoryItem);
-                    }
-
-                    // Process child outlines
-                    ProcessOutlines(outline.Elements("outline"), categoryItem);
-                }
-            }
+            FeedTree.ItemsSource = _viewModel.FeedCategories;
         }
 
         private void FeedTree_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
@@ -926,27 +810,4 @@ namespace RSSReaderWPF
         }
     }
 
-    /// <summary>
-    /// Simple relay command implementation
-    /// </summary>
-    public class RelayCommand : ICommand
-    {
-        private readonly Action _execute;
-        private readonly Func<bool>? _canExecute;
-
-        public RelayCommand(Action execute, Func<bool>? canExecute = null)
-        {
-            _execute = execute ?? throw new ArgumentNullException(nameof(execute));
-            _canExecute = canExecute;
-        }
-
-        public event EventHandler? CanExecuteChanged
-        {
-            add { CommandManager.RequerySuggested += value; }
-            remove { CommandManager.RequerySuggested -= value; }
-        }
-
-        public bool CanExecute(object? parameter) => _canExecute?.Invoke() ?? true;
-        public void Execute(object? parameter) => _execute();
-    }
 }

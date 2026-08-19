@@ -28,3 +28,5 @@ dotnet_diagnostic.CA1805.severity = suggestion
 dotnet_diagnostic.CA1707.severity = none
 # Inline literal arrays are clearer than a field when they are the expected value.
 dotnet_diagnostic.CA1861.severity = none
+# xunit collection marker types are named ...Collection by convention.
+dotnet_diagnostic.CA1711.severity = none
