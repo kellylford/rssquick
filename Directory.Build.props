@@ -19,10 +19,7 @@
     Dependabot builds on Linux, where a bin\** pattern matches nothing.
   -->
   <PropertyGroup>
-    <!-- tests/** is excluded for a second reason: the app project sits at the repository root,
-         so its default **/*.cs glob otherwise swallows the test project's sources and compiles
-         them into the app (and into the XAML wpftmp project, where xunit is not referenced). -->
-    <DefaultItemExcludes>$(DefaultItemExcludes);bin/**;obj/**;tests/**;installer/**</DefaultItemExcludes>
+    <DefaultItemExcludes>$(DefaultItemExcludes);bin/**;obj/**</DefaultItemExcludes>
   </PropertyGroup>
 
   <PropertyGroup>

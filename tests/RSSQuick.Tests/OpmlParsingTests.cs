@@ -41,7 +41,7 @@ public class OpmlParsingTests
     [Fact]
     public void Folders_nest_to_any_depth()
     {
-        var news = OpmlParser.Parse(Nested).Roots.First();
+        var news = OpmlParser.Parse(Nested).Roots[0];
         var sport = news.Children.Single(c => c.Title == "Sport");
 
         Assert.True(sport.IsCategory);
@@ -56,7 +56,7 @@ public class OpmlParsingTests
     [Fact]
     public void An_outline_with_a_feed_url_is_a_feed_and_one_without_is_a_folder()
     {
-        var news = OpmlParser.Parse(Nested).Roots.First();
+        var news = OpmlParser.Parse(Nested).Roots[0];
         var bbc = news.Children.Single(c => c.Title == "BBC");
 
         Assert.False(bbc.IsCategory);

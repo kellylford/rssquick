@@ -22,6 +22,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - **Words no longer run together in headlines.** Tab and newline characters were deleted rather than replaced, so a title separated by tabs was announced with its words joined.
 - **Enter on a podcast episode opens the episode page,** not the audio file. The first link in an item is often an enclosure.
 - **The window now works in a Windows high contrast theme.** Folder names were dark blue, headline dates a fixed grey, and the status bar and splitter light grey, all of which sit unreadably against a high contrast background. Colours now come from Windows. Folders are marked out by bold weight alone, which also means something to a colour-blind user and to a screen reader, where colour never did.
+- **OPML import now refuses a file that declares a DTD,** closing an entity-expansion route that feed content was already protected against. Feed and folder names from an OPML file are also cleaned the same way headlines are, which they were not before.
 - **The Windows "Make text bigger" setting is now honoured.** WPF ignores it entirely on its own, so a reader who had asked for 200% text got none of it here. Applied at startup; changing the setting takes effect next launch.
 
 ### Added

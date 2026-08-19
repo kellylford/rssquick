@@ -29,7 +29,7 @@ $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 
 $repo      = Split-Path -Parent $PSScriptRoot
-$project   = Join-Path $repo 'RSSReaderWPF.csproj'
+$project   = Join-Path $repo 'src\RSSQuick\RSSQuick.csproj'
 $artifacts = Join-Path $repo 'artifacts'
 $staging   = Join-Path $artifacts 'staging'
 $version   = (Get-Content (Join-Path $repo 'VERSION') -Raw).Trim()

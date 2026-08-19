@@ -30,6 +30,8 @@ Then:
 Most of what can break here is invisible in a screenshot, so it is measured instead:
 
 - **Tab order** is asserted in `tests/RSSQuick.Tests/TabOrderTests.cs` by walking focus the same way Tab and Shift+Tab do. If you add, remove, or reorder a focusable control, that file should change with it.
+- **Colours and text size** come from Windows, never from literals in the XAML, so a high contrast theme and the "Make text bigger" setting both work. `ThemeTests` asserts it. If you add a test there, note that `ReadLocalValue` cannot see values set inside a `DataTemplate` — use `DependencyPropertyHelper.GetValueSource`.
+- **Any test class that builds a `MainWindow`** needs `[Collection(WpfCollection.Name)]`, or it will race other WPF tests inside `Application.LoadComponent` and fail intermittently.
 - **Headline text** goes through `FeedText.CleanTitle`, which strips zero-width and exotic-space characters that render as confusing blank cells on a braille display. Text that reaches a headline must go through it. `FeedTextTests` writes its inputs as `\uXXXX` escapes rather than pasting them in: a test for invisible characters whose inputs are themselves invisible is one careless save away from testing nothing.
 
 If you change anything touching focus, tab order, status-bar announcements, or headline text, please also try it with a screen reader before opening the PR, and say in the PR which one you used.

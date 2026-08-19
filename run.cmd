@@ -7,7 +7,7 @@ echo RSS Quick - build and run
 echo =========================
 echo.
 
-dotnet run --configuration Release
+dotnet run --project src\RSSQuick --configuration Release
 if errorlevel 1 (
     echo.
     echo *** FAILED *** - see the messages above.

@@ -17,12 +17,12 @@ goto :help
 
 :debug
 echo Building and running (Debug)...
-dotnet run --configuration Debug
+dotnet run --project src\RSSQuick --configuration Debug
 goto :done
 
 :release
 echo Building and running (Release)...
-dotnet run --configuration Release
+dotnet run --project src\RSSQuick --configuration Release
 goto :done
 
 :test
@@ -32,8 +32,8 @@ goto :done
 
 :clean
 echo Cleaning build output...
-if exist "bin"       rmdir /s /q "bin"
-if exist "obj"       rmdir /s /q "obj"
+if exist "src\RSSQuickin" rmdir /s /q "src\RSSQuickin"
+if exist "src\RSSQuick\obj" rmdir /s /q "src\RSSQuick\obj"
 if exist "artifacts" rmdir /s /q "artifacts"
 if exist "tests\RSSQuick.Tests\bin" rmdir /s /q "tests\RSSQuick.Tests\bin"
 if exist "tests\RSSQuick.Tests\obj" rmdir /s /q "tests\RSSQuick.Tests\obj"

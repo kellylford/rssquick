@@ -22,7 +22,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\RSSReaderWPF.csproj" />
+    <ProjectReference Include="..\..\src\RSSQuick\RSSQuick.csproj" />
   </ItemGroup>
 
   <ItemGroup>

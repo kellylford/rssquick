@@ -29,12 +29,23 @@ Version lives in `VERSION` and nowhere else. `Directory.Build.props` reads it in
 
 ## Architecture
 
-`Models/` holds `FeedItem` and `ArticleItem`. `Services/` holds `FeedLoader` (fetching and parsing) and `FeedText` (headline cleaning). `Converters.cs` holds `IValueConverter`s exposed as static `Instance` singletons and referenced from XAML via `{x:Static}`. What remains in `MainWindow.xaml.cs` (~940 lines) is `MainViewModel`, `RelayCommand`, OPML parsing, and all the focus management — finishing that split is item 2.1 in the improvement plan.
+The application lives in `src/RSSQuick/`:
+
+```
+Models/         FeedItem, ArticleItem (with the FromSyndication factory)
+Services/       FeedLoader, FeedText, OpmlParser, TextScale
+ViewModels/     MainViewModel, RelayCommand
+Converters.cs   IValueConverters, exposed as static Instance singletons and
+                referenced from XAML via {x:Static}
+MainWindow.*    the window, and all the focus management
+```
+
+`MainWindow.xaml.cs` is ~800 lines and is now almost entirely focus and event handling. Everything in `Services/` is a pure function or a stateless static, which is why it is all directly tested.
 
 Flow:
 
 1. **Startup** — `LoadDefaultOpml()` calls `FindDefaultOpml()`, which checks the working directory first (so a portable copy uses the list beside it) then `AppContext.BaseDirectory` (so a Start Menu shortcut, whose working directory is not guaranteed, still finds the installed list). Missing file is not an error; focus goes to the Import button.
-2. **OPML → tree** — `ParseOpml()` / `ProcessOutlines()` walk `<outline>` elements recursively into a `FeedItem` tree. `IsCategory` distinguishes folders from feeds; nesting is arbitrary depth.
+2. **OPML → tree** — `OpmlParser.Parse()` walks `<outline>` elements recursively into a `FeedItem` tree. An outline with an `xmlUrl` is a feed, anything else is a folder; nesting is arbitrary depth, and feeds listed loose at the top level are gathered into an "Uncategorized" folder so every feed sits at the same kind of level.
 3. **Feed → headlines** — Enter in the tree calls `LoadFeedAsync` (one feed) or `LoadAllFeedsInCategoryAsync` (a folder). Both call `BeginLoad`, which cancels whatever load was already running, then hand off to `FeedLoader`. A folder fetches six feeds at a time and reports per-feed failures rather than failing as a whole.
 4. **Headline → browser** — Enter or Alt+B runs `Process.Start` on the article link.
 
@@ -69,7 +80,9 @@ It reads focus through `FocusManager`, not `Keyboard.FocusedElement`: logical fo
 
 `xunit.v3` is held at 3.x by a Dependabot ignore. 4.x changes internals `Xunit.StaFact` compiles against, and every `[WpfFact]` fails discovery with `MissingMethodException` — that is all eight focus and startup tests. `Xunit.StaFact 4.0.5-beta` does not fix it. Lift the ignore when a stable StaFact supports xunit.v3 4.x.
 
-The app project sits at the repository root, so its default `**/*.cs` glob would otherwise compile the test sources into the app. `Directory.Build.props` excludes `tests/**` and `installer/**` for that reason — and it has to live there, not in the csproj, because the SDK computes default items before the project body is evaluated.
+Test classes that build a `MainWindow` must carry `[Collection(WpfCollection.Name)]`. Loading compiled XAML is not thread-safe — `PackagePart` tidies its stream list without a lock — so two STA test threads constructing a window at once corrupt it and one dies inside `Application.LoadComponent`. That collection disables parallelisation; without it the suite fails intermittently, and it will pass locally while failing on CI.
+
+`Directory.Build.props` keeps `bin/**;obj/**` out of the default globs. It has to live there rather than in a csproj, because the SDK computes default items before the project body is evaluated, and WPF's XAML wpftmp project otherwise double-counts every generated `.g.cs` — which breaks Dependabot's clean-clone build even though ordinary builds survive it.
 
 ## Packaging
 

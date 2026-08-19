@@ -40,45 +40,30 @@ The Windows Accessibility text scale ("Make text bigger") is read at startup and
 
 `ThemeTests` asserts all of this against the live visual tree, and every test there was checked to fail against a reintroduced hardcoded colour. Two earlier versions of those tests were silently vacuous, which is worth knowing if you write more: `ReadLocalValue` returns unset for content inside a `DataTemplate` (the value source is `ParentTemplate`, not `Local`), and indexing into a row's visual tree finds container chrome rather than the row's own text.
 
+### Priority 2.1 — the split
+
+`MainWindow.xaml.cs` is down from 1063 lines to ~800, and what is left is the window: focus management and event handling. `OpmlParser`, `MainViewModel` and `RelayCommand` have moved out, and the project now lives in `src/RSSQuick/` rather than at the repository root, so its `**/*.cs` glob no longer swallows every C# file in the repo.
+
+Extracting the OPML parser turned up a real hole: `XDocument.Parse` accepts a DOCTYPE, so a crafted OPML file could expand entities on import. Feed content had been parsed under `DtdProcessing.Prohibit` since the network rewrite; OPML had not. Outline names are also cleaned the way headlines are now, which they never were.
+
+`_feedCategories` is gone with it — a `Dictionary` of `Dictionary` rebuilt on every parse and read only for a feed count.
+
 ---
 
 ## Priority 2 — structure
 
-### 2.1 `MainWindow.xaml.cs` is still ~940 lines
-
-The models and the feed loading have moved out. What remains in one file is `MainViewModel`, `MainWindow`, `RelayCommand`, plus OPML parsing and all the focus management.
-
-**Do:** finish the split along the seams that already exist:
-
-```
-Models/         FeedItem, ArticleItem          (done)
-Services/       FeedLoader, FeedText           (done)
-Services/       OpmlParser                     (still in the window)
-ViewModels/     MainViewModel, RelayCommand    (still in the window)
-```
-
-`OpmlParser` is the valuable one: it is a pure function from a string to a `FeedItem` tree, and it is completely untested.
-
-**Do also:** move the project into `src/`. It sits at the repository root, so its default `**/*.cs` glob swallows every C# file anywhere in the repo — `tests/**` and `installer/**` had to be excluded in `Directory.Build.props` to stop them being compiled into the app. That exclusion is a patch over the layout, and the next directory anyone adds will hit it again.
-
-**Size:** half a day.
-
 ### 2.2 Test coverage gaps
 
-54 tests now cover the tab ring, startup, theming, text scaling, title cleaning, and feed parsing including malformed and hostile input. Still uncovered:
+67 tests cover the tab ring, startup, theming, text scaling, title cleaning, OPML parsing, and feed parsing including malformed and hostile input. Still uncovered:
 
-- **OPML parsing**: nesting, missing `xmlUrl`, missing `text` with `title` present, an empty body, malformed XML. Needs 2.1 first.
-- **Focus after a load**: that focus lands on the first headline, and that Tab away and back returns to the same one.
-- The four network tests are opt-in behind `RSSQUICK_RUN_NETWORK_TESTS=1` because they reach third-party servers. A local HTTP stub would let the timeout, concurrency, and partial-failure paths run on every build.
+- **Focus after a load**: that focus lands on the first headline, and that Tab away and back returns to the same one. This is the most valuable gap left, and the hardest to write — it needs a fake `FeedLoader`, which means putting one behind an interface.
+- The four network tests are opt-in behind `RSSQUICK_RUN_NETWORK_TESTS=1` because they reach third-party servers. A local HTTP stub would let the timeout, concurrency, and partial-failure paths run on every build, and would unblock the focus tests above.
 
 ### 2.3 Dead and oversized state
 
-- `Summary`, `Content` and `Author` on `ArticleItem` are populated and never read — no binding touches them. `Content` holds the full article body, so a twenty-feed folder retains around a thousand article bodies for nothing. Either drop them or use them (see 3.1).
-- `_feedCategories` is a `Dictionary<string, Dictionary<string, FeedItem>>` populated on every parse and read only to produce a total count.
+`Summary`, `Content` and `Author` on `ArticleItem` are populated and never read — no binding touches them. `Content` holds the full article body, so a twenty-feed folder retains around a thousand article bodies for nothing. Either drop them or use them (see 3.1).
 
-`BoolToMarginConverter` and `BoolToForegroundConverter` are gone, removed alongside 3.2.
-
-**Size:** under an hour.
+**Size:** under an hour, but decide 3.1 first.
 
 ---
 
@@ -120,10 +105,9 @@ Feeds are refetched in full every time. Sending `If-Modified-Since` and `If-None
 
 ## Suggested order
 
-1. **2.1** finish the split, extract `OpmlParser`, move to `src/`
-2. **2.2** OPML tests and a local HTTP stub, once 2.1 makes them cheap
-3. **2.3** dead state
-4. **3.7** conditional GET
-5. **3.1, 3.3, 3.4, 3.5, 3.6** as appetite allows
+1. **2.2** a local HTTP stub, which also unblocks the focus-after-load tests
+2. **3.7** conditional GET — small, and the loader is now the one place to put it
+3. **3.1** decide on a reading pane, which settles 2.3
+4. **3.3, 3.4, 3.5, 3.6** as appetite allows
 
 Nothing left is urgent. The application can now be used daily without hitting the things that used to make it unusable, and the remaining work is about keeping it easy to change rather than about fixing it.
