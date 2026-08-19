@@ -1,34 +1,16 @@
 @echo off
-echo RSS Quick - Build and Run
-echo ========================
+REM Build and run RSS Quick. The everyday development loop.
+setlocal
+cd /d "%~dp0"
 
-REM Get the current directory
-set PROJECT_DIR=%~dp0
-
-REM Change to project directory
-cd /d "%PROJECT_DIR%"
-
-echo Building RSS Quick...
-dotnet build --configuration Release
-
-if %ERRORLEVEL% neq 0 (
-    echo.
-    echo *** BUILD FAILED ***
-    echo Check the error messages above
-    pause
-    exit /b 1
-)
-
-echo.
-echo Build successful! Starting RSS Quick...
+echo RSS Quick - build and run
+echo =========================
 echo.
 
 dotnet run --configuration Release
-
-if %ERRORLEVEL% neq 0 (
+if errorlevel 1 (
     echo.
-    echo *** RUN FAILED ***
-    echo Check the error messages above
+    echo *** FAILED *** - see the messages above.
     pause
     exit /b 1
 )
