@@ -17,10 +17,10 @@
 
   <ItemGroup>
     <PackageReference Include="coverlet.collector" Version="10.0.1" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.8.1" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.9.0" />
     <!-- No xunit.runner.visualstudio: that is the VSTest adapter, which Microsoft.Testing.Platform
          does not use and warns about (MTP0001). -->
-    <PackageReference Include="xunit.v3" Version="3.2.2" />
+    <PackageReference Include="xunit.v3" Version="4.0.0" />
     <!-- STA-thread fact attribute for WPF tests -->
     <PackageReference Include="Xunit.StaFact" Version="3.0.13" />
   </ItemGroup>
