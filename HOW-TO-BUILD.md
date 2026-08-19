@@ -1,143 +1,78 @@
-# RSS Quick - How to Build and Distribute
+# Building and packaging RSS Quick
 
-This guide shows you how to build RSS Quick for distribution using File Explorer (double-clicking .cmd files).
+## What you need
 
-## 🖱️ Easy File Explorer Usage (Just Double-Click!)
+- **Windows 10 or 11.** WPF is Windows-only; there is no way to build this elsewhere.
+- **[.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)** — the SDK, not just the runtime. Check with `dotnet --version`.
+- **[Inno Setup 6](https://jrsoftware.org/isdl.php)**, only if you want to build the installer. Without it you still get the portable ZIP.
 
-### For Self-Contained Distribution (162 MB, works everywhere):
-**Double-click:** `distribute.cmd`
-- Creates `dist/` folder with everything included
-- Users don't need to install .NET
-- Larger download but zero user setup
+## Everyday development
 
-### For Small Distribution (400 KB, requires .NET):
-**Double-click:** `distribute-small.cmd`  
-- Creates `dist-small/` folder for your current architecture
-- Much smaller download
-- Users need .NET 8.0 Runtime installed first
+Double-click any of these, or run them from a terminal.
 
-### For Multi-Platform Small Distribution (750 KB, x64 + ARM64):
-**Double-click:** `build-multi-small.cmd`
-- Creates `dist-multi-small/` with both x64 and ARM64 versions
-- Small download with maximum compatibility
-- Users choose the right folder for their processor
+| Script | Does |
+|---|---|
+| `run.cmd` | Build and run in Release. The normal loop. |
+| `build.cmd` | Build and run in Debug |
+| `build.cmd release` | Build and run in Release |
+| `build.cmd test` | Run the test suite |
+| `build.cmd clean` | Delete `bin`, `obj`, and `artifacts` |
 
-## 📁 What Gets Created
+Or use `dotnet` directly: `dotnet build`, `dotnet run`, `dotnet test`.
 
-### Self-Contained (`distribute.cmd`):
+## Building the release packages
+
+```bash
+package.cmd
 ```
-dist/
-├── RSSQuick.exe (and 256 other files)
-├── RSS.opml
-├── README.md
-└── Run-RSSQuick.cmd
+
+That builds both architectures and puts four files in `artifacts/`:
+
 ```
-**Size:** ~162 MB  
-**User needs:** Nothing! Just extract and run
-
-### Small Single-Platform (`distribute-small.cmd`):
+RSSQuick-1.1.0-setup-win-x64.exe        installer, Intel/AMD
+RSSQuick-1.1.0-portable-win-x64.zip     portable, Intel/AMD
+RSSQuick-1.1.0-setup-win-arm64.exe      installer, ARM
+RSSQuick-1.1.0-portable-win-arm64.zip   portable, ARM
 ```
-dist-small/
-├── RSSQuick.exe (and 5 other files)
-├── RSS.opml
-├── README.md
-└── Run-RSSQuick.cmd
+
+Pass an architecture to build just one: `package.cmd x64`.
+
+Each is about 55 MB, and each takes a minute or two to compile and compress.
+
+Under the hood `package.cmd` runs `build/publish.ps1`, which you can call directly for more control:
+
+```bash
+powershell -File build/publish.ps1 -Architecture x64 -SkipInstaller
 ```
-**Size:** ~400 KB  
-**User needs:** .NET 8.0 Runtime for their architecture
 
-### Small Multi-Platform (`build-multi-small.cmd`):
+## Why the packages are built this way
+
+**Both packages are self-contained**, meaning each one carries its own copy of the .NET runtime. That is why they are ~55 MB rather than ~400 KB.
+
+This is a deliberate trade. The framework-dependent packages this replaces were tiny, but "the app won't start" — because .NET was missing, or because the user had installed the runtime for the wrong architecture — was by a wide margin the most common support problem. RSS Quick is aimed at people who should be able to download it and read the news, not diagnose a runtime dialog. Bandwidth is cheaper than that.
+
+**The installer is per-user by default.** `PrivilegesRequired=lowest` means the common case never raises a UAC prompt; nothing here needs administrator rights. An administrator can still choose an all-users install on the first wizard page.
+
+**The installer will not overwrite an edited feed list.** `RSS.opml` is installed with Inno's `onlyifdoesntexist` flag, so upgrading keeps whatever you have edited in place.
+
+**The portable build writes nothing outside its own folder.** It reads `RSS.opml` from the working directory first and falls back to the folder holding the executable, so a copy on a USB stick uses the feed list that travels with it.
+
+## Building the installer by hand
+
+`build/publish.ps1` does this for you, but if you need to run the compiler directly:
+
+```bash
+ISCC.exe /DAppVersion=1.1.0 /DArch=x64 /DSourceDir=<published files> /DOutputDir=artifacts installer\rssquick.iss
 ```
-dist-multi-small/
-├── win-x64/
-│   ├── RSSQuick.exe (and 5 other files)
-│   ├── RSS.opml
-│   └── README.md
-├── win-arm64/
-│   ├── RSSQuick.exe (and 5 other files)  
-│   ├── RSS.opml
-│   └── README.md
-└── README.txt (instructions)
-```
-**Size:** ~750 KB  
-**User needs:** .NET 8.0 Runtime, choose right folder
 
-## 🎯 Which Should You Use?
+Every value the script needs comes in through `/D`. `installer/rssquick.iss` documents what each one is for.
 
-### For General Public Distribution:
-**Recommended:** `distribute.cmd` (self-contained)
-- **Pros:** Works for everyone, no technical knowledge needed
-- **Cons:** Large download
-- **Best for:** Non-technical users, corporate environments
+## Troubleshooting
 
-### For Technical Users:
-**Recommended:** `build-multi-small.cmd` (multi-platform small)
-- **Pros:** Tiny download, works on both Intel and ARM
-- **Cons:** Users must install .NET first
-- **Best for:** Developers, tech-savvy users, GitHub releases
+**"SDK not found"** — install the .NET 10 SDK, then restart your terminal or editor so it picks up the new PATH.
 
-### For Your Own Testing:
-**Recommended:** `distribute-small.cmd` (single platform)
-- **Pros:** Quick to build, small size
-- **Cons:** Only works on your architecture type
-- **Best for:** Personal testing, same-architecture sharing
+**Package restore fails** — `dotnet restore`, then build again.
 
-## 🖱️ Step-by-Step for File Explorer Users
+**`package.cmd` warns that Inno Setup was not found** — install it from [jrsoftware.org](https://jrsoftware.org/isdl.php), or pass `-SkipInstaller` if you only want the portable ZIP.
 
-### Step 1: Open File Explorer
-Navigate to your RSS Quick project folder
-
-### Step 2: Choose Your Script
-- For everyone: Double-click `distribute.cmd`
-- For tech users: Double-click `build-multi-small.cmd`  
-- For testing: Double-click `distribute-small.cmd`
-
-### Step 3: Wait for Build
-The script will:
-- Clean previous builds
-- Build the application
-- Create distribution folder(s)
-- Show you the results
-
-### Step 4: Check Results
-The script will create a folder like:
-- `dist/` (self-contained)
-- `dist-small/` (small single)
-- `dist-multi-small/` (small multi)
-
-### Step 5: Distribute
-- Zip the entire folder
-- Upload to GitHub, email, cloud storage, etc.
-- Users extract and run `RSSQuick.exe`
-
-## ⚡ Quick Comparison
-
-| Script | Click & Go | Size | User Setup | Best For |
-|--------|------------|------|------------|----------|
-| `distribute.cmd` | ✅ | 162 MB | None | Everyone |
-| `distribute-small.cmd` | ✅ | 400 KB | Install .NET | Your platform |
-| `build-multi-small.cmd` | ✅ | 750 KB | Install .NET | Public release |
-
-## 🛠️ Troubleshooting
-
-### "Build failed" errors:
-- Make sure you have .NET 8.0 SDK installed
-- Try: `dotnet --version` in Command Prompt
-- Should show version 8.x.x
-
-### Script won't run:
-- Right-click the .cmd file → "Run as administrator"
-- Or open Command Prompt in the folder and type the filename
-
-### Can't find the script:
-- Make sure you're in the RSS Quick project folder
-- Look for files ending in `.cmd`
-
-## 💡 Pro Tips
-
-1. **Test first**: Use `distribute-small.cmd` to test on your machine
-2. **Check sizes**: The script shows file sizes when done
-3. **Open folder**: Most scripts ask if you want to open the result folder
-4. **Documentation**: All distributions include README files for users
-
-All the scripts are designed to be user-friendly with clear progress messages and automatic folder opening when complete!
+**ARM64 build fails on an Intel machine** — it should not; the ARM64 build is cross-compiled and needs no ARM hardware. If it does, build the architectures separately with `package.cmd x64` and `package.cmd arm64` to see which step is failing.

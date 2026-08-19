@@ -1,5 +1,11 @@
 # RSSQuick Development Notes
 
+> **Historical record, not current documentation.** This describes the original 3-panel to 2-panel
+> rework and the build scripts of that era, several of which no longer exist. It is kept for the
+> braille whitespace investigation and the screen reader design principles, which still hold. For
+> how the project works now see [CLAUDE.md](CLAUDE.md); for what to do next see
+> [docs/IMPROVEMENT-PLAN.md](docs/IMPROVEMENT-PLAN.md).
+
 *Comprehensive development history and lessons learned during the transformation from 3-panel to accessible 2-panel RSS reader*
 
 ## Project Evolution Summary
