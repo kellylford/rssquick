@@ -97,6 +97,23 @@ Both artefacts are **self-contained single-file** builds, so neither needs .NET 
 
 `installer/rssquick.iss` takes every value through `/D` defines from `build/publish.ps1`. It installs per-user (`PrivilegesRequired=lowest`) so the common case raises no UAC prompt, uses a fixed `AppId` so upgrades replace rather than stack, and installs `RSS.opml` with `onlyifdoesntexist` so an edited feed list survives an upgrade. `AppMutex` matches the named mutex `App.OnStartup` holds purely as a running-marker — it does not enforce a single instance.
 
+## The macOS port
+
+`macos/` is a native AppKit version, sharing `RSS.opml` and the behaviour but none of the code —
+there is no .NET in it. It is a Swift package with no Xcode project: `./build.sh test` runs its
+84 tests, `./run.sh` builds and launches it, and `build/make-app.sh` assembles the bundle. It
+reads `VERSION` from the repository root like everything else.
+
+Read `macos/README.md` before touching it. The accessibility decisions were re-made for
+VoiceOver rather than translated, and four of them differ from the Windows rules above on
+purpose — the announcement channel is a notification rather than a live region, position is
+written to the status line but deliberately *not* announced, a headline row names its feed only
+after a folder load, and text size is remembered between runs. The `keepLoadSummary` invariant
+needs one more guard there than here, because focus arriving at the list is a second chance to
+overwrite the summary; the tests caught that.
+
+Changes to either version that affect behaviour a reader can feel should be considered for both.
+
 ## Historical context
 
 `DEVELOPMENT-NOTES.md` is a record of the original 3-panel → 2-panel rework. It is history, not current documentation: it describes build scripts that no longer exist. The parts still worth reading are the braille whitespace investigation and the screen reader design principles.

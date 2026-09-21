@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **A native macOS version**, in `macos/`. AppKit rather than a cross-platform layer, and built
+  for VoiceOver rather than translated from the Windows screen reader behaviour: the same two
+  panels, the same OPML files, the same rule that selecting a feed never fetches anything. The
+  keyboard is Mac-native — Command-B to open, Command-R or F5 to refresh, F6 or Control-Tab
+  between panels, Command-1 and Command-2 to jump to a panel — and every command is also in the
+  menu bar, which on macOS is how a screen reader user finds them. Text size is adjustable from
+  the View menu and remembered, because macOS ignores its own accessibility text size for
+  ordinary views just as Windows does. 84 tests, including focus and tab order against a real
+  window and the real loader against a loopback server.
+
 ## [1.1.0] - 2026-08-19
 
 ### Fixed

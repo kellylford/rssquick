@@ -1,6 +1,6 @@
 # RSS Quick
 
-A fast, accessible RSS reader for Windows. Two panels — feeds on the left, headlines on the right — built for browsing a lot of headlines quickly with a screen reader, a braille display, or just the keyboard.
+A fast, accessible RSS reader for Windows and macOS. Two panels — feeds on the left, headlines on the right — built for browsing a lot of headlines quickly with a screen reader, a braille display, or just the keyboard.
 
 Articles open in your own browser, where you already have your reading setup the way you want it.
 
@@ -14,6 +14,14 @@ Get the latest from the [Releases page](https://github.com/kellylford/rssquick/r
 | **`RSSQuick-<version>-portable-win-x64.zip`** | You want to unzip and run it, including from a USB stick. Nothing is installed and nothing is written outside the folder. |
 
 Choose **x64** for almost any PC. Choose **arm64** only for an ARM device such as a Surface Pro X or a Snapdragon laptop.
+
+### macOS
+
+There is a native macOS version in [`macos/`](macos/), built with AppKit for VoiceOver rather
+than ported from the Windows code. It reads the same OPML files and works the same way; the
+keyboard is Mac-native, so it is Command-B rather than Alt+B and there is a full menu bar. It is
+not packaged for download yet — build it with `./build.sh release` and see
+[macos/README.md](macos/README.md).
 
 ## Getting started
 
