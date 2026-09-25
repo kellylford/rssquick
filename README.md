@@ -6,7 +6,12 @@ Articles open in your own browser, where you already have your reading setup the
 
 ## Download
 
-Get the latest from the [Releases page](https://github.com/kellylford/rssquick/releases). Two packages, both of which carry their own copy of .NET — **you do not need to install anything else**.
+Get the latest from the [Releases page](https://github.com/kellylford/rssquick/releases).
+
+### Windows
+
+Two packages, both of which carry their own copy of .NET — **you do not need to install anything
+else**.
 
 | | Use this when |
 |---|---|
@@ -17,10 +22,16 @@ Choose **x64** for almost any PC. Choose **arm64** only for an ARM device such a
 
 ### macOS
 
-There is a native macOS version in [`macos/`](macos/), built with AppKit for VoiceOver rather
-than ported from the Windows code. It reads the same OPML files and works the same way; the
-keyboard is Mac-native, so it is Command-B rather than Alt+B and there is a full menu bar. It is
-not packaged for download yet — build it with `./build.sh release` and see
+| | Use this when |
+|---|---|
+| **`RSSQuick-<version>-macos.dmg`** | Any Mac running macOS 13 Ventura or newer. Open it and drag RSS Quick to Applications. |
+
+One download for both Apple silicon and Intel. It is signed and notarised by Apple, so it opens
+without a security prompt and without anything to allow in System Settings.
+
+This is a native macOS version, built with AppKit for VoiceOver rather than ported from the
+Windows code. It reads the same OPML files and works the same way; the keyboard is Mac-native, so
+it is Command-B rather than Alt+B and there is a full menu bar. See
 [macos/README.md](macos/README.md).
 
 ## Getting started

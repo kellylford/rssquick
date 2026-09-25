@@ -17,6 +17,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   ordinary views just as Windows does. 84 tests, including focus and tab order against a real
   window and the real loader against a loopback server.
 
+- **The macOS version is signed and notarised**, and ships as a disk image. It opens like any
+  other Mac application — no security prompt, nothing to allow in System Settings, and no need to
+  right-click to get past Gatekeeper. One download covers both Apple silicon and Intel. Talking a
+  VoiceOver user through a Gatekeeper override is not an acceptable first run for a program meant
+  to be usable without sight, which is why this came before anything else on the Mac side.
+
 ## [1.1.0] - 2026-08-19
 
 ### Fixed

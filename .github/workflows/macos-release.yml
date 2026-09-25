@@ -104,12 +104,17 @@ jobs:
       # Draft, not published, and the same draft the Windows release job attaches to. The
       # artefacts want opening with VoiceOver before anyone downloads them, and the release notes
       # want reading before they go out.
+      #
+      # No generate_release_notes here, unlike release.yml. Both workflows fire on the same tag,
+      # and whichever writes the body second wins; only one of them should be claiming to author
+      # it. release.yml is that one. In practice it also gets there first - this job spends most
+      # of its time waiting on Apple's notary service - so the draft already exists by now and
+      # this only adds a file to it.
       - name: Attach to the draft release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v3
         with:
           draft: true
-          generate_release_notes: true
           files: macos/artifacts/*.dmg
 
       # Runs even when something above failed, so a cancelled or broken run does not leave a
