@@ -20,6 +20,7 @@ translated from UI Automation, because several of them do not carry over.
 | `./build.sh [debug\|release\|test\|clean]` | Debug is the default |
 | `./build.sh test` | `swift test` — 84 tests |
 | `./build.sh release` | Universal (arm64 + x86_64) `artifacts/RSS Quick.app` |
+| `./build.sh dist` | Signed, notarised, stapled `artifacts/RSSQuick-<version>-macos.dmg` |
 
 ### From Finder
 
@@ -41,10 +42,116 @@ There is no Xcode project, on purpose: this is a Swift package, so the whole bui
 `Package.swift` and one shell script you can read in a sitting. `build/make-app.sh` does the part
 an Xcode project would otherwise do — the `Info.plist`, the bundle layout, and copying `RSS.opml`
 in beside the program. The bundle is ad-hoc signed so it will open locally; shipping it to anyone
-else needs a Developer ID and notarisation.
+else needs a Developer ID and notarisation, which is what `./build.sh dist` does — see
+*Signing and release* below.
 
 Version comes from `VERSION` at the repository root, the same file the Windows build reads.
 Requires macOS 13 and a Swift 6 toolchain.
+
+## Signing and release
+
+`./build.sh dist` produces the artefact that goes to other people: a signed, notarised and
+stapled disk image in `artifacts/`. It runs the tests, builds the universal app, signs it,
+notarises it, builds the image, signs and notarises that, and verifies the result. Any step
+failing ends the run with nothing to publish, which is the intent — a half-signed build is worse
+than none, because it looks finished.
+
+Why this matters more here than on a normal app: without notarisation macOS tells the reader the
+app cannot be opened safely and sends them to System Settings to allow it. Talking a VoiceOver
+user through a Gatekeeper override is not an acceptable first-run experience for a program whose
+whole purpose is being easy to use without sight.
+
+### What you need, once
+
+Both come from a paid Apple Developer membership.
+
+**A Developer ID Application certificate** in your keychain. Check with:
+
+```bash
+security find-identity -v -p codesigning
+```
+
+It is the entry reading `Developer ID Application: <name> (<team id>)`. `sign.sh` picks the first
+such identity on its own; set `RSSQUICK_SIGNING_IDENTITY` to the full string to choose between
+several.
+
+**An App Store Connect API key** for notarisation, created under Users and Access → Integrations
+→ App Store Connect API with the Developer role. It gives you three things: a downloadable
+`AuthKey_XXXXXXXXXX.p8` (once only — Apple will not offer it again), a 10-character Key ID, and
+an Issuer ID. Keep the `.p8` outside the repository.
+
+```bash
+export NOTARY_KEY_PATH=~/keys/AuthKey_XXXXXXXXXX.p8
+export NOTARY_KEY_ID=XXXXXXXXXX
+export NOTARY_ISSUER_ID=aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee
+```
+
+These variable names are the ones `GHManage/scripts/notarize_macos.sh` uses, so one set of
+exports covers both projects. A `notarytool` keychain profile works too — set `NOTARY_PROFILE`
+instead — but the key is the form that also works unattended in CI.
+
+### Running it
+
+```bash
+./build.sh dist                 # the real thing, 5–30 minutes
+./build.sh dist --no-notarize   # signing only, to check the certificate works
+./build.sh dist --no-test       # skip the tests, to retry a failed notarisation
+```
+
+Most of the time is Apple's: each submission takes two to fifteen minutes, and there are two of
+them.
+
+### Why two notarisation round trips
+
+The app is notarised and stapled, and then the image is notarised and stapled. Each ticket
+answers a different question.
+
+The image's ticket is what stops Gatekeeper warning about the download. The app's ticket is what
+keeps it valid *after* the reader has dragged it to Applications and thrown the image away —
+stapling writes Apple's verdict into the bundle, so it no longer has to be asked for over the
+network. Skip it and the first launch on a machine with no connection, or behind a firewall that
+blocks Apple's endpoints, reports an app that cannot be verified. The extra ten minutes buys the
+offline case.
+
+### Checking the result
+
+```bash
+spctl --assess --type open --context context:primary-signature -v artifacts/RSSQuick-*.dmg
+xcrun stapler validate artifacts/RSSQuick-*.dmg
+```
+
+`--context context:primary-signature` is the part people leave off. Without it `spctl` assesses
+the image as something to execute rather than something that was downloaded, and reports a
+rejection that says nothing about what the reader's Mac will actually do.
+
+The test that matters more than any of these is opening the image on a Mac that has never run
+RSS Quick, with VoiceOver on, and confirming there is no security prompt anywhere in it.
+
+### In CI
+
+`.github/workflows/macos-release.yml` runs the same scripts on a `macos-15` runner, on a `v*` tag
+or on demand, and attaches the image to the same draft release the Windows job uses. It needs
+five repository secrets:
+
+| Secret | Is |
+|---|---|
+| `MACOS_CERTIFICATE_P12` | The Developer ID certificate and key, exported as a `.p12` and base64-encoded |
+| `MACOS_CERTIFICATE_PASSWORD` | The password set when exporting that `.p12` |
+| `NOTARY_KEY_P8` | The `AuthKey_XXXXXXXXXX.p8`, base64-encoded |
+| `NOTARY_KEY_ID` | The 10-character Key ID |
+| `NOTARY_ISSUER_ID` | The Issuer ID |
+
+`MACOS_SIGNING_IDENTITY` is optional and only needed if the certificate has to be chosen by name.
+
+Export the `.p12` from Keychain Access by selecting the *private key* under the certificate —
+exporting the certificate alone produces a file with no key in it, which imports without
+complaint and then fails at the first `codesign`. Base64-encode both files with
+`base64 -i <file> | pbcopy`.
+
+The workflow imports the certificate into a throwaway keychain whose password it generates
+itself, and deletes that keychain in an `always()` step, so a cancelled run does not leave the
+signing key behind on a runner that may be reused.
+
 
 ## Keyboard
 

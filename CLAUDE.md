@@ -104,6 +104,15 @@ there is no .NET in it. It is a Swift package with no Xcode project: `./build.sh
 84 tests, `./run.sh` builds and launches it, and `build/make-app.sh` assembles the bundle. It
 reads `VERSION` from the repository root like everything else.
 
+`./build.sh dist` is the release: `build/release.sh` runs the tests, builds the universal app,
+then signs, notarises and staples both the app and the disk image it goes out in. The app is
+notarised separately from the image on purpose — the image's ticket stops Gatekeeper warning
+about the download, the app's ticket keeps it valid once the reader has dragged it out of the
+image and deleted it, with no network to ask Apple over. There are no entitlements, and that is
+a decision rather than an omission: one Swift binary with no nested libraries, no plugins and no
+sandbox needs no exemptions from the hardened runtime. `.github/workflows/macos-release.yml`
+runs the same scripts on a tag. `macos/README.md` has the credentials and the CI secrets.
+
 Read `macos/README.md` before touching it. The accessibility decisions were re-made for
 VoiceOver rather than translated, and four of them differ from the Windows rules above on
 purpose — the announcement channel is a notification rather than a live region, position is
