@@ -39,3 +39,7 @@ publish-test/
 # Temporary files
 *.tmp
 *.temp
+
+# Finder metadata. Written and rewritten whenever a folder is opened on macOS,
+# so a tracked one shows up as modified in nearly every working tree.
+.DS_Store
