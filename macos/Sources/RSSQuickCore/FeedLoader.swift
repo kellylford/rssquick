@@ -42,6 +42,13 @@ public enum FeedLoader {
     /// A hostile or misconfigured server cannot make us buffer an unbounded response.
     static let maxResponseBytes = 16 * 1024 * 1024
 
+    /// Named in the User-Agent. This file is compiled into the iOS app as well.
+    #if os(iOS)
+    private static let platform = "iOS"
+    #else
+    private static let platform = "macOS"
+    #endif
+
     private static let session: URLSession = {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.timeoutIntervalForRequest = requestTimeout
@@ -52,7 +59,7 @@ public enum FeedLoader {
         configuration.urlCache = nil
         configuration.httpAdditionalHeaders = [
             // Some publishers reject requests with no User-Agent, or serve them a challenge page.
-            "User-Agent": "RSSQuick/1.1 (macOS; +https://github.com/kellylford/rssquick)",
+            "User-Agent": "RSSQuick/1.1 (\(platform); +https://github.com/kellylford/rssquick)",
             "Accept": "application/rss+xml, application/atom+xml, application/xml;q=0.9, text/xml;q=0.9, */*;q=0.5",
             // Most feeds are served compressed and are several times smaller for it.
             "Accept-Encoding": "gzip, deflate",

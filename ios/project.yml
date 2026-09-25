@@ -1,0 +1,71 @@
+# XcodeGen spec for the iOS app. The generated RSSQuick.xcodeproj is committed as well, the same
+# arrangement Scores uses, so a clean clone or a CI runner builds without xcodegen installed.
+# Regenerate after changing this file:  cd ios && xcodegen
+name: RSSQuick
+options:
+  bundleIdPrefix: com.kellylford
+  deploymentTarget:
+    iOS: "17.0"
+  createIntermediateGroups: true
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    IPHONEOS_DEPLOYMENT_TARGET: "17.0"
+    TARGETED_DEVICE_FAMILY: "1,2"
+    DEAD_CODE_STRIPPING: YES
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+
+targets:
+  RSSQuick:
+    type: application
+    platform: iOS
+    sources:
+      - path: RSSQuick
+        excludes:
+          - "**/.DS_Store"
+      # The feed and OPML parsing is the macOS port's platform-neutral core, compiled straight in.
+      # It is pure Foundation with its own tests under macos/Tests, so there is one parser for
+      # both Apple platforms rather than two that drift - the same lesson as ArticleItem.from.
+      - path: ../macos/Sources/RSSQuickCore
+      # The same starter feed list the Windows and macOS builds ship.
+      - path: ../src/RSSQuick/RSS.opml
+        buildPhase: resources
+    settings:
+      base:
+        PRODUCT_NAME: RSSQuick
+        PRODUCT_BUNDLE_IDENTIFIER: com.kellylford.rssquick
+        INFOPLIST_FILE: RSSQuick/Info.plist
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: "RSS Quick"
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.news
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+        INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: YES
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        # HTTPS counts as exempt encryption. Declaring it here stops App Store Connect asking the
+        # export-compliance question on every build.
+        INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
+        INFOPLIST_KEY_UISupportedInterfaceOrientations: "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+        # iOS 27 launch-crash guard carried over from Scores: Xcode 26+ bundles a debug/preview
+        # dylib that crashes at launch on iOS 27. Both must stay off in every configuration.
+        ENABLE_PREVIEWS: NO
+        ENABLE_DEBUG_DYLIB: NO
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: P887QF74N8
+        # The marketing version is overridden from VERSION at the repository root by
+        # scripts/release-testflight.sh; this value is only what a plain Xcode build shows.
+        MARKETING_VERSION: 1.2.0
+        CURRENT_PROJECT_VERSION: 1
+
+schemes:
+  RSSQuick:
+    build:
+      targets:
+        RSSQuick: all
+    run:
+      config: Debug
+    archive:
+      config: Release

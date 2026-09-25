@@ -43,3 +43,8 @@ publish-test/
 # Finder metadata. Written and rewritten whenever a folder is opened on macOS,
 # so a tracked one shows up as modified in nearly every working tree.
 .DS_Store
+
+# iOS build output
+ios/build/
+ios/RSSQuick.xcodeproj/xcuserdata/
+ios/RSSQuick.xcodeproj/project.xcworkspace/xcuserdata/
