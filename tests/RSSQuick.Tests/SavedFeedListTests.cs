@@ -38,11 +38,11 @@ public sealed class SavedFeedListTests : IDisposable
 
     private readonly DirectoryInfo _folder = Directory.CreateTempSubdirectory("rssquick-saved-");
 
-    private SavedFeedList Saved => new(Path.Combine(_folder.FullName, "RSSQuick", "Default.opml"));
+    private SavedFeedList Saved => new(Path.Join(_folder.FullName, "RSSQuick", "Default.opml"));
 
     private string WriteStarter()
     {
-        var path = Path.Combine(_folder.FullName, "RSS.opml");
+        var path = Path.Join(_folder.FullName, "RSS.opml");
         File.WriteAllText(path, Starter);
         return path;
     }
@@ -95,6 +95,19 @@ public sealed class SavedFeedListTests : IDisposable
         StartupFeedList.Choose(Saved, WriteStarter());
 
         Assert.True(Saved.Exists);
+    }
+
+    [Fact]
+    public void When_both_lists_fail_the_saved_list_is_still_named()
+    {
+        Saved.Save(Encoding.UTF8.GetBytes("this is not OPML"));
+        var starter = Path.Join(_folder.FullName, "RSS.opml");
+        File.WriteAllText(starter, "nor is this");
+
+        var error = Assert.Throws<InvalidOperationException>(() => StartupFeedList.Choose(Saved, starter));
+
+        Assert.Contains("Your default feed list could not be read", error.Message);
+        Assert.Contains("starter feed list could not be read either", error.Message);
     }
 
     [Fact]

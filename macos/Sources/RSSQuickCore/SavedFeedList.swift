@@ -82,7 +82,9 @@ public struct StartupFeedList: Sendable {
     ///
     /// - Parameter starter: The shipped RSS.opml, or nil when there is none.
     /// - Throws: Only for a starter list that will not parse, which the caller reports exactly as
-    ///   it did before there was such a thing as a saved list.
+    ///   it did before there was such a thing as a saved list - unless the saved list failed
+    ///   first, in which case the error is a `BothListsFailed` naming both, or the reader never
+    ///   learns their own list was the first thing to go wrong.
     public static func choose(saved: SavedFeedList, starter: URL?) throws -> StartupFeedList {
         var problem: String?
         do {
@@ -96,8 +98,21 @@ public struct StartupFeedList: Sendable {
         guard let starter else {
             return StartupFeedList(list: nil, savedListProblem: problem)
         }
-        let list = try OpenedFeedList(data: Data(contentsOf: starter), isSaved: false)
-        return StartupFeedList(list: list, savedListProblem: problem)
+        do {
+            let list = try OpenedFeedList(data: Data(contentsOf: starter), isSaved: false)
+            return StartupFeedList(list: list, savedListProblem: problem)
+        } catch {
+            guard let problem else { throw error }
+            throw BothListsFailed(message:
+                "\(problem), and the starter feed list could not be read either (\(ErrorText.describe(error)))")
+        }
+    }
+
+    /// The saved list and the starter list both failed at startup.
+    public struct BothListsFailed: LocalizedError, CustomStringConvertible {
+        public let message: String
+        public var description: String { message }
+        public var errorDescription: String? { message }
     }
 
     /// "1 feed" or "12 feeds".

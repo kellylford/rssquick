@@ -21,5 +21,5 @@ internal static class TestStorage
 
     [ModuleInitializer]
     internal static void Redirect() =>
-        SavedFeedList.ForThisUser = new SavedFeedList(Path.Combine(Directory, "Default.opml"));
+        SavedFeedList.ForThisUser = new SavedFeedList(Path.Join(Directory, "Default.opml"));
 }

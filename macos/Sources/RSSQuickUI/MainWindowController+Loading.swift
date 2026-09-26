@@ -113,6 +113,9 @@ extension MainWindowController {
         }
 
         guard let starter = StarterOpml.find() else {
+            // The old list stays on screen but no longer opens at startup, so let it be saved
+            // again.
+            currentListIsDefault = false
             setStatus("Removed your default feed list. The starter feed list is missing from this copy of RSS Quick.")
             return
         }
@@ -129,6 +132,7 @@ extension MainWindowController {
             focusFeedTree()
             setStatus("Removed your default feed list. Showing the starter feed list, \(StartupFeedList.feeds(list.document.feedCount)).")
         } catch {
+            currentListIsDefault = false
             setStatus("Removed your default feed list, but the starter feed list could not be read: \(ErrorText.describe(error))")
         }
     }

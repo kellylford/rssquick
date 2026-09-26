@@ -108,7 +108,7 @@ public sealed class DefaultFeedListTests : IDisposable
 
         ui.Click(ui.MakeDefault);
 
-        var starter = File.ReadAllBytes(Path.Combine(AppContext.BaseDirectory, "RSS.opml"));
+        var starter = File.ReadAllBytes(Path.Join(AppContext.BaseDirectory, "RSS.opml"));
         Assert.Equal(starter, File.ReadAllBytes(Saved.Path));
         Assert.False(ui.MakeDefault.IsEnabled);
         Assert.Contains("Saved as your default feed list", ui.Status);

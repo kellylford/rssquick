@@ -1,5 +1,4 @@
 import Foundation
-import RSSQuickCore
 
 /// Locates the feed list RSS Quick ships with.
 public enum StarterOpml {
