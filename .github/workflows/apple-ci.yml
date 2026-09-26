@@ -1,25 +1,17 @@
 name: Apple CI
 
-# Tests the macOS version and builds the iOS version on every change to either, so Swift that has
+# Tests the macOS version and builds the iOS version on every pull request, so Swift that has
 # only been written on Windows is compiled before it reaches a Mac. ci.yml does the same for the
 # Windows build. Nothing here signs, archives or uploads: macos-release.yml and
 # ios/scripts/release-testflight.sh do that, and neither needs to run for a change to be proven.
 
+# No paths filter, deliberately. Both jobs are required checks on main, and a required check that
+# a filter skips never reports, which leaves a Windows-only pull request waiting forever.
 on:
   push:
     branches: [main]
-    paths:
-      - 'macos/**'
-      - 'ios/**'
-      - 'src/RSSQuick/RSS.opml'
-      - '.github/workflows/apple-ci.yml'
   pull_request:
     branches: [main]
-    paths:
-      - 'macos/**'
-      - 'ios/**'
-      - 'src/RSSQuick/RSS.opml'
-      - '.github/workflows/apple-ci.yml'
   workflow_dispatch:
 
 permissions:

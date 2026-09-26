@@ -144,6 +144,11 @@ runs `swift test` for macOS and a simulator build of iOS (unsigned, no secrets �
 Scores' `ios-build-check.yml`). The Windows dev machine has no Swift toolchain, so for Swift
 written there, `apple-ci.yml` is the first compiler to see it.
 
+All four jobs — `build-and-test`, `analyze` (CodeQL), `macOS tests` and `iOS build` — are required
+checks on `main`, and auto-merge is on, so a pull request lands by itself once they pass. That is
+why `apple-ci.yml` has no paths filter: a required check a filter skips never reports, and the
+pull request waits forever. Renaming a job means updating the branch protection to match.
+
 ## The iOS version
 
 `ios/` is a SwiftUI app for iPhone and iPad. It is kept simple on purpose: a folder tree, OPML
