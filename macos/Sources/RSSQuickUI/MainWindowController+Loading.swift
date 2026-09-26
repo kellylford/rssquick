@@ -17,20 +17,9 @@ extension MainWindowController {
     // MARK: Opening the feed list
 
     func loadDefaultOpml() {
-        guard let url = DefaultOpml.find() else {
-            status = "No feed list found - use Import OPML File to choose one"
-            // Focus goes where the reader can act. Deferred to the next turn of the run loop
-            // because the window has no views laid out yet at this point in construction.
-            DispatchQueue.main.async { [weak self] in
-                guard let self else { return }
-                window?.makeFirstResponder(importButton)
-                setStatus("No feed list found - press Space to import an OPML file")
-            }
-            return
-        }
-
+        let startup: StartupFeedList
         do {
-            try open(url, describe: { "Loaded \($0) from the default feed list" })
+            startup = try StartupFeedList.choose(saved: Self.savedFeedList, starter: StarterOpml.find())
         } catch {
             status = "Could not read the default feed list: \(ErrorText.describe(error))"
             DispatchQueue.main.async { [weak self] in
@@ -40,24 +29,108 @@ extension MainWindowController {
             return
         }
 
+        guard let list = startup.list else {
+            status = "No feed list found - use Import OPML File to choose one"
+            // Focus goes where the reader can act. Deferred to the next turn of the run loop
+            // because the window has no views laid out yet at this point in construction.
+            DispatchQueue.main.async { [weak self] in
+                guard let self else { return }
+                window?.makeFirstResponder(importButton)
+                setStatus(startup.savedListProblem.map { "\($0) - press Space to import an OPML file" }
+                    ?? "No feed list found - press Space to import an OPML file")
+            }
+            return
+        }
+
+        // A saved list that could not be read is not what is on screen, so offer to replace it
+        // with what is.
+        show(list, isDefault: startup.savedListProblem == nil)
+        status = list.isSaved
+            ? "Loaded \(StartupFeedList.feeds(list.document.feedCount)) from your default feed list"
+            : "Loaded \(StartupFeedList.feeds(list.document.feedCount)) from the starter feed list"
+
         // Startup focus is set on the next turn of the run loop, not here: the outline has no
         // rows yet, because it has not been asked to reload against a window that is not on
         // screen. Doing it inline silently leaves focus nowhere.
         DispatchQueue.main.async { [weak self] in
             guard let self, outline.numberOfRows > 0 else { return }
             focusFeedTree()
+
+            // The one startup message worth saying aloud: without it the reader has no way to
+            // know the list in front of them is not their own.
+            if let problem = startup.savedListProblem {
+                setStatus("\(problem) - showing the starter feed list instead")
+            }
         }
     }
 
-    /// Replaces the feed tree with the contents of an OPML file.
-    func open(_ url: URL, describe summary: (String) -> String) throws {
-        let document = try OpmlParser.parse(contentsOf: url)
-
-        roots = document.roots
+    /// Replaces the feed tree with a feed list.
+    ///
+    /// - Parameter isDefault: True when this is the list RSS Quick opens at startup.
+    func show(_ list: OpenedFeedList, isDefault: Bool) {
+        roots = list.document.roots
         outline.reloadData()
+        currentFeedList = list
+        currentListIsDefault = isDefault
+    }
 
-        let feeds = document.feedCount == 1 ? "1 feed" : "\(document.feedCount) feeds"
-        status = summary(feeds)
+    // MARK: The default feed list
+
+    /// File, Make This My Default Feed List: open the list on screen every time RSS Quick starts.
+    ///
+    /// Dimmed in the menu when there is nothing to do; see `validateMenuItem`. The checks here
+    /// are for the key equivalent, which reaches this only when the item is enabled, but a
+    /// sentence costs nothing if that ever changes.
+    @objc func makeDefaultFeedList(_ sender: Any?) {
+        guard let list = currentFeedList else {
+            setStatus("There is no feed list to make your default - import one first")
+            return
+        }
+        guard !currentListIsDefault else {
+            setStatus("This feed list is already your default")
+            return
+        }
+
+        do {
+            try Self.savedFeedList.save(list.data)
+        } catch {
+            setStatus("Could not save your default feed list: \(error.localizedDescription)")
+            return
+        }
+
+        currentFeedList?.isSaved = true
+        currentListIsDefault = true
+        setStatus("Saved as your default feed list, \(StartupFeedList.feeds(list.document.feedCount)). It will open every time RSS Quick starts.")
+    }
+
+    /// File, Use Starter Feed List: forget the saved default and go back to the shipped list.
+    @objc func useStarterFeedList(_ sender: Any?) {
+        do {
+            try Self.savedFeedList.forget()
+        } catch {
+            setStatus("Could not remove your default feed list: \(error.localizedDescription)")
+            return
+        }
+
+        guard let starter = StarterOpml.find() else {
+            setStatus("Removed your default feed list. The starter feed list is missing from this copy of RSS Quick.")
+            return
+        }
+
+        do {
+            let list = try OpenedFeedList(data: Data(contentsOf: starter), isSaved: false)
+            cancelLoad()
+            headlines = []
+            currentlyLoadedFeed = nil
+            lastSelectedHeadlineRow = -1
+            openButton.isEnabled = false
+            table.reloadData()
+            show(list, isDefault: true)
+            focusFeedTree()
+            setStatus("Removed your default feed list. Showing the starter feed list, \(StartupFeedList.feeds(list.document.feedCount)).")
+        } catch {
+            setStatus("Removed your default feed list, but the starter feed list could not be read: \(ErrorText.describe(error))")
+        }
     }
 
     @objc func importOpml(_ sender: Any?) {
@@ -71,9 +144,10 @@ extension MainWindowController {
         guard panel.runModal() == .OK, let url = panel.url else { return }
 
         do {
-            try open(url, describe: { "Imported \($0) from \(url.lastPathComponent)" })
-            Announcer.announce(status, in: window)
+            let list = try OpenedFeedList(data: Data(contentsOf: url), isSaved: false)
+            show(list, isDefault: false)
             focusFeedTree()
+            setStatus("Imported \(StartupFeedList.feeds(list.document.feedCount)) from \(url.lastPathComponent) - Command-D makes it your default feed list")
         } catch {
             setStatus("Could not import \(url.lastPathComponent): \(ErrorText.describe(error))")
             alert(title: "Import Error", message: "Could not import \(url.lastPathComponent).\n\n\(ErrorText.describe(error))")

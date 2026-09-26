@@ -21,16 +21,26 @@ struct FeedListView: View {
                             Button("Import OPML File…", systemImage: "square.and.arrow.down") {
                                 isImporting = true
                             }
-                            if store.isUsingImportedList {
-                                Button("Use Starter Feed List", systemImage: "arrow.uturn.backward") {
-                                    expanded = []
-                                    Announcer.announce(store.restoreStarterList(), after: .milliseconds(200))
-                                }
+                            // Dimmed rather than hidden when there is nothing for them to do, so
+                            // VoiceOver reads them as unavailable and the reader learns they exist.
+                            Button("Make This My Default Feed List", systemImage: "star") {
+                                Announcer.announce(store.makeCurrentListDefault(), after: .milliseconds(200))
                             }
+                            .disabled(!store.canMakeDefault)
+                            Button("Use Starter Feed List", systemImage: "arrow.uturn.backward") {
+                                expanded = []
+                                Announcer.announce(store.restoreStarterList(), after: .milliseconds(200))
+                            }
+                            .disabled(!store.hasSavedList)
                         } label: {
                             Label("Feed List", systemImage: "ellipsis.circle")
                         }
                     }
+                }
+                .task {
+                    // Said once the screen is up: without it the reader has no way to know the
+                    // list in front of them is not their own.
+                    if let problem = store.startupProblem { Announcer.announce(problem) }
                 }
                 .fileImporter(
                     isPresented: $isImporting,

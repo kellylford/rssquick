@@ -90,6 +90,30 @@ public class TabOrderTests
             stops);
     }
 
+    /// <summary>
+    /// The two default-list buttons sit between Import and the feed tree when they are enabled.
+    /// Disabled, they drop out of the ring, which is the case the test above covers.
+    /// </summary>
+    [WpfFact]
+    public void The_default_list_buttons_follow_import_when_enabled()
+    {
+        using var ui = new FocusHarness();
+        ((Button)ui.Window.FindName("MakeDefaultButton")!).IsEnabled = true;
+        ((Button)ui.Window.FindName("UseStarterListButton")!).IsEnabled = true;
+        ui.ImportButton.Focus();
+        ui.Drain();
+
+        var stops = ui.WalkRing(forward: true);
+
+        Assert.Equal(
+            new[]
+            {
+                "button \"Make This My Default (Alt+D)\"", "button \"Use Starter Feed List\"",
+                "feed \"Feed one\"", "headline \"Headline one\"", "button \"Open in _Browser (Alt+B)\"",
+            },
+            stops);
+    }
+
     [WpfFact]
     public void The_ring_walks_the_same_stops_backwards()
     {

@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **Make this my default feed list**, on Windows, macOS and iOS. Import your own OPML file, choose
+  Make This My Default (Alt+D on Windows, Command-D or the File menu on the Mac, the ••• menu on
+  iPhone and iPad), and it opens every time RSS Quick starts instead of the starter list. Use
+  Starter Feed List goes back. Both are greyed out when there is nothing for them to do. RSS Quick
+  keeps an exact copy of the file, so moving the original does not break anything; it is the only
+  thing kept between runs. If the saved copy ever cannot be read, the starter list opens and says
+  why, and your copy is left alone.
+
+### Changed
+- On iOS, importing a list no longer replaces your saved one. It is shown, and becomes the default
+  only when you say so, as on the desktop versions. A list saved by the first TestFlight build
+  still opens.
+
 ## [1.2.0] - 2026-09-24
 
 ### Added

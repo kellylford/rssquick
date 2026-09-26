@@ -49,6 +49,11 @@ public enum MainMenu {
     private static func fileMenu() -> NSMenuItem {
         let menu = NSMenu(title: "File")
         menu.addItem(withTitle: "Import OPML File…", action: #selector(MainWindowController.importOpml(_:)), keyEquivalent: "o")
+
+        // Dimmed rather than hidden when there is nothing for them to do, so VoiceOver reads
+        // them as unavailable and the reader learns they exist. See validateMenuItem.
+        menu.addItem(withTitle: "Make This My Default Feed List", action: #selector(MainWindowController.makeDefaultFeedList(_:)), keyEquivalent: "d")
+        menu.addItem(withTitle: "Use Starter Feed List", action: #selector(MainWindowController.useStarterFeedList(_:)), keyEquivalent: "")
         menu.addItem(.separator())
         menu.addItem(withTitle: "Refresh", action: #selector(MainWindowController.refresh(_:)), keyEquivalent: "r")
 

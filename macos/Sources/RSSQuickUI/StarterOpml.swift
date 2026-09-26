@@ -1,7 +1,8 @@
 import Foundation
+import RSSQuickCore
 
-/// Locates the feed list to open at startup.
-public enum DefaultOpml {
+/// Locates the feed list RSS Quick ships with.
+public enum StarterOpml {
     /// Matched case-insensitively by the file system, so this covers RSS.opml and rss.opml.
     private static let fileName = "RSS.opml"
 
@@ -12,7 +13,8 @@ public enum DefaultOpml {
     /// The application bundle's own resources are the fallback: a program launched from the Dock
     /// or from Spotlight is given the user's home directory as its working directory, and
     /// without this the installed build would open with an empty feed tree even though RSS.opml
-    /// sits right inside it.
+    /// sits right inside it. Both come after the reader's saved default; see
+    /// `StartupFeedList.choose`.
     public static func find() -> URL? {
         let candidates = [
             URL(fileURLWithPath: FileManager.default.currentDirectoryPath).appendingPathComponent(fileName),
@@ -24,4 +26,9 @@ public enum DefaultOpml {
             .compactMap { $0 }
             .first { FileManager.default.fileExists(atPath: $0.path) }
     }
+
+    /// ~/Library/Application Support/RSSQuick/Default.opml
+    public static let savedListURL = URL.applicationSupportDirectory
+        .appendingPathComponent("RSSQuick", isDirectory: true)
+        .appendingPathComponent("Default.opml")
 }

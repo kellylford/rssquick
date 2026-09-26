@@ -20,6 +20,7 @@
 		9D4A5711AF32E9E43D85CB81 /* Accessibility.swift in Sources */ = {isa = PBXBuildFile; fileRef = E278F4C7D6242762D081B301 /* Accessibility.swift */; };
 		B7DEBC5CF7D75A177881AFE6 /* ArticleItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E14DB9D970A1880371A0CB8 /* ArticleItem.swift */; };
 		C56A2174A40309D0EDB91DA0 /* OpmlParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69DF5C67EC4C9F36F4314902 /* OpmlParser.swift */; };
+		8844CD3B7FB08CD13DD71ABC /* SavedFeedList.swift in Sources */ = {isa = PBXBuildFile; fileRef = 365EFC5BC034C630535E9F62 /* SavedFeedList.swift */; };
 		D49A13132F53E6A0C04DCEAE /* FeedText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53C2671F757A9394A2DDD7D1 /* FeedText.swift */; };
 		EA59550EEA14FE5C1C90667F /* RSS.opml in Resources */ = {isa = PBXBuildFile; fileRef = CAB59556865EF3AB073DB002 /* RSS.opml */; };
 		F695F1DDDDE68A5185248F1F /* FeedItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A74B1B801FC87BC587609C4 /* FeedItem.swift */; };
@@ -33,6 +34,7 @@
 		55BA2319692BA2CF2EC88BAC /* ErrorText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorText.swift; sourceTree = "<group>"; };
 		5BA389AABC59C32B93763E74 /* FeedLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedLoader.swift; sourceTree = "<group>"; };
 		69DF5C67EC4C9F36F4314902 /* OpmlParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpmlParser.swift; sourceTree = "<group>"; };
+		365EFC5BC034C630535E9F62 /* SavedFeedList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedFeedList.swift; sourceTree = "<group>"; };
 		7E14DB9D970A1880371A0CB8 /* ArticleItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArticleItem.swift; sourceTree = "<group>"; };
 		9359119AD65E98A846E4C534 /* FeedParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedParser.swift; sourceTree = "<group>"; };
 		A22E83D565D7273E9910F780 /* RSSQuickApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RSSQuickApp.swift; sourceTree = "<group>"; };
@@ -110,6 +112,7 @@
 				9359119AD65E98A846E4C534 /* FeedParser.swift */,
 				53C2671F757A9394A2DDD7D1 /* FeedText.swift */,
 				69DF5C67EC4C9F36F4314902 /* OpmlParser.swift */,
+				365EFC5BC034C630535E9F62 /* SavedFeedList.swift */,
 				4883AACCA80894B3C82981EF /* XMLSafety.swift */,
 			);
 			path = RSSQuickCore;
@@ -224,6 +227,7 @@
 				D49A13132F53E6A0C04DCEAE /* FeedText.swift in Sources */,
 				2837AF34CC32DA58692D9372 /* HeadlinesView.swift in Sources */,
 				C56A2174A40309D0EDB91DA0 /* OpmlParser.swift in Sources */,
+				8844CD3B7FB08CD13DD71ABC /* SavedFeedList.swift in Sources */,
 				5BA416EE422DF027D949A9BA /* RSSQuickApp.swift in Sources */,
 				8872F328DB0D275CC01A40A2 /* XMLSafety.swift in Sources */,
 			);

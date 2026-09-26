@@ -49,6 +49,20 @@ public final class MainWindowController: NSWindowController {
     /// True when the headlines came from a folder, so rows name the feed they came from.
     var headlinesAreMerged = false
 
+    /// The reader's saved default feed list.
+    ///
+    /// Settable so the tests can point it at a temporary folder. Without that, every test that
+    /// builds a window would read - and could overwrite - the real saved list of whoever runs
+    /// the suite.
+    static var savedFeedList = SavedFeedList(url: StarterOpml.savedListURL)
+
+    /// The feed list in the tree, kept so it can be saved as the default.
+    var currentFeedList: OpenedFeedList?
+
+    /// True while the tree shows the list RSS Quick opens at startup, which is what dims
+    /// Make This My Default Feed List.
+    var currentListIsDefault = false
+
     var keyMonitor: Any?
 
     /// The status line, and the only thing that writes to it.

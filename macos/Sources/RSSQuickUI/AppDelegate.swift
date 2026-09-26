@@ -45,6 +45,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
           Command-Plus/Minus   Larger or smaller text, remembered between launches
           Command-0            Back to the standard size
           Command-O            Import a different OPML feed list
+          Command-D            Make the feed list on screen your default
 
         Selecting a feed never fetches anything. Only Return does.
         """
