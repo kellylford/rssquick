@@ -87,6 +87,22 @@ struct SavedFeedListTests {
         #expect(saved.exists)
     }
 
+    @Test("When both lists fail, the saved list is still named")
+    func bothFail() throws {
+        try saved.save(Data("this is not OPML".utf8))
+        let starter = try writeStarter()
+        try Data("nor is this".utf8).write(to: starter)
+
+        do {
+            _ = try StartupFeedList.choose(saved: saved, starter: starter)
+            Issue.record("Expected startup to fail when both lists are unreadable")
+        } catch {
+            let message = "\(error)"
+            #expect(message.contains("Your default feed list could not be read"))
+            #expect(message.contains("starter feed list could not be read either"))
+        }
+    }
+
     @Test("With neither list, there is nothing to show")
     func neither() throws {
         let startup = try StartupFeedList.choose(saved: saved, starter: nil)

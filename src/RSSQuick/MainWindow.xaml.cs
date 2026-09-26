@@ -88,6 +88,10 @@ namespace RSSReaderWPF
 
             // Set up keyboard navigation
             SetupKeyboardNavigation();
+
+            // Nothing stops a second copy of RSS Quick saving or forgetting the default, so the
+            // buttons are re-checked whenever this window comes back to the front.
+            Activated += (_, _) => UpdateFeedListButtons();
         }
 
         private void SetupKeyboardNavigation()
@@ -309,18 +313,25 @@ namespace RSSReaderWPF
                     CancelLoad();
                     _viewModel.Headlines.Clear();
                     _currentlyLoadedFeed = null;
+                    _lastSelectedHeadlineIndex = -1;
+                    OpenInBrowserButton.IsEnabled = false;
                     ShowFeedList(list, isDefault: true);
                     FocusSelectedFeed();
                     message = $"Removed your default feed list. Showing the starter feed list, {Feeds(list.Document.FeedCount)}.";
                 }
                 else
                 {
+                    // The old list stays on screen but no longer opens at startup, so let it be
+                    // saved again.
+                    _currentListIsDefault = false;
                     UpdateFeedListButtons();
                     message = "Removed your default feed list. The starter feed list is missing from this copy of RSS Quick.";
                 }
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException
+                                           or System.Xml.XmlException or InvalidOperationException)
             {
+                _currentListIsDefault = false;
                 UpdateFeedListButtons();
                 message = $"Removed your default feed list, but the starter feed list could not be read: {ex.Message}";
             }

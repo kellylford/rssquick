@@ -34,8 +34,15 @@ final class FeedStore {
     private var current: OpenedFeedList?
 
     /// Set at startup when a saved list existed but could not be read, for the view to announce
-    /// once the screen is up.
-    private(set) var startupProblem: String?
+    /// once the screen is up. Handed out once, by `takeStartupProblem`.
+    private var startupProblem: String?
+
+    /// The startup problem, if there was one, and never again: the view that asks re-appears
+    /// every time the reader comes back from a feed.
+    func takeStartupProblem() -> String? {
+        defer { startupProblem = nil }
+        return startupProblem
+    }
 
     private let saved = SavedFeedList(url: URL.applicationSupportDirectory.appending(path: "Imported.opml"))
 
@@ -108,8 +115,22 @@ final class FeedStore {
         } catch {
             return "Could not remove your default feed list. \(error.localizedDescription)"
         }
-        loadStartupList()
-        return "Removed your default feed list. Showing the starter feed list, \(Self.feeds(feedCount))."
+        hasSavedList = false
+
+        // The list on screen stays if the starter cannot be shown, but it no longer opens at
+        // startup, so it can be saved again.
+        guard let starter = Bundle.main.url(forResource: "RSS", withExtension: "opml") else {
+            isShowingDefault = false
+            return "Removed your default feed list. The starter feed list is missing from this copy of RSS Quick."
+        }
+        do {
+            let list = try OpenedFeedList(data: Data(contentsOf: starter), isSaved: false)
+            show(list, isDefault: true)
+            return "Removed your default feed list. Showing the starter feed list, \(Self.feeds(feedCount))."
+        } catch {
+            isShowingDefault = false
+            return "Removed your default feed list, but the starter feed list could not be read. \(Self.describe(error))"
+        }
     }
 
     private func show(_ list: OpenedFeedList, isDefault: Bool) {

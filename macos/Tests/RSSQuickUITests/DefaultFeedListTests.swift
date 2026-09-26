@@ -6,6 +6,11 @@ import RSSQuickCore
 
 /// Make This My Default Feed List and Use Starter Feed List, in the real window: when each is
 /// dimmed, and what each writes. The Windows version is tests/RSSQuick.Tests/DefaultFeedListTests.cs.
+///
+/// These tests set `MainWindowController.savedFeedList`, a static the FocusHarness suites also set,
+/// and suites run in parallel. That is safe only because every test here is synchronous on the
+/// main actor, so nothing else can run between setting it and reading it. Adding an `await` to one
+/// of them brings back the race; give the window its own location instead if that is ever needed.
 @Suite("The default feed list commands", .serialized)
 @MainActor
 struct DefaultFeedListTests {
@@ -41,6 +46,7 @@ struct DefaultFeedListTests {
     @Test("With nothing saved, Use Starter Feed List is dimmed")
     func nothingSaved() throws {
         let controller = try makeWindow()
+        defer { controller.close() }
 
         #expect(!isEnabled(useStarter, in: controller))
     }
@@ -48,6 +54,7 @@ struct DefaultFeedListTests {
     @Test("A saved list opens at startup, and cannot be made the default again")
     func savedOpensAtStartup() throws {
         let controller = try makeWindow(saving: Self.mine)
+        defer { controller.close() }
 
         #expect(controller.roots.map(\.title) == ["Mine"])
         #expect(controller.currentFeedList?.isSaved == true)
@@ -58,6 +65,7 @@ struct DefaultFeedListTests {
     @Test("An imported list can be made the default, which saves its exact bytes")
     func makeImportedListDefault() throws {
         let controller = try makeWindow()
+        defer { controller.close() }
         let imported = try OpenedFeedList(data: Self.mine, isSaved: false)
 
         controller.show(imported, isDefault: false)
@@ -74,6 +82,7 @@ struct DefaultFeedListTests {
     @Test("Use Starter Feed List forgets the saved list")
     func useStarterForgets() throws {
         let controller = try makeWindow(saving: Self.mine)
+        defer { controller.close() }
 
         controller.useStarterFeedList(nil)
 

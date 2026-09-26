@@ -23,7 +23,7 @@ namespace RSSReaderWPF.Services
         public string Path { get; }
 
         /// <summary>%APPDATA%\RSSQuick\Default.opml</summary>
-        public static string DefaultPath => System.IO.Path.Combine(
+        public static string DefaultPath => System.IO.Path.Join(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
             "RSSQuick", "Default.opml");
 
@@ -52,8 +52,17 @@ namespace RSSReaderWPF.Services
         {
             Directory.CreateDirectory(System.IO.Path.GetDirectoryName(Path)!);
             var temporary = Path + ".saving";
-            File.WriteAllBytes(temporary, content);
-            File.Move(temporary, Path, overwrite: true);
+            try
+            {
+                File.WriteAllBytes(temporary, content);
+                File.Move(temporary, Path, overwrite: true);
+            }
+            finally
+            {
+                // Only still there when the save failed, and the failure is the caller's to
+                // report. This just stops it leaving a half-written file beside the real one.
+                try { File.Delete(temporary); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+            }
         }
 
         /// <summary>Removes the saved list, so the starter list opens next time.</summary>
@@ -109,9 +118,20 @@ namespace RSSReaderWPF.Services
 
             if (starterPath is null) return new(null, problem);
 
-            // Not caught: a starter list that will not parse is reported by the caller exactly as
-            // it was before there was such a thing as a saved list.
-            return new(OpenedFeedList.Parse(File.ReadAllBytes(starterPath), isSaved: false), problem);
+            // A starter list that will not parse is reported by the caller exactly as it was before
+            // there was such a thing as a saved list - unless the saved list failed first, in which
+            // case that has to survive into the message too, or the reader never learns their own
+            // list was the first thing to go wrong.
+            try
+            {
+                return new(OpenedFeedList.Parse(File.ReadAllBytes(starterPath), isSaved: false), problem);
+            }
+            catch (Exception ex) when (problem is not null && (ex is IOException or UnauthorizedAccessException
+                                           or System.Xml.XmlException or InvalidOperationException))
+            {
+                throw new InvalidOperationException(
+                    $"{problem}, and the starter feed list could not be read either ({ex.Message})", ex);
+            }
         }
     }
 }

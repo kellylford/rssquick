@@ -40,7 +40,7 @@ struct FeedListView: View {
                 .task {
                     // Said once the screen is up: without it the reader has no way to know the
                     // list in front of them is not their own.
-                    if let problem = store.startupProblem { Announcer.announce(problem) }
+                    if let problem = store.takeStartupProblem() { Announcer.announce(problem) }
                 }
                 .fileImporter(
                     isPresented: $isImporting,
