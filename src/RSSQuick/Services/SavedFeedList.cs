@@ -57,11 +57,12 @@ namespace RSSReaderWPF.Services
                 File.WriteAllBytes(temporary, content);
                 File.Move(temporary, Path, overwrite: true);
             }
-            finally
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
-                // Only still there when the save failed, and the failure is the caller's to
-                // report. This just stops it leaving a half-written file beside the real one.
-                try { File.Delete(temporary); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+                // Rethrown for the caller to report. This only stops a failed save leaving a
+                // half-written file beside the real one.
+                if (File.Exists(temporary)) File.Delete(temporary);
+                throw;
             }
         }
 
