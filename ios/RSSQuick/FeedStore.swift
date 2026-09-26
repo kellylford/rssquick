@@ -3,11 +3,14 @@ import Observation
 
 /// The feed list, and where it came from.
 ///
-/// This is the one place the iOS version keeps anything between runs, and it is a deliberate
-/// difference from Windows. There a file on disk is simply there next time; on iOS a file picked
-/// from Files is only lent to the app for the moment it was picked, so without a copy the reader
-/// would have to import their list again every launch. Only the OPML is kept - never feed
-/// content, which is always fetched fresh, as on the other platforms.
+/// The only thing kept between runs is the reader's saved default, as on Windows and macOS: a
+/// copy of the OPML they chose with Make This My Default Feed List. It is a copy rather than a
+/// reference because a file picked from Files is only lent to the app for the moment it was
+/// picked. Never feed content, which is always fetched fresh, as on the other platforms.
+///
+/// Importing a list shows it without saving it, so looking at someone else's list does not lose
+/// your own. The first TestFlight build saved on every import; that file is where the saved
+/// default still lives, so a list saved by that build keeps opening.
 @MainActor
 @Observable
 final class FeedStore {
@@ -17,33 +20,46 @@ final class FeedStore {
     /// Set when the list could not be read, for the feed list to show in place of the tree.
     private(set) var loadError: String?
 
-    /// True once the reader has imported a list of their own.
-    private(set) var isUsingImportedList = false
+    /// True while the list on screen is the one RSS Quick opens at startup, which is what dims
+    /// Make This My Default Feed List.
+    private(set) var isShowingDefault = false
+
+    /// True when Make This My Default Feed List has something to do.
+    var canMakeDefault: Bool { current != nil && !isShowingDefault }
+
+    /// True when there is a saved default for Use Starter Feed List to forget.
+    private(set) var hasSavedList = false
+
+    /// The list on screen, kept so it can be saved as the default exactly as it was read.
+    private var current: OpenedFeedList?
+
+    /// Set at startup when a saved list existed but could not be read, for the view to announce
+    /// once the screen is up.
+    private(set) var startupProblem: String?
+
+    private let saved = SavedFeedList(url: URL.applicationSupportDirectory.appending(path: "Imported.opml"))
 
     init() {
-        loadSavedOrBundledList()
+        loadStartupList()
     }
 
-    private static var importedListURL: URL {
-        URL.applicationSupportDirectory.appending(path: "Imported.opml")
-    }
-
-    private func loadSavedOrBundledList() {
-        let imported = Self.importedListURL
-        if FileManager.default.fileExists(atPath: imported.path()), apply(try? Data(contentsOf: imported)) {
-            isUsingImportedList = true
-            return
+    private func loadStartupList() {
+        let starter = Bundle.main.url(forResource: "RSS", withExtension: "opml")
+        do {
+            let startup = try StartupFeedList.choose(saved: saved, starter: starter)
+            startupProblem = startup.savedListProblem.map { "\($0). Showing the starter feed list instead." }
+            if let list = startup.list {
+                show(list, isDefault: startup.savedListProblem == nil)
+            } else {
+                loadError = "The starter feed list is missing from this copy of RSS Quick. Import an OPML file to begin."
+            }
+        } catch {
+            loadError = "The feed list could not be read. Import an OPML file to replace it."
         }
-
-        guard let bundled = Bundle.main.url(forResource: "RSS", withExtension: "opml") else {
-            loadError = "The starter feed list is missing from this copy of RSS Quick. Import an OPML file to begin."
-            return
-        }
-        _ = apply(try? Data(contentsOf: bundled))
-        isUsingImportedList = false
+        hasSavedList = saved.exists
     }
 
-    /// Replaces the feed list with an OPML file the reader picked, and keeps a copy for next time.
+    /// Shows an OPML file the reader picked. It does not become the default until they say so.
     ///
     /// The file is parsed before anything is replaced, so choosing the wrong file leaves the
     /// current list exactly where it was.
@@ -53,52 +69,54 @@ final class FeedStore {
         let accessing = url.startAccessingSecurityScopedResource()
         defer { if accessing { url.stopAccessingSecurityScopedResource() } }
 
-        let data: Data
-        let document: OpmlDocument
+        let list: OpenedFeedList
         do {
-            data = try Data(contentsOf: url)
-            document = try OpmlParser.parse(data)
+            list = try OpenedFeedList(data: Data(contentsOf: url), isSaved: false)
         } catch {
             return "Could not import \(url.lastPathComponent). \(Self.describe(error))"
         }
 
-        guard document.feedCount > 0 else {
+        guard list.document.feedCount > 0 else {
             return "\(url.lastPathComponent) has no feeds in it. Your feed list has not changed."
         }
 
-        show(document)
-        isUsingImportedList = true
+        show(list, isDefault: false)
+        return "Imported \(Self.feeds(list.document.feedCount)). To open it every time, choose Make This My Default Feed List."
+    }
+
+    /// Opens the list on screen every time RSS Quick starts.
+    func makeCurrentListDefault() -> String {
+        guard let current else { return "There is no feed list to make your default. Import one first." }
+        guard !isShowingDefault else { return "This feed list is already your default." }
 
         do {
-            try FileManager.default.createDirectory(
-                at: URL.applicationSupportDirectory, withIntermediateDirectories: true)
-            try data.write(to: Self.importedListURL, options: .atomic)
+            try saved.save(current.data)
         } catch {
-            return "Imported \(Self.feeds(document.feedCount)), but could not save the list for next time."
+            return "Could not save your default feed list. \(error.localizedDescription)"
         }
 
-        return "Imported \(Self.feeds(document.feedCount))."
+        self.current?.isSaved = true
+        isShowingDefault = true
+        hasSavedList = true
+        return "Saved as your default feed list, \(Self.feeds(current.document.feedCount)). It will open every time RSS Quick starts."
     }
 
-    /// Goes back to the list RSS Quick ships with.
+    /// Forgets the saved default and goes back to the list RSS Quick ships with.
     func restoreStarterList() -> String {
-        try? FileManager.default.removeItem(at: Self.importedListURL)
-        loadSavedOrBundledList()
-        return "Restored the starter feed list, \(Self.feeds(feedCount))."
-    }
-
-    private func apply(_ data: Data?) -> Bool {
-        guard let data, let document = try? OpmlParser.parse(data) else {
-            loadError = "The feed list could not be read. Import an OPML file to replace it."
-            return false
+        do {
+            try saved.forget()
+        } catch {
+            return "Could not remove your default feed list. \(error.localizedDescription)"
         }
-        show(document)
-        return true
+        loadStartupList()
+        return "Removed your default feed list. Showing the starter feed list, \(Self.feeds(feedCount))."
     }
 
-    private func show(_ document: OpmlDocument) {
-        roots = document.roots
-        feedCount = document.feedCount
+    private func show(_ list: OpenedFeedList, isDefault: Bool) {
+        current = list
+        isShowingDefault = isDefault
+        roots = list.document.roots
+        feedCount = list.document.feedCount
         loadError = nil
     }
 

@@ -1,8 +1,9 @@
 # RSS Quick for macOS
 
 A native AppKit port of RSS Quick, built to the same brief as the Windows original: a two-panel
-RSS reader for screen reader and braille display users, with no persistent storage, no cache, and
-articles opened in the system browser rather than in an embedded view.
+RSS reader for screen reader and braille display users, with no cache, nothing stored beyond the
+reader's saved default feed list and text size, and articles opened in the system browser rather
+than in an embedded view.
 
 It shares the Windows build's `RSS.opml` and its behaviour, not its code — there is no .NET here.
 Everything is Swift, and the accessibility decisions have been re-made for VoiceOver rather than
@@ -253,7 +254,13 @@ Most of the Windows constraints carry straight across. These are the ones that c
   including realised table rows, which is where the Windows equivalent went vacuous twice.
   Folders are marked out by weight alone.
 
-- **Text size is the one thing remembered between runs.** macOS ignores its own accessibility
+- **The default feed list commands are menu items, not buttons.** Windows puts Make This My
+  Default and Use Starter Feed List beside Import, because it has no menu bar. Here they are in the
+  File menu, dimmed by `validateMenuItem` when they have nothing to do — VoiceOver reads a dimmed
+  item as unavailable, so the reader learns it exists, which a disabled Windows button leaving the
+  tab ring does not manage. The saved copy is `~/Library/Application Support/RSSQuick/Default.opml`.
+
+- **Text size is remembered between runs, alongside the saved feed list.** macOS ignores its own accessibility
   text size for ordinary views just as WPF ignores the Windows one, so it is the reader's own
   setting here, in the View menu. A low-vision reader re-enlarging the text on every launch is a
   poor trade for the Windows build's tidiness about storage. Window position is remembered too,

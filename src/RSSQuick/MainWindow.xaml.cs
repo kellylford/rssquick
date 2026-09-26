@@ -59,6 +59,12 @@ namespace RSSReaderWPF
         private int _lastSelectedHeadlineIndex = -1; // Track last selected headline for focus retention
         private FeedItem? _currentlyLoadedFeed = null; // Track which feed is currently loaded
 
+        /// <summary>The feed list in the tree, kept so it can be saved as the default.</summary>
+        private OpenedFeedList? _currentFeedList;
+
+        /// <summary>True while the tree shows the list RSS Quick opens at startup.</summary>
+        private bool _currentListIsDefault;
+
         public MainWindow()
         {
             InitializeComponent();
@@ -106,6 +112,11 @@ namespace RSSReaderWPF
             // fetched concurrently, and waiting with no way out is the thing being fixed.
             var cancelBinding = new KeyBinding(new RelayCommand(CancelLoad), Key.Escape, ModifierKeys.None);
             InputBindings.Add(cancelBinding);
+
+            // Alt+D saves the list on screen as the default. A binding rather than an access key
+            // so it can say why when the button is greyed out, instead of doing nothing.
+            var makeDefaultBinding = new KeyBinding(new RelayCommand(MakeCurrentListDefault), Key.D, ModifierKeys.Alt);
+            InputBindings.Add(makeDefaultBinding);
         }
 
         private void LoadDefaultOpml()
@@ -115,12 +126,12 @@ namespace RSSReaderWPF
 
             try
             {
-                string? opmlPath = FindDefaultOpml();
-                if (opmlPath != null)
+                var startup = StartupFeedList.Choose(SavedFeedList.ForThisUser, FindStarterOpml());
+                if (startup.List is { } list)
                 {
-                    string content = File.ReadAllText(opmlPath);
-                    ParseOpml(content);
-                    _viewModel.StatusMessage = "Loaded default OPML file with feeds";
+                    // A saved list that could not be read is not what is on screen, so offer to
+                    // replace it with what is.
+                    ShowFeedList(list, isDefault: startup.SavedListProblem is null);
 
                     // Set focus to the first item in the tree after successful load
                     this.Dispatcher.BeginInvoke(new Action(() => {
@@ -137,23 +148,31 @@ namespace RSSReaderWPF
                                 treeViewItem.Focus();
                             }
 
-                            _viewModel.StatusMessage = "Focus set to feed tree - use arrow keys to navigate";
+                            // The one startup message that must survive: without it the reader
+                            // has no way to know the list in front of them is not their own.
+                            _viewModel.StatusMessage = startup.SavedListProblem is { } problem
+                                ? $"{problem} - showing the starter feed list instead"
+                                : "Focus set to feed tree - use arrow keys to navigate";
                         }
                     }), System.Windows.Threading.DispatcherPriority.ApplicationIdle);
                 }
                 else
                 {
+                    UpdateFeedListButtons();
                     _viewModel.StatusMessage = "Default RSS.opml file not found - use Import OPML File button";
 
                     // Set focus to Import button if no default file
                     this.Dispatcher.BeginInvoke(new Action(() => {
                         ImportOpmlButton.Focus();
-                        _viewModel.StatusMessage = "No default feeds found - press Enter to import OPML file";
+                        _viewModel.StatusMessage = startup.SavedListProblem is { } problem
+                            ? $"{problem} - press Enter to import an OPML file"
+                            : "No default feeds found - press Enter to import OPML file";
                     }), System.Windows.Threading.DispatcherPriority.ApplicationIdle);
                 }
             }
             catch (Exception ex)
             {
+                UpdateFeedListButtons();
                 _viewModel.StatusMessage = $"Error loading default OPML: {ex.Message}";
 
                 // Focus Import button on error too
@@ -164,7 +183,7 @@ namespace RSSReaderWPF
         }
 
         /// <summary>
-        /// Locates the feed list to open at startup, or null when there is none.
+        /// Locates the feed list RSS Quick ships with, or null when there is none.
         /// </summary>
         /// <remarks>
         /// The working directory comes first, so "drop an rss.opml beside the program and launch it
@@ -172,8 +191,9 @@ namespace RSSReaderWPF
         /// install directory is the fallback: a Start Menu or desktop shortcut does not reliably
         /// set the working directory to the install folder, and without this the installed build
         /// opened with an empty feed tree even though RSS.opml sat right next to the executable.
+        /// Both come after the reader's saved default; see <see cref="StartupFeedList.Choose"/>.
         /// </remarks>
-        private static string? FindDefaultOpml()
+        private static string? FindStarterOpml()
         {
             // Matched case-insensitively by the file system, so this covers RSS.opml and rss.opml.
             const string fileName = "RSS.opml";
@@ -188,21 +208,139 @@ namespace RSSReaderWPF
         }
 
         /// <summary>
-        /// Replaces the feed tree with the contents of an OPML file.
+        /// Replaces the feed tree with a feed list.
         /// </summary>
-        /// <exception cref="InvalidOperationException">The content is not usable OPML.</exception>
-        private void ParseOpml(string opmlContent)
+        /// <param name="isDefault">
+        /// True when this is the list RSS Quick opens at startup, which is what greys out
+        /// Make This My Default.
+        /// </param>
+        private void ShowFeedList(OpenedFeedList list, bool isDefault)
         {
-            var opml = OpmlParser.Parse(opmlContent);
-
             _viewModel.FeedCategories.Clear();
-            foreach (var root in opml.Roots) _viewModel.FeedCategories.Add(root);
+            foreach (var root in list.Document.Roots) _viewModel.FeedCategories.Add(root);
 
-            _viewModel.StatusMessage = opml.FeedCount == 1
-                ? "Loaded 1 feed from OPML file"
-                : $"Loaded {opml.FeedCount} feeds from OPML file";
+            _currentFeedList = list;
+            _currentListIsDefault = isDefault;
+            UpdateFeedListButtons();
+
+            _viewModel.StatusMessage = list.IsSaved
+                ? $"Loaded {Feeds(list.Document.FeedCount)} from your default feed list"
+                : $"Loaded {Feeds(list.Document.FeedCount)} from OPML file";
 
             FeedTree.ItemsSource = _viewModel.FeedCategories;
+        }
+
+        private static string Feeds(int count) => count == 1 ? "1 feed" : $"{count} feeds";
+
+        /// <summary>
+        /// Greys out the two default-list buttons when they would do nothing.
+        /// </summary>
+        /// <remarks>
+        /// A disabled button leaves the tab order, so the Alt+D binding stays live and explains
+        /// itself in the status bar rather than doing nothing silently.
+        /// </remarks>
+        private void UpdateFeedListButtons()
+        {
+            MakeDefaultButton.IsEnabled = _currentFeedList is not null && !_currentListIsDefault;
+            UseStarterListButton.IsEnabled = SavedFeedList.ForThisUser.Exists;
+        }
+
+        private void MakeDefault_Click(object sender, RoutedEventArgs e) => MakeCurrentListDefault();
+
+        /// <summary>
+        /// Alt+D, or the button: open the list on screen every time RSS Quick starts.
+        /// </summary>
+        private void MakeCurrentListDefault()
+        {
+            if (_currentFeedList is not { } list)
+            {
+                _viewModel.StatusMessage = "There is no feed list to make your default - import one first";
+                return;
+            }
+            if (_currentListIsDefault)
+            {
+                _viewModel.StatusMessage = "This feed list is already your default";
+                return;
+            }
+
+            try
+            {
+                SavedFeedList.ForThisUser.Save(list.Content);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                _viewModel.StatusMessage = $"Could not save your default feed list: {ex.Message}";
+                return;
+            }
+
+            _currentFeedList = list with { IsSaved = true };
+            _currentListIsDefault = true;
+            MoveFocusOffDisabledButton();
+            UpdateFeedListButtons();
+
+            _viewModel.StatusMessage =
+                $"Saved as your default feed list, {Feeds(list.Document.FeedCount)}. It will open every time RSS Quick starts.";
+        }
+
+        /// <summary>
+        /// Forget the saved default and go back to the list RSS Quick ships with.
+        /// </summary>
+        private void UseStarterList_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                SavedFeedList.ForThisUser.Forget();
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                _viewModel.StatusMessage = $"Could not remove your default feed list: {ex.Message}";
+                return;
+            }
+
+            // Before the tree is replaced, while the button still has focus to give up.
+            MoveFocusOffDisabledButton();
+
+            string message;
+            try
+            {
+                if (FindStarterOpml() is { } starter)
+                {
+                    var list = OpenedFeedList.Parse(File.ReadAllBytes(starter), isSaved: false);
+                    CancelLoad();
+                    _viewModel.Headlines.Clear();
+                    _currentlyLoadedFeed = null;
+                    ShowFeedList(list, isDefault: true);
+                    FocusSelectedFeed();
+                    message = $"Removed your default feed list. Showing the starter feed list, {Feeds(list.Document.FeedCount)}.";
+                }
+                else
+                {
+                    UpdateFeedListButtons();
+                    message = "Removed your default feed list. The starter feed list is missing from this copy of RSS Quick.";
+                }
+            }
+            catch (Exception ex)
+            {
+                UpdateFeedListButtons();
+                message = $"Removed your default feed list, but the starter feed list could not be read: {ex.Message}";
+            }
+
+            _viewModel.StatusMessage = message;
+        }
+
+        /// <summary>
+        /// Moves focus to the feed tree before the button holding it is disabled.
+        /// </summary>
+        /// <remarks>
+        /// A disabled control cannot keep keyboard focus, and WPF does not move it anywhere: it
+        /// is simply dropped, and a screen reader user is left with no idea where they are.
+        /// </remarks>
+        private void MoveFocusOffDisabledButton()
+        {
+            if (!MakeDefaultButton.IsKeyboardFocusWithin && !UseStarterListButton.IsKeyboardFocusWithin
+                && !ReferenceEquals(FocusManager.GetFocusedElement(this), MakeDefaultButton)
+                && !ReferenceEquals(FocusManager.GetFocusedElement(this), UseStarterListButton)) return;
+            if (!FocusSelectedFeed()) ImportOpmlButton.Focus();
         }
 
         private void FeedTree_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
@@ -716,9 +854,10 @@ namespace RSSReaderWPF
             {
                 try
                 {
-                    string content = File.ReadAllText(dialog.FileName);
-                    ParseOpml(content);
-                    _viewModel.StatusMessage = $"Successfully imported OPML file: {dialog.FileName}";
+                    var list = OpenedFeedList.Parse(File.ReadAllBytes(dialog.FileName), isSaved: false);
+                    ShowFeedList(list, isDefault: false);
+                    _viewModel.StatusMessage =
+                        $"Successfully imported OPML file: {dialog.FileName} - press Alt+D to make it your default feed list";
                 }
                 catch (Exception ex)
                 {

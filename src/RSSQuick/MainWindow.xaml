@@ -19,6 +19,20 @@
             <Button Name="ImportOpmlButton" Content="Import OPML File"
                     Click="ImportOpml_Click" Margin="0,0,10,0" Padding="10,5"
                     TabIndex="0"/>
+            <!-- Both start disabled; UpdateFeedListButtons enables them once there is something
+                 for them to do. Disabled buttons leave the tab ring, which is why TabOrderTests
+                 walks it with each state. -->
+            <Button Name="MakeDefaultButton" Content="Make This My Default (Alt+D)"
+                    Click="MakeDefault_Click" Margin="0,0,10,0" Padding="10,5"
+                    TabIndex="1" IsEnabled="False"
+                    AutomationProperties.AcceleratorKey="Alt+D"
+                    AutomationProperties.HelpText="Open this feed list every time RSS Quick starts"
+                    ToolTip="Open this feed list every time RSS Quick starts (Alt+D)"/>
+            <Button Name="UseStarterListButton" Content="Use Starter Feed List"
+                    Click="UseStarterList_Click" Margin="0,0,10,0" Padding="10,5"
+                    TabIndex="2" IsEnabled="False"
+                    AutomationProperties.HelpText="Forget your default feed list and go back to the one RSS Quick comes with"
+                    ToolTip="Forget your default feed list and go back to the one RSS Quick comes with"/>
         </StackPanel>
 
         <!-- Main Content -->
@@ -42,7 +56,7 @@
                       SelectedItemChanged="FeedTree_SelectedItemChanged"
                       KeyDown="FeedTree_KeyDown"
                       GotFocus="FeedTree_GotFocus"
-                      TabIndex="1"
+                      TabIndex="3"
                       IsTabStop="False"
                       KeyboardNavigation.TabNavigation="Once"
                       AutomationProperties.Name="RSS Feed Tree"
@@ -85,7 +99,7 @@
                          KeyDown="HeadlinesList_KeyDown"
                          GotFocus="HeadlinesList_GotFocus"
                          Loaded="HeadlinesList_Loaded"
-                         TabIndex="2"
+                         TabIndex="4"
                          IsTabStop="False"
                          KeyboardNavigation.TabNavigation="Once"
                          AutomationProperties.Name="Headlines List"
@@ -116,7 +130,7 @@
                 <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,5,0,0">
                     <Button Name="OpenInBrowserButton" Content="Open in _Browser (Alt+B)"
                             Click="OpenInBrowser_Click" Padding="8,3"
-                            TabIndex="3" IsEnabled="False"
+                            TabIndex="5" IsEnabled="False"
                             ToolTip="Open the selected headline in your default web browser (Alt+B)"/>
                 </StackPanel>
             </Grid>

@@ -20,10 +20,12 @@ loader with its per-feed failure reporting. Those are tested by `macos/Tests` (`
 
 ## Decisions that differ from the desktop versions
 
-- **The imported OPML is kept.** On iOS a file picked in Files is only lent to the app for that
-  moment, so without a copy the reader would have to import their list again every launch. Only
-  the OPML is saved (Application Support/Imported.opml), never feed content. "Use Starter Feed
-  List" in the ••• menu removes it.
+- **The default feed list commands are in the ••• menu**, dimmed when they have nothing to do,
+  as the desktop versions dim theirs. Importing shows a list without saving it; Make This My
+  Default Feed List saves a copy, which is the only way a list survives on iOS, where a file picked
+  in Files is only lent to the app for that moment. The copy lives at
+  Application Support/Imported.opml — a name kept from the first TestFlight build, which saved on
+  every import, so a list saved by that build still opens. Never feed content.
 - **Articles open in Safari inside the app** (`SFSafariViewController`), not in the Safari app.
   On a phone, switching apps means finding the way back. Done returns to the same headline,
   and Safari Reader and content blockers still work.

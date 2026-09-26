@@ -61,6 +61,9 @@ final class FocusHarness {
             children: [goodFeed, otherFeed, brokenFeed]
         )
 
+        // Nothing saved, and never the real saved list: a window reads it at startup, and the
+        // default-list tests write one.
+        MainWindowController.savedFeedList = FocusHarness.emptySavedFeedList()
         controller = MainWindowController()
         controller.roots = [folder]
         controller.outline.reloadData()
@@ -73,6 +76,12 @@ final class FocusHarness {
     }
 
     deinit { server.stop() }
+
+    /// A saved-list location in a folder of its own, with nothing in it.
+    static func emptySavedFeedList() -> SavedFeedList {
+        SavedFeedList(url: FileManager.default.temporaryDirectory
+            .appendingPathComponent("rssquick-ui-\(UUID().uuidString)/Default.opml"))
+    }
 
     /// Lets anything the window deferred to the next turn of the run loop actually happen.
     func settle() async {

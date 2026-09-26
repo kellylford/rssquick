@@ -43,7 +43,9 @@ it is Command-B rather than Alt+B and there is a full menu bar. See
 
 Pressing Enter on a *folder* loads every feed inside it and merges the headlines, newest first. The status bar names the feed each headline came from as you arrow through.
 
-To use your own feeds, either replace the `RSS.opml` file next to the program, or use the **Import OPML File** button. Any OPML file exported from another reader will work.
+To use your own feeds, use the **Import OPML File** button, then **Make This My Default** (**Alt+D**) so your list opens every time RSS Quick starts. Any OPML file exported from another reader will work. **Use Starter Feed List** goes back to the list RSS Quick comes with. Each button is greyed out when there is nothing for it to do.
+
+RSS Quick keeps a copy of your default list, so moving or deleting the original file does not matter. If you edit the original, import it and make it your default again. On the Mac both commands are in the File menu (Command-D for the first); on iPhone and iPad they are in the ••• menu.
 
 ## Keyboard
 
@@ -54,10 +56,11 @@ To use your own feeds, either replace the `RSS.opml` file next to the program, o
 | **Right** / **Left** | Expand / collapse a folder in the feed tree |
 | **Enter** | On a feed or folder, load headlines. On a headline, open the article |
 | **Alt+B** | Open the current article in your browser |
+| **Alt+D** | Make the feed list on screen your default |
 | **F5** | Reload the headlines you are reading |
 | **F6** or **Ctrl+Tab** | Jump between the feed tree and the headlines list |
 
-The tab ring is exactly four stops and wraps in both directions. Nothing lands on an empty container.
+The tab ring wraps in both directions and nothing lands on an empty container. It is four stops most of the time; Make This My Default and Use Starter Feed List join it, after Import, only while they are available.
 
 ## Accessibility
 

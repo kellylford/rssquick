@@ -205,6 +205,12 @@ extension MainWindowController: NSMenuItemValidation {
         case #selector(stopLoading(_:)):
             return loadTask != nil
 
+        case #selector(makeDefaultFeedList(_:)):
+            return currentFeedList != nil && !currentListIsDefault
+
+        case #selector(useStarterFeedList(_:)):
+            return Self.savedFeedList.exists
+
         case #selector(increaseTextSize(_:)):
             return TextScale.current < TextScale.maximum
 
