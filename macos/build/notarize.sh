@@ -84,7 +84,12 @@ if [[ -d "$target" && "$target" == *.app ]]; then
     ditto -c -k --keepParent "$target" "$submission"
 fi
 
-cleanup() { [[ -n "$scratch" ]] && rm -rf "$scratch"; return 0; }
+# macOS ships bash 3.2, which exits 0 when `set -u` trips while an EXIT trap is set, so an unset
+# variable would otherwise pass for success. The trap fails the script unless it reached the end.
+cleanup() {
+    [[ -n "$scratch" ]] && rm -rf "$scratch"
+    [[ -n "${finished:-}" ]] || exit 1
+}
 trap cleanup EXIT
 
 echo "Submitting $(basename "$submission") to Apple. This usually takes 2-15 minutes."
@@ -117,3 +122,4 @@ xcrun stapler staple "$target"
 xcrun stapler validate "$target"
 
 echo "Notarized and stapled $target"
+finished=1
