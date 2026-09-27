@@ -70,8 +70,8 @@ struct TabOrderTests {
             let field = try #require(cell.textField)
 
             #expect(field.toolTip == item.title)
-            #expect(field.accessibilityHelp() != item.title)
-            #expect(cell.accessibilityHelp() != item.title)
+            #expect(field.accessibilityHelp() == nil)
+            #expect(cell.accessibilityHelp() == nil)
         }
     }
 }
