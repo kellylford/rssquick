@@ -4,9 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.2.0] - 2026-09-26
 
 ### Added
+- **An iPhone and iPad version**, in `ios/`, available through TestFlight. It is kept small on
+  purpose: the feed list with folders that expand and collapse, OPML import, and headlines that
+  open in Safari inside the app, so Done returns you to the same headline. It shares the macOS
+  version's feed and OPML parsing, title cleaning and folder loading rather than having its own.
 - **Make this my default feed list**, on Windows, macOS and iOS. Import your own OPML file, choose
   Make This My Default (Alt+D on Windows, Command-D or the File menu on the Mac, the ••• menu on
   iPhone and iPad), and it opens every time RSS Quick starts instead of the starter list. Use
@@ -14,15 +18,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   keeps an exact copy of the file, so moving the original does not break anything; it is the only
   thing kept between runs. If the saved copy ever cannot be read, the starter list opens and says
   why, and your copy is left alone.
-
-### Changed
-- On iOS, importing a list no longer replaces your saved one. It is shown, and becomes the default
-  only when you say so, as on the desktop versions. A list saved by the first TestFlight build
-  still opens.
-
-## [1.2.0] - 2026-09-24
-
-### Added
 - **A native macOS version**, in `macos/`. AppKit rather than a cross-platform layer, and built
   for VoiceOver rather than translated from the Windows screen reader behaviour: the same two
   panels, the same OPML files, the same rule that selecting a feed never fetches anything. The
@@ -32,12 +27,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   the View menu and remembered, because macOS ignores its own accessibility text size for
   ordinary views just as Windows does. 84 tests, including focus and tab order against a real
   window and the real loader against a loopback server.
-
 - **The macOS version is signed and notarised**, and ships as a disk image. It opens like any
   other Mac application — no security prompt, nothing to allow in System Settings, and no need to
   right-click to get past Gatekeeper. One download covers both Apple silicon and Intel. Talking a
   VoiceOver user through a Gatekeeper override is not an acceptable first run for a program meant
   to be usable without sight, which is why this came before anything else on the Mac side.
+
+### Changed
+- On iOS, importing a list no longer replaces your saved one. It is shown, and becomes the default
+  only when you say so, as on the desktop versions. A list saved by the first TestFlight build
+  still opens.
 
 ## [1.1.0] - 2026-08-19
 
