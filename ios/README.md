@@ -36,6 +36,10 @@ loader with its per-feed failure reporting. Those are tested by `macos/Tests` (`
   finishes: "45 headlines", or the count plus how many feeds failed. The message is delayed
   slightly, because an announcement made during a screen change is dropped.
 - **The feed is named on a headline only in a folder's merged list**, as on macOS.
+- **No check for a newer version.** The desktop versions ask GitHub at launch; on iOS TestFlight
+  and the App Store deliver updates, and an app that told you about its own would only be
+  repeating them. `ReleaseCheck.swift` is in `RSSQuickCore`, which this app compiles, but nothing
+  here calls it.
 - **Plain http feeds are allowed** (`NSAllowsArbitraryLoads`). Feeds come from whatever list the
   reader imports, and the bundled list has one http feed.
 

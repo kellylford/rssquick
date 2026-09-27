@@ -15,8 +15,8 @@ else**.
 
 | | Use this when |
 |---|---|
-| **`RSSQuick-<version>-setup-win-x64.exe`** | You want it in the Start Menu. Installs for your account only, so there is no administrator prompt. |
-| **`RSSQuick-<version>-portable-win-x64.zip`** | You want to unzip and run it, including from a USB stick. Nothing is installed and nothing is written outside the folder. |
+| **`RSSQuick-<version>-setup-win-x64.exe`** | You want it in the Start Menu. Installs for your account only, so there is no administrator prompt, and keeps itself up to date. |
+| **`RSSQuick-<version>-portable-win-x64.zip`** | You want to unzip and run it, including from a USB stick. Nothing is installed and nothing is written outside the folder. It tells you when there is a new version, but does not update itself. |
 
 Choose **x64** for almost any PC. Choose **arm64** only for an ARM device such as a Surface Pro X or a Snapdragon laptop.
 
@@ -33,6 +33,32 @@ This is a native macOS version, built with AppKit for VoiceOver rather than port
 Windows code. It reads the same OPML files and works the same way; the keyboard is Mac-native, so
 it is Command-B rather than Alt+B and there is a full menu bar. See
 [macos/README.md](macos/README.md).
+
+### Staying up to date
+
+A few seconds after it starts, RSS Quick asks GitHub whether there is a newer version. What
+happens next depends on how you got it:
+
+- **Windows, installed.** The new version downloads in the background and installs when you
+  close RSS Quick, so the next time you open it you are up to date. The status bar says when it
+  has downloaded, and a **Restart and Update** button (Alt+U) appears beside the other buttons if
+  you would rather have it straight away.
+- **Windows, portable.** The status bar says a new version is out, and a **Download Update**
+  button (Alt+U) opens its page. A portable copy never replaces itself.
+- **macOS.** The status line says a new version is out, and **Download RSS Quick <version>…** in
+  the RSS Quick menu opens its page. **Check for Updates…**, in the same place, asks at any time.
+- **iPhone and iPad.** Updates arrive through TestFlight, like any other app.
+
+None of this moves focus or opens anything you did not ask for. If you are waiting on a feed when
+the news arrives, it is held until the feed has loaded and read out after the result. The check
+sends nothing about you or your feeds: it is one request for the latest release's details and,
+on an installed Windows copy, the download itself.
+
+**Upgrading from 1.2.0 or earlier on Windows?** The installer changed after 1.2.0, so run the new
+setup once by hand; from then on it updates itself. The first time the new version starts, it
+removes the old copy, so you do not end up with two in the Start Menu. If you had edited the old
+copy's `RSS.opml`, your list becomes your default feed list first. An old copy installed for all
+users, in Program Files, is left alone; remove it from Installed Apps.
 
 ## Getting started
 
@@ -84,7 +110,9 @@ Found something that does not work with your setup? Please open an [accessibilit
 
 `RSS.opml` ships with feeds across Global News, Technology, Science, Culture, Sports, and Accessibility. It is a starting point — edit it, replace it, or import your own.
 
-The installer never overwrites an `RSS.opml` you have edited when you upgrade.
+An update replaces the `RSS.opml` that came with RSS Quick. To keep a list of your own, import
+it and choose **Make This My Default** (Alt+D): that copy is kept separately and survives every
+update.
 
 ## Building from source
 

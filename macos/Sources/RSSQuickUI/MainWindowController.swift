@@ -65,6 +65,14 @@ public final class MainWindowController: NSWindowController {
 
     var keyMonitor: Any?
 
+    /// Word of a newer version that arrived during a load, held until the load has said what it
+    /// did.
+    ///
+    /// The check at launch finishes a few seconds after startup, which is exactly when someone is
+    /// most likely to have pressed Return on a feed. Announced then, it would interrupt
+    /// "Loading…" and then be replaced by the load's summary before anyone heard it.
+    var pendingUpdateNotice: String?
+
     /// The status line, and the only thing that writes to it.
     var status: String = "" {
         didSet { statusField.stringValue = status }

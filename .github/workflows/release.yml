@@ -29,17 +29,6 @@ jobs:
       - name: Test
         run: dotnet test --project tests/RSSQuick.Tests/RSSQuick.Tests.csproj --configuration Release
 
-      # Present on the windows-latest image, but pinning it here means a change to the image
-      # fails loudly at this step instead of silently producing a release with no installer.
-      - name: Check for Inno Setup
-        shell: pwsh
-        run: |
-          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
-          if (-not (Test-Path $iscc)) {
-            throw "Inno Setup 6 is not on this runner; the installer cannot be built."
-          }
-          Write-Host "Found $iscc"
-
       # The tag is authoritative: a v1.2.0 tag must not publish artefacts stamped 1.1.0.
       - name: Check the tag matches VERSION
         if: startsWith(github.ref, 'refs/tags/v')
@@ -52,9 +41,26 @@ jobs:
           }
           Write-Host "Version $file"
 
-      - name: Build the installer and portable ZIP
+      - name: Restore vpk
+        run: dotnet tool restore
+
+      # The previous release's full package, so vpk can build a delta against it: an installed
+      # copy then downloads the difference rather than the whole 55 MB. The first Velopack
+      # release has no predecessor to find, which is what continue-on-error is for - vpk then
+      # builds the full package alone, and installed copies download that instead.
+      - name: Download the previous x64 release for delta packages
+        if: startsWith(github.ref, 'refs/tags/v')
+        continue-on-error: true
+        run: dotnet tool run vpk download github --repoUrl https://github.com/${{ github.repository }} --token ${{ secrets.GITHUB_TOKEN }} --outputDir artifacts/releases
+
+      - name: Download the previous ARM64 release for delta packages
+        if: startsWith(github.ref, 'refs/tags/v')
+        continue-on-error: true
+        run: dotnet tool run vpk download github --repoUrl https://github.com/${{ github.repository }} --token ${{ secrets.GITHUB_TOKEN }} --channel win-arm64 --outputDir artifacts/releases
+
+      - name: Build the installer, portable ZIP and update feed
         shell: pwsh
-        run: ./build/publish.ps1 -Architecture ${{ inputs.architecture || 'both' }}
+        run: ./build/publish.ps1 -Architecture ${{ inputs.architecture || 'both' }} -KeepReleaseFeed
 
       - name: Upload artefacts
         uses: actions/upload-artifact@v7
@@ -63,15 +69,33 @@ jobs:
           path: |
             artifacts/*.zip
             artifacts/*.exe
+            artifacts/releases/*
 
       # Draft, not published: the artefacts want a manual check with a screen reader before
       # anyone downloads them, and the release notes want reading before they go out.
+      #
+      # Publishing the draft is also what ships the update. Installed copies read the feed files
+      # below from the latest published release, so nothing updates until a person has looked.
+      #
+      # artifacts/releases/* is the whole update feed for both channels: the packages (full, and
+      # delta when there was a previous release), releases.win.json and releases.win-arm64.json,
+      # assets.*.json and RELEASES*. It includes the previous version's full package fetched
+      # above, which has to go too - the feed lists it. fail_on_unmatched_files, so a change in
+      # what vpk writes fails the release instead of publishing one installed copies cannot read.
       - name: Create draft release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v3
         with:
           draft: true
           generate_release_notes: true
+          fail_on_unmatched_files: true
           files: |
             artifacts/*.zip
             artifacts/*.exe
+            artifacts/releases/*.nupkg
+            artifacts/releases/releases.win.json
+            artifacts/releases/releases.win-arm64.json
+            artifacts/releases/assets.win.json
+            artifacts/releases/assets.win-arm64.json
+            artifacts/releases/RELEASES
+            artifacts/releases/RELEASES-win-arm64

@@ -26,6 +26,11 @@ public enum MainMenu {
     private static func applicationMenu(_ name: String) -> NSMenuItem {
         let menu = NSMenu(title: name)
         menu.addItem(withTitle: "About \(name)", action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)), keyEquivalent: "")
+
+        // Where Mac applications keep it, so Help's search and a reader who knows the convention
+        // both find it. Retitled Download RSS Quick <version>… once a newer one is known; see
+        // AppDelegate.validateMenuItem.
+        menu.addItem(withTitle: "Check for Updates…", action: #selector(AppDelegate.checkForUpdates(_:)), keyEquivalent: "")
         menu.addItem(.separator())
 
         let services = NSMenu(title: "Services")
