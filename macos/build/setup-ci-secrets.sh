@@ -127,7 +127,9 @@ if key is None:
 open(dst, 'w').write(cert + key)
 PY
 
-    openssl pkcs12 -export -in "$WORK/one.pem" -name "$IDENTITY" \
+    # -legacy because `security import`, which is what the runner uses, cannot read the AES and
+    # PBKDF2 encryption OpenSSL 3 uses for a .p12 by default.
+    openssl pkcs12 -export -legacy -in "$WORK/one.pem" -name "$IDENTITY" \
         -passout "pass:$P12_PW" -out "$P12" 2>/dev/null \
         || die "could not build a .p12 from the Developer ID identity."
     rm -f "$WORK/all.p12" "$WORK/all.pem" "$WORK/one.pem"
