@@ -98,6 +98,11 @@ struct ReleaseCheckTests {
         #expect(Self.parse(Self.release(page: "file:///Applications/Calculator.app")) == nil)
     }
 
+    @Test("A page that is not on GitHub is never opened")
+    func pageNotOnGitHub() {
+        #expect(Self.parse(Self.release(page: "https://example.com/rssquick-1.3.0")) == nil)
+    }
+
     @Test("Anything else is nothing rather than an error", arguments: [
         "",
         "not json",

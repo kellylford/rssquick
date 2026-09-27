@@ -1,4 +1,7 @@
 using System;
+using System.ComponentModel;
+using System.Diagnostics;
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -34,6 +37,16 @@ namespace RSSReaderWPF.Services
         public const string RepositoryUrl = "https://github.com/kellylford/rssquick";
 
         private readonly UpdateManager? _manager;
+
+        /// <summary>
+        /// Held by the first running copy, which is the only one that updates.
+        /// </summary>
+        /// <remarks>
+        /// Two copies at once is allowed here, and without this each would download the same
+        /// update into the same folder and each would arm an install on exit.
+        /// </remarks>
+        private readonly Mutex? _updaterMarker;
+        private readonly bool _isUpdater;
         private readonly CancellationTokenSource _lifetime = new();
         private UpdateInfo? _downloaded;
         private bool _restarting;
@@ -52,6 +65,10 @@ namespace RSSReaderWPF.Services
                     ? new UpdateManager(new GithubSource(RepositoryUrl, accessToken: null, prerelease: false))
                     : new UpdateManager(feed);
                 _manager = manager.IsInstalled ? manager : null;
+                if (_manager is not null)
+                {
+                    _updaterMarker = new Mutex(initiallyOwned: true, "RSSQuick.Updater", out _isUpdater);
+                }
             }
             catch (Exception)
             {
@@ -76,6 +93,9 @@ namespace RSSReaderWPF.Services
         {
             if (_manager is { } manager)
             {
+                // Another copy is already doing this; it will say so in its own window.
+                if (!_isUpdater) return null;
+
                 try
                 {
                     // CheckForUpdatesAsync takes no token, so abandon the wait instead when the
@@ -136,7 +156,10 @@ namespace RSSReaderWPF.Services
             if (_disposed) return;
             _disposed = true;
 
-            if (!_restarting && _manager is { } manager && _downloaded is { } update)
+            // Not while another copy is open: replacing the install folder means stopping anything
+            // running from it, and closing one window should never close the other. Nothing is
+            // lost; the next launch finds the update again.
+            if (!_restarting && _manager is { } manager && _downloaded is { } update && !AnotherCopyIsRunning())
             {
                 try
                 {
@@ -148,8 +171,39 @@ namespace RSSReaderWPF.Services
                 }
             }
 
+            if (_updaterMarker is not null)
+            {
+                if (_isUpdater) _updaterMarker.ReleaseMutex();
+                _updaterMarker.Dispose();
+            }
+
             _lifetime.Cancel();
             _lifetime.Dispose();
+        }
+
+        /// <summary>True when another process is running this same executable.</summary>
+        private static bool AnotherCopyIsRunning()
+        {
+            var self = Environment.ProcessPath;
+            if (self is null) return false;
+
+            foreach (var process in Process.GetProcessesByName(Path.GetFileNameWithoutExtension(self)))
+            {
+                using (process)
+                {
+                    if (process.Id == Environment.ProcessId) continue;
+                    try
+                    {
+                        if (string.Equals(process.MainModule?.FileName, self, StringComparison.OrdinalIgnoreCase))
+                            return true;
+                    }
+                    catch (Exception ex) when (ex is Win32Exception or InvalidOperationException)
+                    {
+                        // Exited, or not ours to inspect. Either way not a copy of this one.
+                    }
+                }
+            }
+            return false;
         }
     }
 }

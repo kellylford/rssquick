@@ -83,6 +83,16 @@ namespace RSSReaderWPF
         /// </remarks>
         private string? _pendingUpdateNotice;
 
+        /// <summary>
+        /// True while the status bar still holds what a load did, and the reader has not moved since.
+        /// </summary>
+        /// <remarks>
+        /// Word of an update that arrives then is added to the summary rather than replacing it,
+        /// for the same reason as <see cref="_keepLoadSummary"/>: "3 of 20 feeds failed" has no
+        /// other way to reach the reader.
+        /// </remarks>
+        private bool _loadSummaryShowing;
+
         public MainWindow()
         {
             InitializeComponent();
@@ -392,6 +402,7 @@ namespace RSSReaderWPF
             UpdateButton.Visibility = Visibility.Visible;
 
             if (_isLoadingFeed) _pendingUpdateNotice = notice;
+            else if (_loadSummaryShowing) _viewModel.StatusMessage = $"{_viewModel.StatusMessage}. {notice}";
             else _viewModel.StatusMessage = notice;
         }
 
@@ -421,8 +432,10 @@ namespace RSSReaderWPF
             }
             catch (Exception ex)
             {
+                // Not "when you close": a failed attempt is not retried at exit, in case it had
+                // already started the installer. The next launch downloads it again.
                 _viewModel.StatusMessage =
-                    $"Could not install RSS Quick {offer.Version} now ({ex.Message}). It will be installed when you close RSS Quick";
+                    $"Could not install RSS Quick {offer.Version} now ({ex.Message}). It will be offered again the next time RSS Quick starts";
             }
         }
 
@@ -550,6 +563,7 @@ namespace RSSReaderWPF
             _loadCancellation = new CancellationTokenSource();
 
             _isLoadingFeed = true;
+            _loadSummaryShowing = false;
             _currentlyLoadedFeed = target;
             _viewModel.Headlines.Clear();
             _lastSelectedHeadlineIndex = -1;
@@ -576,14 +590,18 @@ namespace RSSReaderWPF
             if (_loadCancellation is not { IsCancellationRequested: false }) return;
 
             _loadCancellation.Cancel();
-            _viewModel.StatusMessage = "Loading cancelled";
+            ReportLoadOutcome("Loading cancelled");
         }
 
-        /// <summary>Puts articles on screen and hands focus to the first of them.</summary>
-        private void ShowArticles(IReadOnlyList<ArticleItem> articles, string status)
+        /// <summary>
+        /// Writes how a load ended - loaded, failed, cancelled - to the status bar.
+        /// </summary>
+        /// <remarks>
+        /// Every way a load can end comes through here, so word of an update held back during the
+        /// load is always read out once it is over, whichever way that was.
+        /// </remarks>
+        private void ReportLoadOutcome(string status)
         {
-            foreach (var article in articles) _viewModel.Headlines.Add(article);
-
             // One announcement rather than two, with what the reader asked for first.
             if (_pendingUpdateNotice is { } notice)
             {
@@ -592,6 +610,15 @@ namespace RSSReaderWPF
             }
 
             _viewModel.StatusMessage = status;
+            _loadSummaryShowing = true;
+        }
+
+        /// <summary>Puts articles on screen and hands focus to the first of them.</summary>
+        private void ShowArticles(IReadOnlyList<ArticleItem> articles, string status)
+        {
+            foreach (var article in articles) _viewModel.Headlines.Add(article);
+
+            ReportLoadOutcome(status);
 
             // Cleared before focusing, so the selection this makes is allowed to do its other
             // work - tracking the row, enabling the browser button - rather than being suppressed
@@ -622,7 +649,7 @@ namespace RSSReaderWPF
             if (feeds.Count == 0)
             {
                 _isLoadingFeed = false;
-                _viewModel.StatusMessage = $"{categoryItem.Title} has no feeds in it";
+                ReportLoadOutcome($"{categoryItem.Title} has no feeds in it");
                 return;
             }
 
@@ -657,7 +684,7 @@ namespace RSSReaderWPF
                 if (token.IsCancellationRequested) return;
 
                 _isLoadingFeed = false;
-                _viewModel.StatusMessage = $"Could not load {categoryItem.Title}: {ex.Message}";
+                ReportLoadOutcome($"Could not load {categoryItem.Title}: {ex.Message}");
             }
         }
 
@@ -727,7 +754,7 @@ namespace RSSReaderWPF
                 if (token.IsCancellationRequested) return;
 
                 _isLoadingFeed = false;
-                _viewModel.StatusMessage = $"Could not load {feedItem.Title}: {ex.Message}";
+                ReportLoadOutcome($"Could not load {feedItem.Title}: {ex.Message}");
 
                 // A modal box only where the user asked for one specific thing and got nothing.
                 // The folder path deliberately does not do this; see DescribeFolderLoad.
@@ -780,6 +807,7 @@ namespace RSSReaderWPF
                     : selectedArticle.FeedTitle;
 
                 _viewModel.StatusMessage = $"{source} - {position} of {total}";
+                _loadSummaryShowing = false;
             }
         }
 

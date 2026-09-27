@@ -65,10 +65,11 @@ namespace RSSReaderWPF.Services
                     UseShellExecute = false,
                 });
             }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException
-                                           or System.ComponentModel.Win32Exception or System.Security.SecurityException)
+            catch (Exception)
             {
-                // Two copies installed is untidy, not broken. The next start tries again.
+                // Everything, deliberately: this runs before the window exists and again on every
+                // start, so anything it let through would stop RSS Quick opening at all. Two
+                // copies installed is untidy, not broken, and the next start tries again.
             }
         }
 
@@ -83,29 +84,40 @@ namespace RSSReaderWPF.Services
             return File.Exists(uninstaller) ? new OldInstall(uninstaller, folder) : null;
         }
 
-        /// <summary>
-        /// Saves the old copy's feed list as the reader's default, if they had edited it.
-        /// </summary>
-        /// <remarks>
-        /// The old installer deletes <c>RSS.opml</c> on uninstall whether or not it was edited,
-        /// and editing it in place was how a reader kept their own list before Make This My
-        /// Default existed. Without this, retiring the old copy would silently throw their list
-        /// away. A list already saved as the default wins: that is the one they chose most
-        /// recently.
-        /// </remarks>
-        internal static bool KeepEditedList(OldInstall old, SavedFeedList saved, string shippedStarter)
-        {
-            if (saved.Exists) return false;
+        /// <summary>Beside the saved default: where an edited list goes when there already is one.</summary>
+        internal const string KeptListName = "RSS-from-previous-install.opml";
 
+        /// <summary>
+        /// Keeps the old copy's feed list, if the reader had edited it.
+        /// </summary>
+        /// <returns>Where it was kept, or null when there was nothing to keep.</returns>
+        /// <remarks>
+        /// <para>The old installer deletes <c>RSS.opml</c> on uninstall whether or not it was
+        /// edited, and editing it in place was how a reader kept their own list before Make This
+        /// My Default existed. Without this, retiring the old copy would silently throw their list
+        /// away.</para>
+        /// <para>It becomes the default when there is none. When there is one, that is the list
+        /// the reader chose most recently and it stays; the old one is copied beside it, where
+        /// Import can open it, rather than lost.</para>
+        /// </remarks>
+        internal static string? KeepEditedList(OldInstall old, SavedFeedList saved, string shippedStarter)
+        {
             var oldList = Path.Join(old.Folder, "RSS.opml");
-            if (!File.Exists(oldList)) return false;
+            if (!File.Exists(oldList)) return null;
 
             var content = File.ReadAllBytes(oldList);
             var shipped = File.Exists(shippedStarter) ? File.ReadAllBytes(shippedStarter) : null;
-            if (IsUntouchedStarter(content, shipped)) return false;
+            if (IsUntouchedStarter(content, shipped)) return null;
 
-            saved.Save(content);
-            return true;
+            if (!saved.Exists)
+            {
+                saved.Save(content);
+                return saved.Path;
+            }
+
+            var aside = Path.Join(Path.GetDirectoryName(saved.Path)!, KeptListName);
+            File.WriteAllBytes(aside, content);
+            return aside;
         }
 
         /// <summary>

@@ -104,6 +104,7 @@ extension MainWindowController: NSTableViewDataSource, NSTableViewDelegate {
         // headlines on screen came from.
         guard !keepLoadSummary else { return }
         status = describePosition(at: row)
+        loadSummaryShowing = false
     }
 }
 

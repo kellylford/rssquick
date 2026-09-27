@@ -95,6 +95,10 @@ public sealed class ReleaseCheckTests
     public void A_page_that_is_not_https_is_never_opened() =>
         Assert.Null(ReleaseCheck.Parse(Release(page: "file:///C:/Windows/System32/calc.exe"), Running, Zip));
 
+    [Fact]
+    public void A_page_that_is_not_on_github_is_never_opened() =>
+        Assert.Null(ReleaseCheck.Parse(Release(page: "https://example.com/rssquick-1.3.0"), Running, Zip));
+
     [Theory]
     [InlineData("")]
     [InlineData("not json")]
