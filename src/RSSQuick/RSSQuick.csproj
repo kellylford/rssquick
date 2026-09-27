@@ -30,7 +30,7 @@
     <PackageReference Include="System.ServiceModel.Syndication" Version="10.0.12" />
     <!-- Keep in step with vpk in .config/dotnet-tools.json: the packages vpk builds are read by
          this library, and Dependabot's velopack group moves the two together. -->
-    <PackageReference Include="Velopack" Version="1.2.0" />
+    <PackageReference Include="Velopack" Version="1.2.158" />
   </ItemGroup>
 
   <!-- So helpers that are internal because nothing outside the app should call them can still be
