@@ -17,21 +17,33 @@ universal="${UNIVERSAL:-1}"
 # Version lives in VERSION at the repository root and nowhere else, the same as on Windows.
 version="$(tr -d '[:space:]' < "$repo/VERSION")"
 
-archflags=()
-if [[ "$universal" == "1" ]]; then
-    archflags=(--arch arm64 --arch x86_64)
-fi
-
-echo "Building rssquick ($configuration)…"
-swift build --package-path "$package" -c "$configuration" ${archflags[@]+"${archflags[@]}"}
-
-binary="$(swift build --package-path "$package" -c "$configuration" ${archflags[@]+"${archflags[@]}"} --show-bin-path)/rssquick"
 app="$package/artifacts/RSS Quick.app"
 
 rm -rf "$app"
 mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
 
-cp "$binary" "$app/Contents/MacOS/rssquick"
+# Universal means one build per architecture, joined with lipo. Passing both --arch flags to one
+# `swift build` hands the build to Xcode's build system instead of SwiftPM's own, and with the
+# Xcode on GitHub's macos-15 runner that fails with "duplicate output file" for every target.
+# A --triple per architecture stays on SwiftPM's build system, the one the tests use. Each slice
+# is copied out as soon as it is built, because some toolchains put both in the same folder.
+if [[ "$universal" == "1" ]]; then
+    slices="$(mktemp -d)"
+    trap 'rm -rf "$slices"' EXIT
+    for arch in arm64 x86_64; do
+        triple="$arch-apple-macosx13.0"
+        echo "Building rssquick ($configuration, $arch)…"
+        swift build --package-path "$package" -c "$configuration" --triple "$triple"
+        cp "$(swift build --package-path "$package" -c "$configuration" --triple "$triple" --show-bin-path)/rssquick" \
+            "$slices/rssquick-$arch"
+    done
+    lipo -create "$slices/rssquick-arm64" "$slices/rssquick-x86_64" -output "$app/Contents/MacOS/rssquick"
+else
+    echo "Building rssquick ($configuration)…"
+    swift build --package-path "$package" -c "$configuration"
+    cp "$(swift build --package-path "$package" -c "$configuration" --show-bin-path)/rssquick" \
+        "$app/Contents/MacOS/rssquick"
+fi
 
 # The default feed list, shared with the Windows build rather than duplicated.
 cp "$repo/src/RSSQuick/RSS.opml" "$app/Contents/Resources/RSS.opml"
