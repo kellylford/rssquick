@@ -89,8 +89,10 @@ namespace RSSReaderWPF.Services
 
                 if (TryParseTag(tag.GetString()!) is not { } version) return null;
                 if (version <= Normalize(current)) return null;
+                // Opened in the reader's browser, so only ever a page on GitHub.
                 if (!Uri.TryCreate(page.GetString(), UriKind.Absolute, out var pageUri)
-                    || pageUri.Scheme != Uri.UriSchemeHttps) return null;
+                    || pageUri.Scheme != Uri.UriSchemeHttps
+                    || !string.Equals(pageUri.Host, "github.com", StringComparison.OrdinalIgnoreCase)) return null;
                 if (!HasAsset(root, assetSuffix)) return null;
 
                 return new AvailableRelease(version, pageUri);

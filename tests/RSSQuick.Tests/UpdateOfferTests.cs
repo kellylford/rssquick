@@ -75,10 +75,12 @@ public class UpdateOfferTests
     }
 
     /// <summary>
-    /// If Velopack cannot install now, the reader is told, and told it is not lost.
+    /// If Velopack cannot install now, the reader is told, and told it is not lost - but not
+    /// that it will install on close. A failed attempt is not retried at exit, in case it had
+    /// already started the installer, so that would be a promise nothing keeps.
     /// </summary>
     [WpfFact]
-    public void An_update_that_cannot_install_now_says_it_will_install_on_close()
+    public void An_update_that_cannot_install_now_says_it_will_be_offered_again()
     {
         using var ui = new FocusHarness();
         ui.Window.ShowUpdate(Downloaded, () => throw new InvalidOperationException("Update.exe is missing"));
@@ -87,7 +89,7 @@ public class UpdateOfferTests
         UpdateButton(ui).RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent, UpdateButton(ui)));
 
         Assert.Equal(
-            "Could not install RSS Quick 1.3.0 now (Update.exe is missing). It will be installed when you close RSS Quick",
+            "Could not install RSS Quick 1.3.0 now (Update.exe is missing). It will be offered again the next time RSS Quick starts",
             Status(ui));
     }
 
@@ -153,6 +155,63 @@ public class UpdateOfferTests
         ui.PumpUntil(() => ui.Headlines.Items.Count == 2, "the feed to load");
 
         Assert.Equal($"Loaded 2 headlines from News. {DownloadedNotice}", Status(ui));
+    }
+
+    /// <summary>
+    /// Every way a load can end reads out the held notice, not only success. Otherwise a load
+    /// the reader gave up on keeps it until some unrelated later load.
+    /// </summary>
+    [WpfFact]
+    public void An_update_found_during_a_load_is_announced_when_the_load_is_cancelled()
+    {
+        using var server = new LocalFeedServer();
+        using var ui = new FocusHarness(populate: false);
+        var url = server.Serve("slow.xml", SampleFeed.WithItems("Slow", "A"), delay: TimeSpan.FromSeconds(10));
+        ui.SetFeeds(new FeedItem { Title = "Slow", Url = url.ToString() });
+
+        ui.PressEnterOnFeed(0);
+        ui.Window.ShowUpdate(Downloaded, () => { });
+        var escape = ui.Window.InputBindings.OfType<System.Windows.Input.KeyBinding>()
+            .Single(b => b.Key == System.Windows.Input.Key.Escape);
+        escape.Command.Execute(null);
+        ui.Drain();
+
+        Assert.Equal($"Loading cancelled. {DownloadedNotice}", Status(ui));
+    }
+
+    /// <summary>
+    /// A load that has just finished has something to say that nothing else will repeat, such as
+    /// how many feeds failed. Word of an update that lands straight afterwards is added to it.
+    /// </summary>
+    [WpfFact]
+    public void An_update_found_just_after_a_load_is_added_to_its_summary()
+    {
+        using var server = new LocalFeedServer();
+        using var ui = new FocusHarness(populate: false);
+        ui.SetFeeds(new FeedItem { Title = "News", Url = server.Serve("news.xml", SampleFeed.WithItems("News", "A", "B")).ToString() });
+        ui.PressEnterOnFeed(0);
+        ui.PumpUntil(() => ui.Headlines.Items.Count == 2, "the feed to load");
+
+        ui.Window.ShowUpdate(Downloaded, () => { });
+
+        Assert.Equal($"Loaded 2 headlines from News. {DownloadedNotice}", Status(ui));
+    }
+
+    /// <summary>Once the reader has moved, the summary has been heard and the notice stands alone.</summary>
+    [WpfFact]
+    public void An_update_found_after_the_reader_has_moved_stands_alone()
+    {
+        using var server = new LocalFeedServer();
+        using var ui = new FocusHarness(populate: false);
+        ui.SetFeeds(new FeedItem { Title = "News", Url = server.Serve("news.xml", SampleFeed.WithItems("News", "A", "B")).ToString() });
+        ui.PressEnterOnFeed(0);
+        ui.PumpUntil(() => ui.Headlines.Items.Count == 2, "the feed to load");
+        ui.Headlines.SelectedIndex = 1;
+        ui.Drain();
+
+        ui.Window.ShowUpdate(Downloaded, () => { });
+
+        Assert.Equal(DownloadedNotice, Status(ui));
     }
 
     [WpfFact]

@@ -73,6 +73,11 @@ public final class MainWindowController: NSWindowController {
     /// "Loading…" and then be replaced by the load's summary before anyone heard it.
     var pendingUpdateNotice: String?
 
+    /// True while the status line still holds what a load did, and the reader has not moved
+    /// since. Word of an update that arrives then is added to the summary rather than replacing
+    /// it, for the same reason as `keepLoadSummary`.
+    var loadSummaryShowing = false
+
     /// The status line, and the only thing that writes to it.
     var status: String = "" {
         didSet { statusField.stringValue = status }

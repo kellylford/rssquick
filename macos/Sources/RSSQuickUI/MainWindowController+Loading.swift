@@ -21,9 +21,20 @@ extension MainWindowController {
             + "Download RSS Quick \(release.version) in the RSS Quick menu opens its page"
         if isLoadingFeed {
             pendingUpdateNotice = notice
+        } else if loadSummaryShowing {
+            setStatus("\(status). \(notice)")
         } else {
             setStatus(notice)
         }
+    }
+
+    /// Writes how a load ended - loaded, failed, cancelled - to the status line.
+    ///
+    /// Every way a load can end comes through here, so word of an update held back during the load
+    /// is always read out once it is over, whichever way that was.
+    func reportLoadOutcome(_ summary: String) {
+        reportLoadOutcome(summary)
+        loadSummaryShowing = true
     }
 
     // MARK: Opening the feed list
@@ -178,6 +189,7 @@ extension MainWindowController {
         loadTask = nil
 
         isLoadingFeed = true
+        loadSummaryShowing = false
         currentlyLoadedFeed = target
         headlinesAreMerged = merged
         headlines = []
@@ -210,7 +222,7 @@ extension MainWindowController {
 
                 isLoadingFeed = false
                 let reason = ErrorText.describe(error)
-                setStatus("Could not load \(feed.title): \(reason)")
+                reportLoadOutcome("Could not load \(feed.title): \(reason)")
 
                 // A dialog only where the reader asked for one specific thing and got nothing.
                 // The folder path deliberately does not do this; see describeFolderLoad.
@@ -225,7 +237,7 @@ extension MainWindowController {
         let feeds = folder.allFeeds
         guard !feeds.isEmpty else {
             isLoadingFeed = false
-            setStatus("\(folder.title) has no feeds in it")
+            reportLoadOutcome("\(folder.title) has no feeds in it")
             return
         }
 
@@ -257,7 +269,7 @@ extension MainWindowController {
                 guard !Task.isCancelled, let self else { return }
 
                 isLoadingFeed = false
-                setStatus("Could not load \(title): \(ErrorText.describe(error))")
+                reportLoadOutcome("Could not load \(title): \(ErrorText.describe(error))")
             }
         }
     }
@@ -321,7 +333,7 @@ extension MainWindowController {
         loadTask.cancel()
         self.loadTask = nil
         isLoadingFeed = false
-        setStatus("Loading cancelled")
+        reportLoadOutcome("Loading cancelled")
     }
 
     /// Refresh: reload whatever is currently in the headlines list.
@@ -422,6 +434,7 @@ extension MainWindowController {
             return
         }
         status = describePosition(at: max(table.selectedRow, 0))
+        loadSummaryShowing = false
     }
 
     /// What the status line says about where you are in the headlines.

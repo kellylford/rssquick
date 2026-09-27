@@ -74,7 +74,10 @@ public enum ReleaseCheck {
               let running = Self.version(fromTag: current), running.lexicographicallyPrecedes(published)
         else { return nil }
 
-        guard let pageText = release.html_url, let page = URL(string: pageText), page.scheme == "https" else { return nil }
+        // Opened in the reader's browser, so only ever a page on GitHub.
+        guard let pageText = release.html_url, let page = URL(string: pageText), page.scheme == "https",
+              page.host?.lowercased() == "github.com"
+        else { return nil }
 
         let suffix = assetSuffix.lowercased()
         guard (release.assets ?? []).contains(where: { $0.name?.lowercased().hasSuffix(suffix) == true }) else { return nil }

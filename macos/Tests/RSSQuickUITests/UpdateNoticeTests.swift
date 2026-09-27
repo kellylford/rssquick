@@ -59,6 +59,44 @@ struct UpdateNoticeTests {
         #expect(harness.controller.status == "Loaded 2 headlines from Example News. \(Self.notice)")
     }
 
+    /// Every way a load can end reads out the held notice, not only success.
+    @Test("A newer version found during a load is announced when the load is cancelled")
+    func announcedOnCancel() async throws {
+        let harness = try await FocusHarness.make()
+
+        let row = harness.outline.row(forItem: harness.slowFeed)
+        harness.outline.selectRowIndexes([row], byExtendingSelection: false)
+        harness.window.makeFirstResponder(harness.outline)
+        harness.outline.keyDown(with: FocusHarness.returnKey)
+
+        harness.controller.showUpdate(Self.release)
+        harness.controller.cancelLoad()
+
+        #expect(harness.controller.status == "Loading cancelled. \(Self.notice)")
+    }
+
+    /// A load that has just finished has something to say that nothing else will repeat.
+    @Test("A newer version found just after a load is added to its summary")
+    func addedToSummary() async throws {
+        let harness = try await FocusHarness.make()
+        await harness.pressReturnOnFeed(harness.goodFeed)
+
+        harness.controller.showUpdate(Self.release)
+
+        #expect(harness.controller.status == "Loaded 2 headlines from Example News. \(Self.notice)")
+    }
+
+    @Test("Once the reader has moved, a newer version stands alone")
+    func standsAloneAfterMoving() async throws {
+        let harness = try await FocusHarness.make()
+        await harness.pressReturnOnFeed(harness.goodFeed)
+        harness.moveDownInHeadlines()
+
+        harness.controller.showUpdate(Self.release)
+
+        #expect(harness.controller.status == Self.notice)
+    }
+
     @Test("A newer version is announced once")
     func announcedOnce() async throws {
         let harness = try await FocusHarness.make()

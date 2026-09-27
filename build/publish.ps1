@@ -56,6 +56,10 @@ if ($version -notmatch '^\d+\.\d+\.\d+$') {
     throw "VERSION should hold a three-part version such as 1.1.0, but holds '$version'."
 }
 
+# dotnet finds the vpk tool manifest by looking up from the current directory, so work from
+# the repository whichever folder the script was started in.
+Push-Location $repo
+
 if ($Architecture -eq 'both') { $targets = @('x64', 'arm64') } else { $targets = @($Architecture) }
 
 Write-Host "RSS Quick $version"
@@ -192,3 +196,5 @@ if (-not $SkipInstaller) {
     Write-Host 'Update feed (artifacts\releases, every file goes on the release):'
     Get-ChildItem $releases | ForEach-Object { Write-Host "  $($_.Name)" }
 }
+
+Pop-Location

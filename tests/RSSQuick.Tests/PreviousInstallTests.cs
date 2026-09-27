@@ -88,7 +88,7 @@ public sealed class PreviousInstallTests : IDisposable
     {
         var old = OldInstallWith(Edited);
 
-        Assert.True(PreviousInstall.KeepEditedList(old, Saved, Starter));
+        Assert.Equal(Saved.Path, PreviousInstall.KeepEditedList(old, Saved, Starter));
 
         Assert.Equal(Edited, File.ReadAllText(Saved.Path));
     }
@@ -98,7 +98,7 @@ public sealed class PreviousInstallTests : IDisposable
     {
         var old = OldInstallWith(File.ReadAllText(Starter));
 
-        Assert.False(PreviousInstall.KeepEditedList(old, Saved, Starter));
+        Assert.Null(PreviousInstall.KeepEditedList(old, Saved, Starter));
         Assert.False(Saved.Exists);
     }
 
@@ -122,15 +122,21 @@ public sealed class PreviousInstallTests : IDisposable
         Assert.True(PreviousInstall.IsUntouchedStarter(withCrLf, shippedStarter: null));
     }
 
+    /// <summary>
+    /// The saved default is the list chosen most recently, so it stays. The old installer is
+    /// about to delete the edited one, so it is copied beside it rather than lost.
+    /// </summary>
     [Fact]
-    public void A_default_the_reader_already_saved_is_not_replaced()
+    public void A_default_already_saved_stays_and_the_edited_list_is_kept_beside_it()
     {
         var old = OldInstallWith(Edited);
         Saved.Save(Encoding.UTF8.GetBytes("<opml/>"));
 
-        Assert.False(PreviousInstall.KeepEditedList(old, Saved, Starter));
+        var kept = PreviousInstall.KeepEditedList(old, Saved, Starter);
 
         Assert.Equal("<opml/>", File.ReadAllText(Saved.Path));
+        Assert.Equal(Path.Join(Path.GetDirectoryName(Saved.Path), PreviousInstall.KeptListName), kept);
+        Assert.Equal(Edited, File.ReadAllText(kept!));
     }
 
     [Fact]
@@ -138,7 +144,7 @@ public sealed class PreviousInstallTests : IDisposable
     {
         var old = OldInstallWith(list: null);
 
-        Assert.False(PreviousInstall.KeepEditedList(old, Saved, Starter));
+        Assert.Null(PreviousInstall.KeepEditedList(old, Saved, Starter));
         Assert.False(Saved.Exists);
     }
 
