@@ -117,7 +117,7 @@ Velopack replaces the whole program folder on update, so the `RSS.opml` beside t
 
 `macos/` is a native AppKit version, sharing `RSS.opml` and the behaviour but none of the code —
 there is no .NET in it. It is a Swift package with no Xcode project: `./build.sh test` runs its
-84 tests, `./run.sh` builds and launches it, and `build/make-app.sh` assembles the bundle. It
+116 tests, `./run.sh` builds and launches it, and `build/make-app.sh` assembles the bundle. It
 reads `VERSION` from the repository root like everything else.
 
 `./build.sh dist` is the release: `build/release.sh` runs the tests, builds the universal app,

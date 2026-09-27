@@ -19,7 +19,7 @@ translated from UI Automation, because several of them do not carry over.
 |---|---|
 | `./run.sh` | Debug build + launch — the normal development loop |
 | `./build.sh [debug\|release\|test\|clean]` | Debug is the default |
-| `./build.sh test` | `swift test` — 84 tests |
+| `./build.sh test` | `swift test` — 116 tests |
 | `./build.sh release` | Universal (arm64 + x86_64) `artifacts/RSS Quick.app` |
 | `./build.sh dist` | Signed, notarised, stapled `artifacts/RSSQuick-<version>-macos.dmg` |
 
@@ -285,7 +285,7 @@ Most of the Windows constraints carry straight across. These are the ones that c
 
 ## Tests
 
-`swift test` — 84 tests, no network.
+`swift test` — 116 tests, no network.
 
 `LocalFeedServer` serves canned feeds on a loopback port, so the real `FeedLoader` runs against a
 server the test controls. Nothing in the application grew an interface to make this possible.

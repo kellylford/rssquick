@@ -5,7 +5,7 @@ import RSSQuickTestSupport
 
 /// When a published release counts as a newer version for this copy. The Windows version answers
 /// the same questions in tests/RSSQuick.Tests/ReleaseCheckTests.cs; the two should change together.
-@Suite("Finding a newer release")
+@Suite("Finding a newer release", .serialized)
 struct ReleaseCheckTests {
     private static let dmg = ReleaseCheck.macAssetSuffix
     private static let running = "1.2.0"
