@@ -80,7 +80,7 @@ It reads focus through `FocusManager`, not `Keyboard.FocusedElement`: logical fo
 
 `global.json` selects the Microsoft.Testing.Platform runner for `dotnet test`. That is required rather than preferred — MTP 2.x, which xunit.v3 4.x pulls in, refuses to run under the VSTest target on the .NET 10 SDK. It changes the command line: pass the project with `--project`, and use `-- --report-xunit-trx` in place of `--logger trx`. VSTest spellings are silently ignored rather than failing, so a broken invocation looks like a passing run that reported nothing.
 
-`xunit.v3` is held at 3.x by a Dependabot ignore. 4.x changes internals `Xunit.StaFact` compiles against, and every `[WpfFact]` fails discovery with `MissingMethodException` — that is all eight focus and startup tests. `Xunit.StaFact 4.0.5-beta` does not fix it. Lift the ignore when a stable StaFact supports xunit.v3 4.x.
+`Xunit.StaFact` and `xunit.v3` move in lockstep across majors: StaFact compiles against xunit internals, so a mismatched pair fails every `[WpfFact]` at discovery. That is why the Dependabot `test-tooling` group bumps them together — never merge one without the other.
 
 `TestStorage` redirects `SavedFeedList.ForThisUser` to a temporary folder with a module initializer, before any test runs. Every window reads the saved list at startup, so without it the suite would open, and could overwrite, the real saved list of whoever runs it. The macOS `FocusHarness` does the same with `MainWindowController.savedFeedList`.
 
