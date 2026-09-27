@@ -33,7 +33,13 @@ extension MainWindowController {
     /// Every way a load can end comes through here, so word of an update held back during the load
     /// is always read out once it is over, whichever way that was.
     func reportLoadOutcome(_ summary: String) {
-        reportLoadOutcome(summary)
+        // One announcement rather than two, with what the reader asked for first.
+        if let notice = pendingUpdateNotice {
+            pendingUpdateNotice = nil
+            setStatus("\(summary). \(notice)")
+        } else {
+            setStatus(summary)
+        }
         loadSummaryShowing = true
     }
 
@@ -279,13 +285,7 @@ extension MainWindowController {
         headlines = articles
         table.reloadData()
 
-        // One announcement rather than two, with what the reader asked for first.
-        if let notice = pendingUpdateNotice {
-            pendingUpdateNotice = nil
-            setStatus("\(summary). \(notice)")
-        } else {
-            setStatus(summary)
-        }
+        reportLoadOutcome(summary)
 
         // Cleared before focusing, so the selection this makes is allowed to do its other work -
         // tracking the row, enabling the browser button - rather than being suppressed as part
