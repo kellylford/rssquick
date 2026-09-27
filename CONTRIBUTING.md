@@ -21,9 +21,9 @@ Then:
 | `run.cmd` | Build and run — the everyday loop |
 | `build.cmd test` | Run the tests |
 | `build.cmd clean` | Delete build output and artefacts |
-| `package.cmd` | Build the installer and portable ZIP into `artifacts/` |
+| `package.cmd` | Build the installer, portable ZIP and update feed into `artifacts/` |
 
-`package.cmd` needs [Inno Setup 6](https://jrsoftware.org/isdl.php) for the installer half; without it you still get the portable ZIP.
+The installer is built with [Velopack](https://velopack.io)'s `vpk`, which `package.cmd` restores as a local .NET tool; there is nothing else to install.
 
 ## Accessibility is the test suite's main job
 

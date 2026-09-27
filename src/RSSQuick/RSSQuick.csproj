@@ -15,10 +15,22 @@
          publishes go through those scripts, so the RIDs live there. -->
     <PublishSingleFile>false</PublishSingleFile>
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+
+    <!-- Velopack has to run before WPF starts, so the entry point is Program.Main rather than
+         the Main WPF generates for App.xaml - which is why App.xaml is compiled as a Page below. -->
+    <StartupObject>RSSReaderWPF.Program</StartupObject>
   </PropertyGroup>
 
   <ItemGroup>
+    <ApplicationDefinition Remove="App.xaml" />
+    <Page Include="App.xaml" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="System.ServiceModel.Syndication" Version="10.0.12" />
+    <!-- Keep in step with vpk in .config/dotnet-tools.json: the packages vpk builds are read by
+         this library, and Dependabot's velopack group moves the two together. -->
+    <PackageReference Include="Velopack" Version="1.2.0" />
   </ItemGroup>
 
   <!-- So helpers that are internal because nothing outside the app should call them can still be

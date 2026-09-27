@@ -32,13 +32,13 @@
     <WarningsAsErrors>CS8602;CS8604;CS8618</WarningsAsErrors>
   </PropertyGroup>
 
-  <!-- Product identity, stamped into the executable and read by the installer script. -->
+  <!-- Product identity, stamped into the executable. -->
   <PropertyGroup>
     <Product>RSS Quick</Product>
     <Company>Kelly Ford</Company>
     <Authors>Kelly Ford</Authors>
     <Copyright>Copyright © Kelly Ford</Copyright>
-    <!-- VERSION is the single source of truth: prepare-release.ps1 writes it, the installer
+    <!-- VERSION is the single source of truth: prepare-release.ps1 writes it, the publish
          script reads it, and it lands in the executable's file version from here. -->
     <_VersionFromFile>$([System.IO.File]::ReadAllText('$(MSBuildThisFileDirectory)VERSION'))</_VersionFromFile>
     <VersionPrefix>$(_VersionFromFile.Trim())</VersionPrefix>

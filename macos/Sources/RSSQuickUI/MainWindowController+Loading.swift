@@ -14,6 +14,18 @@ extension MainWindowController {
         if announce { Announcer.announce(message, in: window) }
     }
 
+    /// Says that a newer version is available. Focus stays where it is: an update is not a
+    /// reason to move a reader who is in the middle of something.
+    func showUpdate(_ release: AvailableRelease) {
+        let notice = "RSS Quick \(release.version) is available. "
+            + "Download RSS Quick \(release.version) in the RSS Quick menu opens its page"
+        if isLoadingFeed {
+            pendingUpdateNotice = notice
+        } else {
+            setStatus(notice)
+        }
+    }
+
     // MARK: Opening the feed list
 
     func loadDefaultOpml() {
@@ -255,7 +267,13 @@ extension MainWindowController {
         headlines = articles
         table.reloadData()
 
-        setStatus(summary)
+        // One announcement rather than two, with what the reader asked for first.
+        if let notice = pendingUpdateNotice {
+            pendingUpdateNotice = nil
+            setStatus("\(summary). \(notice)")
+        } else {
+            setStatus(summary)
+        }
 
         // Cleared before focusing, so the selection this makes is allowed to do its other work -
         // tracking the row, enabling the browser button - rather than being suppressed as part

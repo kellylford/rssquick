@@ -13,7 +13,7 @@ Then:
 1. **Write the changelog.** Add a `[1.1.0]` section to `CHANGELOG.md`. Describe what changed for someone using the app, not what changed in the code.
 2. **Run the tests.** `build.cmd test` on Windows, and `./build.sh test` in `macos/`.
 3. **Build the packages.** `package.cmd` on Windows. On a Mac, `./build.sh dist` in `macos/` — see [Cutting the macOS half](#cutting-the-macos-half) below.
-4. **Try them.** Install the installer, run the portable ZIP, and check the things that are easy to break: Tab and Shift+Tab through all four stops, load a feed, load a folder, open an article. Do this with a screen reader running. Then the same on the Mac with VoiceOver, from the disk image rather than the build directory.
+4. **Try them.** Install the installer, run the portable ZIP, and check the things that are easy to break: Tab and Shift+Tab through all four stops, load a feed, load a folder, open an article. Do this with a screen reader running. Then the same on the Mac with VoiceOver, from the disk image rather than the build directory. Before the first release of a new installer or updater change, also try an update end to end — HOW-TO-BUILD.md's *Trying an update without publishing one* does it against a local folder.
 5. **Commit and tag.**
    ```bash
    git commit -am "Release v1.1.0"
@@ -32,6 +32,8 @@ The Windows job finishes first and is the one that creates the draft: the macOS 
 6. **Review the draft**, edit the generated notes, and publish it.
 
 The release is a draft rather than published on purpose: the artefacts deserve a manual check before anyone downloads them, and auto-generated notes deserve reading before they go out.
+
+Publishing it is also what ships the update. Installed Windows copies read the update feed from the latest published release, so within a few seconds of their next start they download the new version and install it when they close; portable and Mac copies say a new version is available. Nothing is offered while the release is a draft — and once it is published, it is on its way to every installed copy, so check the draft first. The feed files attached to it (`*.nupkg`, `releases.*.json`, `assets.*.json`, `RELEASES*`) are for the updater: leave them on the release.
 
 ## Cutting the macOS half
 

@@ -33,6 +33,11 @@
                     TabIndex="2" IsEnabled="False"
                     AutomationProperties.HelpText="Forget your default feed list and go back to the one RSS Quick comes with"
                     ToolTip="Forget your default feed list and go back to the one RSS Quick comes with"/>
+            <!-- Collapsed until App finds a newer version; ShowUpdate sets its text and shows it.
+                 Collapsed rather than disabled, so it takes no room and no tab stop until then,
+                 and a reader who never sees an update never meets it. -->
+            <Button Name="UpdateButton" Click="Update_Click" Padding="10,5"
+                    TabIndex="3" Visibility="Collapsed"/>
         </StackPanel>
 
         <!-- Main Content -->
@@ -56,7 +61,7 @@
                       SelectedItemChanged="FeedTree_SelectedItemChanged"
                       KeyDown="FeedTree_KeyDown"
                       GotFocus="FeedTree_GotFocus"
-                      TabIndex="3"
+                      TabIndex="4"
                       IsTabStop="False"
                       KeyboardNavigation.TabNavigation="Once"
                       AutomationProperties.Name="RSS Feed Tree"
@@ -99,7 +104,7 @@
                          KeyDown="HeadlinesList_KeyDown"
                          GotFocus="HeadlinesList_GotFocus"
                          Loaded="HeadlinesList_Loaded"
-                         TabIndex="4"
+                         TabIndex="5"
                          IsTabStop="False"
                          KeyboardNavigation.TabNavigation="Once"
                          AutomationProperties.Name="Headlines List"
@@ -130,7 +135,7 @@
                 <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,5,0,0">
                     <Button Name="OpenInBrowserButton" Content="Open in _Browser (Alt+B)"
                             Click="OpenInBrowser_Click" Padding="8,3"
-                            TabIndex="5" IsEnabled="False"
+                            TabIndex="6" IsEnabled="False"
                             ToolTip="Open the selected headline in your default web browser (Alt+B)"/>
                 </StackPanel>
             </Grid>

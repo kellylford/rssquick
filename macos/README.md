@@ -256,6 +256,17 @@ Most of the Windows constraints carry straight across. These are the ones that c
   the menu bar is not decoration here. It is how a Mac application is expected to be driven, and
   how VoiceOver and Help's search find commands.
 
+- **A newer version is a notice, not a button.** Five seconds after launch `AppDelegate` asks
+  GitHub through `ReleaseCheck`, and a newer release with a disk image in it is announced once on
+  the status line; the RSS Quick menu's Check for Updates… is retitled Download RSS Quick
+  <version>…, which is where a reader browsing the menu or searching Help will find it. Windows
+  adds a button to its tab ring instead, because it has no menu bar. As there, focus never moves,
+  and word that arrives during a load waits in `pendingUpdateNotice` and is appended to the load
+  summary rather than interrupting "Loading…" — `UpdateNoticeTests` holds this to the same
+  questions as the Windows `UpdateOfferTests`. The check runs in the delegate, not the window, so
+  the tests never reach GitHub; under `swift run` there is no Info.plist version to compare, so
+  a development build never asks.
+
 - **No literal colours anywhere**, and `ThemeTests` walks the live view tree to prove it —
   including realised table rows, which is where the Windows equivalent went vacuous twice.
   Folders are marked out by weight alone.
@@ -301,8 +312,10 @@ Things worth knowing before adding tests here:
 
 ## Not carried over
 
-- No installer. `build.sh release` produces `RSS Quick.app`; there is no `.dmg` or notarised
-  build yet, which is what shipping this to anyone else would need.
+- No self-updating. The Windows installed copy downloads and installs new versions itself;
+  this one says a new version exists and offers the page. Updating in place would mean Sparkle,
+  and with it a nested framework and XPC helper services in a bundle that is otherwise one signed
+  binary with no entitlements — more to sign, notarise and get wrong than a notice is worth.
 - No application icon.
 - The Windows build's per-monitor DPI manifest has no counterpart — AppKit handles display
   scaling without being asked.

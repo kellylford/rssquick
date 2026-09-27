@@ -11,6 +11,7 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -64,6 +65,23 @@ namespace RSSReaderWPF
 
         /// <summary>True while the tree shows the list RSS Quick opens at startup.</summary>
         private bool _currentListIsDefault;
+
+        /// <summary>The newer version UpdateButton offers, once App has found one.</summary>
+        private UpdateOffer? _update;
+
+        /// <summary>Installs <see cref="_update"/> now. Only used when it is ready to install.</summary>
+        private Action? _restartAndUpdate;
+
+        /// <summary>
+        /// Word of an update that arrived during a load, held until the load has said what it did.
+        /// </summary>
+        /// <remarks>
+        /// The update check finishes a few seconds after startup, which is exactly when someone is
+        /// most likely to have pressed Enter on a feed. Written straight to the status bar, it
+        /// would replace "Loading BBC News..." and then be replaced by the load's summary before
+        /// anyone heard it.
+        /// </remarks>
+        private string? _pendingUpdateNotice;
 
         public MainWindow()
         {
@@ -340,6 +358,75 @@ namespace RSSReaderWPF
         }
 
         /// <summary>
+        /// Offers a newer version: shows UpdateButton and says so in the status bar.
+        /// </summary>
+        /// <param name="offer">What App found.</param>
+        /// <param name="restartAndUpdate">Installs it now. Used only when it is ready to install.</param>
+        /// <remarks>
+        /// Focus is left where it is. An update is not a reason to move a reader who is in the
+        /// middle of something; the button joins the tab ring beside the other feed list
+        /// buttons, and Alt+U reaches it from anywhere.
+        /// </remarks>
+        internal void ShowUpdate(UpdateOffer offer, Action restartAndUpdate)
+        {
+            _update = offer;
+            _restartAndUpdate = restartAndUpdate;
+
+            string notice;
+            if (offer.ReadyToInstall)
+            {
+                UpdateButton.Content = $"Restart and _Update to {offer.Version}";
+                AutomationProperties.SetHelpText(UpdateButton, $"Close RSS Quick, install version {offer.Version} and start it again");
+                UpdateButton.ToolTip = $"Close RSS Quick, install version {offer.Version} and start it again (Alt+U)";
+                notice = $"RSS Quick {offer.Version} has been downloaded and will be installed when you close RSS Quick. "
+                       + "Restart and Update installs it now";
+            }
+            else
+            {
+                UpdateButton.Content = $"Download _Update {offer.Version}";
+                AutomationProperties.SetHelpText(UpdateButton, $"Open the RSS Quick {offer.Version} download page in your browser");
+                UpdateButton.ToolTip = $"Open the RSS Quick {offer.Version} download page in your browser (Alt+U)";
+                notice = $"RSS Quick {offer.Version} is available. Download Update opens its page in your browser";
+            }
+            AutomationProperties.SetAcceleratorKey(UpdateButton, "Alt+U");
+            UpdateButton.Visibility = Visibility.Visible;
+
+            if (_isLoadingFeed) _pendingUpdateNotice = notice;
+            else _viewModel.StatusMessage = notice;
+        }
+
+        private void Update_Click(object sender, RoutedEventArgs e)
+        {
+            if (_update is not { } offer) return;
+
+            if (!offer.ReadyToInstall)
+            {
+                try
+                {
+                    Process.Start(new ProcessStartInfo(offer.Page.AbsoluteUri) { UseShellExecute = true });
+                    _viewModel.StatusMessage = $"Opened the RSS Quick {offer.Version} page in your browser";
+                }
+                catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException)
+                {
+                    _viewModel.StatusMessage = $"Could not open your browser: {ex.Message}. The page is {offer.Page.AbsoluteUri}";
+                }
+                return;
+            }
+
+            _viewModel.StatusMessage = $"Installing RSS Quick {offer.Version} and restarting";
+            try
+            {
+                // Ends this process when it works.
+                _restartAndUpdate?.Invoke();
+            }
+            catch (Exception ex)
+            {
+                _viewModel.StatusMessage =
+                    $"Could not install RSS Quick {offer.Version} now ({ex.Message}). It will be installed when you close RSS Quick";
+            }
+        }
+
+        /// <summary>
         /// Moves focus to the feed tree before the button holding it is disabled.
         /// </summary>
         /// <remarks>
@@ -496,6 +583,13 @@ namespace RSSReaderWPF
         private void ShowArticles(IReadOnlyList<ArticleItem> articles, string status)
         {
             foreach (var article in articles) _viewModel.Headlines.Add(article);
+
+            // One announcement rather than two, with what the reader asked for first.
+            if (_pendingUpdateNotice is { } notice)
+            {
+                status = $"{status}. {notice}";
+                _pendingUpdateNotice = null;
+            }
 
             _viewModel.StatusMessage = status;
 

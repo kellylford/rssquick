@@ -1,6 +1,7 @@
 using System;
-using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
+using RSSReaderWPF.Services;
 
 namespace RSSReaderWPF
 {
@@ -10,30 +11,46 @@ namespace RSSReaderWPF
     public partial class App : Application
     {
         /// <summary>
-        /// Held for the lifetime of the process purely so the installer can tell whether RSS Quick
-        /// is running. Inno Setup's AppMutex directive checks for this name and asks the user to
-        /// close the app rather than failing partway through on a locked executable.
+        /// How long after startup to look for a newer version.
         /// </summary>
         /// <remarks>
-        /// Deliberately not used to enforce a single instance. Two copies running at once is
-        /// harmless here, and an installed copy should not stop a portable one on a USB stick.
+        /// Long enough that startup has finished announcing the feed list and placing focus, so
+        /// the check never competes with either for the reader's attention or the connection.
         /// </remarks>
-        private static readonly Mutex RunningMarker = new(initiallyOwned: false, name: "RSSQuick.SingleInstance");
+        private static readonly TimeSpan UpdateCheckDelay = TimeSpan.FromSeconds(5);
+
+        private readonly AppUpdater _updater;
+
+        /// <param name="updater">Owned by <see cref="Program.Main"/>, which disposes it on exit.</param>
+        public App(AppUpdater updater) => _updater = updater;
 
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
 
-            GC.KeepAlive(RunningMarker);
+            var window = new MainWindow();
+            MainWindow = window;
+            window.Show();
 
-            MainWindow = new MainWindow();
-            MainWindow.Show();
+            _ = OfferUpdateAsync(window);
         }
 
-        protected override void OnExit(ExitEventArgs e)
+        /// <summary>
+        /// Looks for a newer version and, if there is one, tells the window.
+        /// </summary>
+        /// <remarks>
+        /// Here rather than in the window so that the tests, which build windows by the hundred,
+        /// never reach GitHub.
+        /// </remarks>
+        private async Task OfferUpdateAsync(MainWindow window)
         {
-            RunningMarker.Dispose();
-            base.OnExit(e);
+            await Task.Delay(UpdateCheckDelay);
+
+            // Back on the UI thread after each await: this started on it.
+            var offer = await _updater.CheckAsync();
+            if (offer is null || !window.IsLoaded) return;
+
+            window.ShowUpdate(offer, _updater.RestartAndUpdate);
         }
     }
 }

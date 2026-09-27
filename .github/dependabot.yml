@@ -18,6 +18,13 @@ updates:
           - "Xunit*"
           - "Microsoft.NET.Test.Sdk"
           - "coverlet.*"
+      # The Velopack library reads what the vpk tool writes, so a release built by one version
+      # of vpk must be read by the same version of the library. Never merge one without the
+      # other; vpk is pinned in .config/dotnet-tools.json, which this ecosystem also updates.
+      velopack:
+        patterns:
+          - "Velopack"
+          - "vpk"
 
   - package-ecosystem: github-actions
     directory: /

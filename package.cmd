@@ -1,6 +1,7 @@
 @echo off
-REM Build the release artefacts: a portable ZIP and an installer, for x64 and ARM64.
-REM Output lands in artifacts\. Pass x64 or arm64 to build just one.
+REM Build the release artefacts: a portable ZIP and an installer, for x64 and ARM64, plus the
+REM update feed installed copies read. Output lands in artifacts\. Pass x64 or arm64 to build
+REM just one.
 setlocal
 cd /d "%~dp0"
 

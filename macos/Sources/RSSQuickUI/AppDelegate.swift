@@ -1,8 +1,16 @@
 import AppKit
+import RSSQuickCore
 
 @MainActor
-public final class AppDelegate: NSObject, NSApplicationDelegate {
+public final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
     private var mainWindow: MainWindowController?
+
+    /// A newer version than this one, once a check has found it.
+    private(set) var availableUpdate: AvailableRelease?
+
+    /// How long after launch to look for a newer version: long enough that startup has finished
+    /// announcing the feed list and placing focus, so the check competes with neither.
+    private static let updateCheckDelay: Duration = .seconds(5)
 
     public override init() { super.init() }
 
@@ -15,6 +23,66 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         controller.window?.makeKeyAndOrderFront(nil)
 
         NSApp.activate(ignoringOtherApps: true)
+
+        // Here rather than in the window controller, so that the tests - which build windows
+        // without an application delegate - never reach GitHub.
+        if let version = Self.runningVersion {
+            Task { [weak self] in
+                try? await Task.sleep(for: Self.updateCheckDelay)
+                // Failures are ignored at launch. No network is not worth interrupting anyone
+                // for, and the next launch asks again.
+                guard let release = try? await ReleaseCheck.check(current: version) else { return }
+                self?.offer(release)
+            }
+        }
+    }
+
+    /// The version in the bundle's Info.plist, which make-app.sh copies from VERSION.
+    ///
+    /// Nil under `swift run`, which has no bundle, so a development build never asks.
+    static var runningVersion: String? {
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String
+    }
+
+    private func offer(_ release: AvailableRelease) {
+        availableUpdate = release
+        mainWindow?.showUpdate(release)
+    }
+
+    /// RSS Quick menu: Check for Updates…, or Download RSS Quick <version>… once one is known.
+    @objc public func checkForUpdates(_ sender: Any?) {
+        if let release = availableUpdate {
+            NSWorkspace.shared.open(release.page)
+            mainWindow?.setStatus("Opened the RSS Quick \(release.version) page in your browser")
+            return
+        }
+
+        guard let version = Self.runningVersion else {
+            mainWindow?.setStatus("This copy of RSS Quick is a development build, so it has no version to compare")
+            return
+        }
+
+        mainWindow?.setStatus("Checking for a newer version…")
+        Task { [weak self] in
+            do {
+                if let release = try await ReleaseCheck.check(current: version) {
+                    self?.offer(release)
+                } else {
+                    self?.mainWindow?.setStatus("RSS Quick \(version) is the newest version")
+                }
+            } catch {
+                self?.mainWindow?.setStatus("Could not check for a newer version - GitHub \(ErrorText.describe(error))")
+            }
+        }
+    }
+
+    /// Names the version in the menu once there is one, so the menu itself says there is an
+    /// update - to a reader browsing it, and to Help's search.
+    public func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
+        if menuItem.action == #selector(checkForUpdates(_:)) {
+            menuItem.title = availableUpdate.map { "Download RSS Quick \($0.version)…" } ?? "Check for Updates…"
+        }
+        return true
     }
 
     public func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { true }

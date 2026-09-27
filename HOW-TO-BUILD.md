@@ -4,7 +4,8 @@
 
 - **Windows 10 or 11.** WPF is Windows-only; there is no way to build this elsewhere.
 - **[.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)** — the SDK, not just the runtime. Check with `dotnet --version`.
-- **[Inno Setup 6](https://jrsoftware.org/isdl.php)**, only if you want to build the installer. Without it you still get the portable ZIP.
+
+The installer is built by [Velopack](https://velopack.io)'s `vpk`, a .NET tool pinned in `.config/dotnet-tools.json`. `package.cmd` restores it, so there is nothing else to install.
 
 ## Everyday development
 
@@ -29,11 +30,18 @@ package.cmd
 That builds both architectures and puts four files in `artifacts/`:
 
 ```
-RSSQuick-1.1.0-setup-win-x64.exe        installer, Intel/AMD
-RSSQuick-1.1.0-portable-win-x64.zip     portable, Intel/AMD
-RSSQuick-1.1.0-setup-win-arm64.exe      installer, ARM
-RSSQuick-1.1.0-portable-win-arm64.zip   portable, ARM
+RSSQuick-1.3.0-setup-win-x64.exe        installer, Intel/AMD
+RSSQuick-1.3.0-portable-win-x64.zip     portable, Intel/AMD
+RSSQuick-1.3.0-setup-win-arm64.exe      installer, ARM
+RSSQuick-1.3.0-portable-win-arm64.zip   portable, ARM
 ```
+
+and the update feed in `artifacts/releases/`: a `.nupkg` package per architecture, and the
+`releases.win.json`, `releases.win-arm64.json`, `assets.*.json` and `RELEASES*` files an installed
+copy reads to find it. Every one of those goes on the GitHub release; `release.yml` uploads them.
+x64 is Velopack's default `win` channel and ARM64 is `win-arm64`. An installed copy only ever
+looks at its own channel, and the x64 one must never be renamed, or every installed x64 copy
+stops seeing updates.
 
 Pass an architecture to build just one: `package.cmd x64`.
 
@@ -45,27 +53,40 @@ Under the hood `package.cmd` runs `build/publish.ps1`, which you can call direct
 powershell -File build/publish.ps1 -Architecture x64 -SkipInstaller
 ```
 
+`-KeepReleaseFeed` leaves `artifacts/releases/` as it is rather than emptying it first. The release
+workflow runs `vpk download github` into it beforehand, so vpk can build a delta package against
+the previous version, and installed copies download the difference rather than 55 MB.
+
 ## Why the packages are built this way
 
 **Both packages are self-contained**, meaning each one carries its own copy of the .NET runtime. That is why they are ~55 MB rather than ~400 KB.
 
 This is a deliberate trade. The framework-dependent packages this replaces were tiny, but "the app won't start" — because .NET was missing, or because the user had installed the runtime for the wrong architecture — was by a wide margin the most common support problem. RSS Quick is aimed at people who should be able to download it and read the news, not diagnose a runtime dialog. Bandwidth is cheaper than that.
 
-**The installer is per-user by default.** `PrivilegesRequired=lowest` means the common case never raises a UAC prompt; nothing here needs administrator rights. An administrator can still choose an all-users install on the first wizard page.
+**The installer is per-user.** Velopack installs into `%LocalAppData%\RSSQuick`, so there is never a UAC prompt, and the installed copy can replace itself without one. There is no wizard: Setup installs, adds a Start Menu shortcut and starts RSS Quick, which is fewer pages for a screen reader to get through than the Inno Setup installer it replaced.
 
-**The installer will not overwrite an edited feed list.** `RSS.opml` is installed with Inno's `onlyifdoesntexist` flag, so upgrading keeps whatever you have edited in place.
+**Updates replace the shipped `RSS.opml`.** Velopack swaps the whole program folder, so a list edited in place there would be lost. That is why the reader's own list lives in `%APPDATA%\RSSQuick\Default.opml` (Make This My Default), which no update touches. The first start after moving from the old installer copies an edited `RSS.opml` there before removing the old copy; see `src/RSSQuick/Services/PreviousInstall.cs`.
 
 **The portable build writes nothing outside its own folder.** It reads `RSS.opml` from the working directory first and falls back to the folder holding the executable, so a copy on a USB stick uses the feed list that travels with it.
 
-## Building the installer by hand
+## Trying an update without publishing one
 
-`build/publish.ps1` does this for you, but if you need to run the compiler directly:
+An installed copy reads its updates from GitHub, but `RSSQUICK_UPDATE_FEED` points it at a folder
+instead, so the whole download-and-install cycle can be tried before a release exists.
 
-```bash
-ISCC.exe /DAppVersion=1.1.0 /DArch=x64 /DSourceDir=<published files> /DOutputDir=artifacts installer\rssquick.iss
-```
+1. `package.cmd x64`, and install `artifacts\RSSQuick-<version>-setup-win-x64.exe`.
+2. Put a higher version in `VERSION`, then build again without emptying the feed:
+   `powershell -File build/publish.ps1 -Architecture x64 -KeepReleaseFeed`.
+   `artifacts\releases` now holds both versions, and a delta between them.
+3. Start the installed copy with the variable set, from a Command Prompt in the repository:
 
-Every value the script needs comes in through `/D`. `installer/rssquick.iss` documents what each one is for.
+   ```bash
+   set RSSQUICK_UPDATE_FEED=%CD%\artifacts\releases && "%LocalAppData%\RSSQuick\current\RSSQuick.exe"
+   ```
+
+   About five seconds after it opens, the status bar says the new version has downloaded, and
+   Restart and Update appears.
+4. Put `VERSION` back, and uninstall from Installed Apps when you are done.
 
 ## Troubleshooting
 
@@ -73,6 +94,6 @@ Every value the script needs comes in through `/D`. `installer/rssquick.iss` doc
 
 **Package restore fails** — `dotnet restore`, then build again.
 
-**`package.cmd` warns that Inno Setup was not found** — install it from [jrsoftware.org](https://jrsoftware.org/isdl.php), or pass `-SkipInstaller` if you only want the portable ZIP.
+**`vpk pack` says the version already exists** — `artifacts/releases` still holds this version from an earlier run with `-KeepReleaseFeed`. Run without it, which empties the folder first.
 
 **ARM64 build fails on an Intel machine** — it should not; the ARM64 build is cross-compiled and needs no ARM hardware. If it does, build the architectures separately with `package.cmd x64` and `package.cmd arm64` to see which step is failing.

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-RSS Quick — a Windows-only WPF RSS reader (.NET 10) built accessibility-first for screen reader and braille display users. Two panels: a feed TreeView and a headlines ListBox; articles open in the system browser rather than an embedded control. No cache and no settings file — feeds come from an OPML file and content is always fetched fresh. The one thing kept between runs is the reader's saved default feed list (see Startup below).
+RSS Quick — a Windows-only WPF RSS reader (.NET 10) built accessibility-first for screen reader and braille display users. Two panels: a feed TreeView and a headlines ListBox; articles open in the system browser rather than an embedded control. No cache and no settings file — feeds come from an OPML file and content is always fetched fresh. The one thing kept between runs is the reader's saved default feed list (see Startup below). The one request that is not a feed is the check for a newer version a few seconds after startup (see Updates below).
 
 Naming is split on purpose: the C# namespace and project file are `RSSReaderWPF`, the assembly and executable are `RSSQuick` (via `<AssemblyName>`). Keep the namespace as-is.
 
@@ -21,9 +21,9 @@ dotnet run
 | `run.cmd` | Release build + run — the normal dev loop |
 | `build.cmd [debug\|release\|test\|clean]` | Debug is the default |
 | `build.cmd test` | `dotnet test tests/RSSQuick.Tests/RSSQuick.Tests.csproj` |
-| `package.cmd [x64\|arm64]` | Installer + portable ZIP into `artifacts/`, both architectures by default |
+| `package.cmd [x64\|arm64]` | Installer + portable ZIP into `artifacts/`, and the update feed into `artifacts/releases/`, both architectures by default |
 
-`package.cmd` wraps `build/publish.ps1`, which is PowerShell 5.1-compatible on purpose — there is no pwsh 7 on the dev machine. The installer half needs Inno Setup 6; without it the script warns and still produces the portable ZIP.
+`package.cmd` wraps `build/publish.ps1`, which is PowerShell 5.1-compatible on purpose — there is no pwsh 7 on the dev machine. The installer is Velopack's Setup.exe, built by `vpk pack`; vpk is a local tool pinned in `.config/dotnet-tools.json` and restored by the script, so there is nothing to install.
 
 Version lives in `VERSION` and nowhere else. `Directory.Build.props` reads it into the assembly version and `build/publish.ps1` reads it for artefact filenames. `build/prepare-release.ps1 <x.y.z>` is the only thing that should write it.
 
@@ -33,10 +33,12 @@ The application lives in `src/RSSQuick/`:
 
 ```
 Models/         FeedItem, ArticleItem (with the FromSyndication factory)
-Services/       FeedLoader, FeedText, OpmlParser, TextScale
+Services/       FeedLoader, FeedText, OpmlParser, TextScale, SavedFeedList,
+                ReleaseCheck, AppUpdater (Velopack), PreviousInstall
 ViewModels/     MainViewModel, RelayCommand
 Converters.cs   IValueConverters, exposed as static Instance singletons and
                 referenced from XAML via {x:Static}
+Program.cs      the entry point: Velopack first, then WPF
 MainWindow.*    the window, and all the focus management
 ```
 
@@ -48,6 +50,7 @@ Flow:
 2. **OPML → tree** — `OpmlParser.Parse()` walks `<outline>` elements recursively into a `FeedItem` tree. An outline with an `xmlUrl` is a feed, anything else is a folder; nesting is arbitrary depth, and feeds listed loose at the top level are gathered into an "Uncategorized" folder so every feed sits at the same kind of level.
 3. **Feed → headlines** — Enter in the tree calls `LoadFeedAsync` (one feed) or `LoadAllFeedsInCategoryAsync` (a folder). Both call `BeginLoad`, which cancels whatever load was already running, then hand off to `FeedLoader`. A folder fetches six feeds at a time and reports per-feed failures rather than failing as a whole.
 4. **Headline → browser** — Enter or Alt+B runs `Process.Start` on the article link.
+5. **Updates** — `Program.Main` runs `VelopackApp.Build().Run()` before WPF starts (Setup launches the executable with its own arguments to install and update, and that call handles them and exits), then retires any old Inno Setup install. Five seconds after the window opens, `App.OfferUpdateAsync` asks `AppUpdater`: an installed copy checks and downloads through Velopack and installs on exit; a portable or dev copy only asks `ReleaseCheck` whether GitHub has something newer. Either way the window gets `ShowUpdate`. The check lives in App, not the window, so the tests — which build windows directly — never reach GitHub.
 
 ### Traps this codebase has already fallen into
 
@@ -55,15 +58,19 @@ Flow:
 - **`SyndicationItem.PublishDate` throws from its getter** when the feed's date is malformed, rather than returning a default. `PickDate` catches it. Reading any syndication date property unguarded reintroduces "one bad entry loses the whole feed".
 - **`HttpClient` reports its own timeout as `TaskCanceledException`**, which derives from `OperationCanceledException`. Every `catch (OperationCanceledException)` here is filtered on `IsCancellationRequested` for our own token, so a timeout is reported as a failure rather than swallowed as a user cancellation. Dropping that filter brings back "one slow feed kills the folder".
 - **Control characters in headline text are replaced with a space, not deleted.** Tabs and newlines fall in that range and are usually separating words.
+- **`System.Version` treats a missing part as less than zero**, so the assembly's 1.2.0.0 is "newer" than the tag's 1.2.0 and every copy would be offered its own release. `ReleaseCheck.Normalize` makes both three parts; compare nothing else.
+- **The x64 update channel is Velopack's default `win` and must never be renamed.** Every installed x64 copy polls `releases.win.json` on GitHub; a new name strands them all on their current version, silently. ARM64 is `win-arm64`. The same rule QuickMail learned.
+- **The `Velopack` package and the `vpk` tool move in lockstep**, like xunit.v3 and StaFact: the library reads what the tool writes. Dependabot's `velopack` group bumps both.
 
 ### Accessibility constraints — treat these as load-bearing
 
 - **Neither items control is its own tab stop.** `IsTabStop="False"` on both `FeedTree` and `HeadlinesList`, plus an `ItemContainerStyle` that sets `IsTabStop="True"` on `TreeViewItem` (unlike `ListBoxItem`, it is not one by default). With `TabNavigation="Once"` each panel is a single stop that lands on an item. Setting `IsTabStop="True"` on a container reintroduces the 1.1.0 Shift+Tab bug: focus lands on a container that reports no name, value or state, and the `GotFocus` handler pushes it straight back in, so Shift+Tab appears to do nothing. `tests/RSSQuick.Tests/TabOrderTests.cs` measures this — every test there was verified to fail against the unfixed window.
 - **The `GotFocus` handlers are guarded on `e.OriginalSource`.** They redirect only focus that landed on the container itself. Without the guard they run for every focus change bubbling through the panel, so each arrow-key step re-focuses the row it just left.
 - `FeedText.CleanTitle()` strips zero-width characters (U+200B/C/D, U+FEFF, U+2060), normalizes exotic spaces (U+00A0, U+2009, U+202F) to plain spaces, replaces control characters with a space, and collapses whitespace. Invisible characters and stray whitespace render as confusing blank cells on a braille display. Do not bypass it for text that reaches a headline.
-- Tab order is explicit and fixed: Import (0) → Make This My Default (1) → Use Starter Feed List (2) → FeedTree (3) → HeadlinesList (4) → Open in Browser (5). The two default-list buttons are disabled when they have nothing to do, and a disabled button leaves the tab ring, so the ring is usually four stops. Adding a focusable control means renumbering deliberately and updating `TabOrderTests`.
+- Tab order is explicit and fixed: Import (0) → Make This My Default (1) → Use Starter Feed List (2) → Update (3) → FeedTree (4) → HeadlinesList (5) → Open in Browser (6). The two default-list buttons are disabled when they have nothing to do, and a disabled button leaves the tab ring; the Update button is `Collapsed` until `ShowUpdate` offers a newer version. So the ring is usually four stops. Adding a focusable control means renumbering deliberately and updating `TabOrderTests` (and `UpdateOfferTests`, which walks the ring with the Update button showing).
 - **A button that disables itself must move focus first.** WPF drops keyboard focus from a control that becomes disabled and moves it nowhere. `MoveFocusOffDisabledButton()` sends it to the feed tree; `DefaultFeedListTests` fails without it.
 - **Two things compete for the status bar**: what a load just did, and where you are in the list. `_keepLoadSummary` stops the selection a load makes from overwriting the summary it just wrote — without it, "3 of 20 feeds failed" is replaced by "BBC News - 1 of 45" before anyone can read it. Position takes over from the first arrow key.
+- **A third thing is word of an update**, which arrives a few seconds after startup — exactly when a reader is likely to be waiting on their first feed. `ShowUpdate` holds it in `_pendingUpdateNotice` while a load runs, and `ShowArticles` appends it to the load summary, so it is neither lost nor interrupts. An update never moves focus.
 - The status bar `TextBlock` is the **only** live region (`AutomationProperties.LiveSetting="Polite"`). Update `_viewModel.StatusMessage` rather than adding announcement channels. It reports position as `<feed> - <n> of <m>`, named from the article's own `FeedTitle` so merged folder views stay readable.
 - Focus is managed by hand. `_isLoadingFeed` suppresses `SelectionChanged` side effects during a load, `_lastSelectedHeadlineIndex` restores the user's place on return, `_currentlyLoadedFeed` is what F5 reloads. Startup focus is set through `Dispatcher.BeginInvoke` at `ApplicationIdle` because WPF containers are not realized when the data arrives — removing that deferral breaks focus silently. After a load, `FocusSelectedHeadline()` lays out and scrolls the row into view before focusing it, which replaced a 100 ms `DispatcherTimer` that was guessing at the same thing.
 - Selecting a feed does **not** load it; Enter does. Intentional, so arrow-key browsing never triggers network fetches.
@@ -98,7 +105,13 @@ Test classes that build a `MainWindow` must carry `[Collection(WpfCollection.Nam
 
 Both artefacts are **self-contained single-file** builds, so neither needs .NET installed. That is deliberate: "app won't start, missing .NET Runtime" was the dominant support problem with the framework-dependent packages this replaced. The cost is ~55 MB per artefact.
 
-`installer/rssquick.iss` takes every value through `/D` defines from `build/publish.ps1`. It installs per-user (`PrivilegesRequired=lowest`) so the common case raises no UAC prompt, uses a fixed `AppId` so upgrades replace rather than stack, and installs `RSS.opml` with `onlyifdoesntexist` so an edited feed list survives an upgrade. `AppMutex` matches the named mutex `App.OnStartup` holds purely as a running-marker — it does not enforce a single instance.
+The installer is Velopack's, and it is what makes an installed copy update itself. `build/publish.ps1` runs `vpk pack` over the same single-file build the portable ZIP holds, installing per-user into `%LocalAppData%\RSSQuick` (no UAC prompt, and no prompt to update either), and renames Setup.exe to the `RSSQuick-<version>-setup-win-<arch>.exe` pattern the Inno Setup installer used. The update feed — `.nupkg` packages plus `releases.*.json`, `assets.*.json` and `RELEASES*` for both channels — goes on the GitHub release alongside the downloads; `release.yml` lists each file with `fail_on_unmatched_files`, so a change in what vpk writes fails the release rather than publishing one installed copies cannot read. It also runs `vpk download github` first, so each release carries a delta against the last.
+
+Installed copies read the feed from the latest *published* release. `release.yml` makes a draft, so nothing updates until a person has checked the build and published it.
+
+Velopack replaces the whole program folder on update, so the `RSS.opml` beside the executable is always the shipped one; a reader's own list lives in `Default.opml`. Versions 1.1.0 and 1.2.0 were installed by Inno Setup, and `PreviousInstall.Retire` removes that copy on every start of an installed copy until it is gone — first copying its `RSS.opml` to `Default.opml` if it was edited and nothing is saved yet, because Inno's uninstaller deletes it. An all-users Inno install is left alone: removing it would need an administrator prompt.
+
+`RSSQUICK_UPDATE_FEED` points an installed copy at a folder of `vpk pack` output instead of GitHub; HOW-TO-BUILD.md has the steps for trying an update end to end.
 
 ## The macOS port
 
@@ -113,7 +126,10 @@ notarised separately from the image on purpose — the image's ticket stops Gate
 about the download, the app's ticket keeps it valid once the reader has dragged it out of the
 image and deleted it, with no network to ask Apple over. There are no entitlements, and that is
 a decision rather than an omission: one Swift binary with no nested libraries, no plugins and no
-sandbox needs no exemptions from the hardened runtime. `.github/workflows/macos-release.yml`
+sandbox needs no exemptions from the hardened runtime. That is also why the Mac does not update
+itself: Sparkle would bring a nested framework and XPC services into the bundle. It checks
+GitHub at launch with `ReleaseCheck` (the Swift twin of the Windows one) and says so, and the
+RSS Quick menu has Check for Updates…, retitled Download RSS Quick <version>… once one is known. `.github/workflows/macos-release.yml`
 runs the same scripts on a tag. `macos/README.md` has the credentials and the CI secrets.
 
 Read `macos/README.md` before touching it. The accessibility decisions were re-made for
