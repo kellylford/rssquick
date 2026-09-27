@@ -38,6 +38,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   only when you say so, as on the desktop versions. A list saved by the first TestFlight build
   still opens.
 
+### Fixed
+- On the Mac, VoiceOver no longer reads each name in the feed tree twice ("Technology Technology
+  collapsed"). The tooltip that shows a shortened name in full was also being passed to VoiceOver.
+
 ## [1.1.0] - 2026-08-19
 
 ### Fixed

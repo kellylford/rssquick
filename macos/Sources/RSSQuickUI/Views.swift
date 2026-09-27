@@ -162,7 +162,7 @@ final class HeadlineCellView: NSTableCellView {
 final class FeedCellView: NSTableCellView {
     static let identifier = NSUserInterfaceItemIdentifier("FeedCell")
 
-    private let field = NSTextField(labelWithString: "")
+    private let field = NameField(labelWithString: "")
 
     init() {
         super.init(frame: .zero)
@@ -192,6 +192,13 @@ final class FeedCellView: NSTableCellView {
             : .systemFont(ofSize: fontSize)
         field.stringValue = item.title
         field.toolTip = item.title
+    }
+
+    /// Keeps the tooltip, which shows a truncated name in full, out of what VoiceOver reads.
+    /// AppKit hands a tooltip to accessibility as help text, and help that repeats the value is
+    /// the name spoken twice on every row.
+    private final class NameField: NSTextField {
+        override func accessibilityHelp() -> String? { nil }
     }
 }
 
