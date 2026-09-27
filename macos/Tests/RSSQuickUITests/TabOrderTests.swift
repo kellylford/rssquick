@@ -56,4 +56,22 @@ struct TabOrderTests {
         #expect(harness.table.accessibilityHelp()?.isEmpty == false)
         #expect(harness.controller.statusField.accessibilityLabel() == "Status")
     }
+
+    /// A tooltip on a text field doubles as its accessibility help, so a tree row whose tooltip
+    /// repeats its name was read by VoiceOver as "Technology Technology collapsed".
+    @Test("A tree row says its name once")
+    func treeRowNameIsNotRepeated() async throws {
+        let harness = try await FocusHarness.make()
+        harness.outline.layoutSubtreeIfNeeded()
+
+        for item in [harness.folder, harness.goodFeed] {
+            let row = harness.outline.row(forItem: item)
+            let cell = try #require(harness.outline.view(atColumn: 0, row: row, makeIfNecessary: true) as? FeedCellView)
+            let field = try #require(cell.textField)
+
+            #expect(field.toolTip == item.title)
+            #expect(field.accessibilityHelp() != item.title)
+            #expect(cell.accessibilityHelp() != item.title)
+        }
+    }
 }
