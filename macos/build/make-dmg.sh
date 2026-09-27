@@ -37,9 +37,11 @@ dmg="$package/artifacts/RSSQuick-$version-macos.dmg"
 staging="$(mktemp -d)"
 tempro="$(mktemp -u).dmg"
 temprw="$(mktemp -u).dmg"
-trap 'rm -rf "$staging" "$tempro" "$temprw"' EXIT
+# macOS ships bash 3.2, which exits 0 when `set -u` trips while an EXIT trap is set, so an unset
+# variable would otherwise pass for success. The trap fails the script unless it reached the end.
+trap 'rm -rf "$staging" "$tempro" "$temprw"; [[ -n "${finished:-}" ]] || exit 1' EXIT
 
-echo "Staging $volume…"
+echo "Staging ${volume}…"
 cp -a "$app" "$staging/"
 
 # A plain-text readme rather than a background image with arrows in it. The window art that most
@@ -127,3 +129,4 @@ codesign --force --timestamp ${keychainargs[@]+"${keychainargs[@]}"} --sign "$id
 codesign --verify --verbose "$dmg"
 
 echo "Built $dmg ($(du -h "$dmg" | cut -f1))"
+finished=1

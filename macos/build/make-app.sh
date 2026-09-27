@@ -29,7 +29,9 @@ mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
 # is copied out as soon as it is built, because some toolchains put both in the same folder.
 if [[ "$universal" == "1" ]]; then
     slices="$(mktemp -d)"
-    trap 'rm -rf "$slices"' EXIT
+    # macOS ships bash 3.2, which exits 0 when `set -u` trips while an EXIT trap is set, so an
+    # unset variable would otherwise pass for success. The trap fails unless the script finished.
+    trap 'rm -rf "$slices"; [[ -n "${finished:-}" ]] || exit 1' EXIT
     for arch in arm64 x86_64; do
         triple="$arch-apple-macosx13.0"
         echo "Building rssquick ($configuration, $arch)…"
@@ -77,3 +79,4 @@ codesign --force --sign - --timestamp=none "$app" >/dev/null 2>&1 || {
 }
 
 echo "Built $app (version $version)"
+finished=1

@@ -31,9 +31,12 @@ die() { echo "error: $*" >&2; exit 1; }
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 WORK="$(mktemp -d)"
+# macOS ships bash 3.2, which exits 0 when `set -u` trips while an EXIT trap is set, so an unset
+# variable would otherwise pass for success. The trap fails the script unless it reached the end.
 cleanup() {
     rm -rf "$WORK"
     [ -n "${VERIFY_KC:-}" ] && security delete-keychain "$VERIFY_KC" 2>/dev/null || true
+    [ -n "${finished:-}" ] || exit 1
 }
 trap cleanup EXIT
 
@@ -164,3 +167,4 @@ echo ""
 gh secret list --repo "$REPO"
 echo ""
 echo "Done. The next v* tag builds, signs, notarises and attaches the Mac disk image by itself."
+finished=1
