@@ -39,6 +39,7 @@ namespace RSSReaderWPF.Services
         private bool _restarting;
         private bool _disposed;
 
+        /// <summary>Connects to Velopack when this copy was installed by Setup.</summary>
         /// <param name="feed">
         /// A folder or URL holding <c>vpk pack</c> output, in place of GitHub. For trying the
         /// whole download-and-install cycle without publishing a release.
