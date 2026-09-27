@@ -64,15 +64,15 @@ struct UpdateNoticeTests {
     func announcedOnCancel() async throws {
         let harness = try await FocusHarness.make()
 
-        let row = harness.outline.row(forItem: harness.slowFeed)
-        harness.outline.selectRowIndexes([row], byExtendingSelection: false)
-        harness.window.makeFirstResponder(harness.outline)
-        harness.outline.keyDown(with: FocusHarness.returnKey)
+        // Not through the tree: the slow feed is not in it. The same route as escapeCancels.
+        harness.controller.loadFeed(harness.slowFeed)
+        try await Task.sleep(for: .milliseconds(50))
 
         harness.controller.showUpdate(Self.release)
-        harness.controller.cancelLoad()
+        harness.controller.cancelOperation(nil)
 
         #expect(harness.controller.status == "Loading cancelled. \(Self.notice)")
+        await harness.settle()
     }
 
     /// A load that has just finished has something to say that nothing else will repeat.
