@@ -144,6 +144,12 @@ five repository secrets:
 
 `MACOS_SIGNING_IDENTITY` is optional and only needed if the certificate has to be chosen by name.
 
+`build/setup-ci-secrets.sh` sets all five in one go, from the certificate in the login keychain
+and the notary key described in `~/.fastweather-keys/asc.json` - the same files, and the same
+secret names, that Image-Description-Toolkit and GHManage use. Run it yourself, once: it asks
+macOS to export the certificate, which puts up one dialog, and it checks the notary key with
+Apple before uploading anything. The manual route below is what it automates.
+
 Export the `.p12` from Keychain Access by selecting the *private key* under the certificate —
 exporting the certificate alone produces a file with no key in it, which imports without
 complaint and then fails at the first `codesign`. Base64-encode both files with
