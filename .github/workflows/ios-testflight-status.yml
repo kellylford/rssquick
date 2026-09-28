@@ -1,0 +1,39 @@
+name: iOS TestFlight Status
+
+# Read-only: what App Store Connect has for RSS Quick - every build with its version, processing
+# state and Beta App Review state, the App Store versions, and the TestFlight groups with their
+# public links. Run from the Actions tab, or `gh workflow run ios-testflight-status.yml`, and read
+# the "Status" step's log. Uses the same App Store Connect key as ios-release.yml.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  status:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Stage the App Store Connect key
+        env:
+          NOTARY_KEY_P8: ${{ secrets.NOTARY_KEY_P8 }}
+          NOTARY_KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
+        run: |
+          set -euo pipefail
+          dir="$RUNNER_TEMP/keys"
+          mkdir -p "$dir"
+          printf '%s' "$NOTARY_KEY_P8" | base64 --decode > "$dir/AuthKey_${NOTARY_KEY_ID}.p8"
+          echo "ASC_KEY_PATH=$dir/AuthKey_${NOTARY_KEY_ID}.p8" >> "$GITHUB_ENV"
+
+      - name: Status
+        env:
+          ASC_KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.NOTARY_ISSUER_ID }}
+        run: |
+          pip install --quiet pyjwt cryptography requests
+          python3 ios/scripts/asc.py status

@@ -77,21 +77,62 @@ at the repository root.
    users on the team. If that address isn't one yet, add it under Users and Access first.
    Turn on automatic distribution so every new build reaches the group without extra clicks.
 
-### Each release
+### Each release: from GitHub
+
+Pushing a `v*` tag releases all three platforms at the same version. `.github/workflows/ios-release.yml`
+runs beside the Windows and macOS release workflows, on a GitHub-hosted Mac:
+
+1. It builds with the version from `VERSION`.
+2. It asks App Store Connect for the highest build number it has ever seen, and uses one more.
+   Build numbers only go up, whichever route uploaded the last build.
+3. It uploads the build and waits for Apple to process it.
+4. It sets "What to Test" from that version's `CHANGELOG.md` section.
+5. It adds the build to the external **Public Testers** group. If there is no such group, it
+   creates one with a public link.
+6. It submits the build for Beta App Review.
+
+To upload the version on a branch without tagging, run it by hand from the Actions tab.
+
+`ios-testflight-status.yml`, run by hand, is read-only. For every build it lists the version,
+processing state and Beta App Review state; it also lists the App Store versions and each
+TestFlight group with its public link. Run it from the Actions tab, or with
+`gh workflow run ios-testflight-status.yml`, then read the log.
+
+Both workflows are built on GitHub rather than on this Mac on purpose. The Mac runs a beta
+macOS, and Apple rejects App Store builds made on one. Both are driven by
+`ios/scripts/asc.py`, which also runs by hand on a Mac with `ASC_KEY_ID`, `ASC_ISSUER_ID` and
+`ASC_KEY_PATH` set.
+
+**Repository secrets.**
+- **App Store Connect API key:** the workflows use the one the macOS release already uses
+  (`NOTARY_KEY_ID`, `NOTARY_ISSUER_ID`, `NOTARY_KEY_P8`). That key needs the **App Manager**
+  or **Admin** role to manage groups and submit builds. With the Developer role, the status
+  workflow works but distributing fails with a 403.
+- **Apple Distribution certificate:** not the Developer ID certificate the Mac build uses. Set
+  it once, from this Mac:
+
+```bash
+# Keychain Access -> login -> My Certificates -> "Apple Distribution: Kelly Ford (P887QF74N8)"
+# (it must have a private key under it) -> Export -> dist.p12, with a password.
+base64 -i dist.p12 | gh secret set IOS_DIST_CERT_P12 -R kellylford/rssquick
+gh secret set IOS_DIST_CERT_PASSWORD -R kellylford/rssquick   # paste the export password
+rm dist.p12
+```
+
+These are the same certificate and key Scores' `ios-release.yml` uses. GitHub secrets are
+per-repository, so they have to be set here too.
+
+### Each release: from this Mac
 
 ```bash
 ios/scripts/release-testflight.sh 2
 ```
 
-The argument is the build number. Each release needs a number App Store Connect hasn't seen for
-this version, including builds it rejected. The script archives the app, signs it, and uploads it
-with the Apple ID signed in to Xcode. App Store Connect takes 5 to 15 minutes to process a build,
-then TestFlight emails the Internal group. `--export-only` writes an `.ipa` without uploading.
-
-Local uploads from this Mac are fine for TestFlight even though it runs a beta macOS. As the
-FastWeather notes record, an **App Store** submission built on a beta OS is rejected. When it's
-time for that, copy Scores' `.github/workflows/ios-release.yml` and point it at
-`ios/RSSQuick.xcodeproj`.
+This still works for a quick internal build. The argument is the build number, which must be
+higher than any App Store Connect has seen; `ios-testflight-status.yml` shows the current
+highest. The script archives the app, signs it, and uploads it with the Apple ID signed in to
+Xcode. TestFlight emails the Internal group 5 to 15 minutes later. `--export-only` writes an
+`.ipa` without uploading.
 
 `ENABLE_PREVIEWS` and `ENABLE_DEBUG_DYLIB` are off in `project.yml`. Both must stay off: either
 one bundles a dylib that crashes the app at launch on iOS 27 (found in Scores).
