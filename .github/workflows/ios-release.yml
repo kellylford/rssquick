@@ -195,12 +195,19 @@ jobs:
           xcrun altool --validate-app -t ios -f "$ipa" --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID"
           xcrun altool --upload-app -t ios -f "$ipa" --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID"
 
-      # The version's CHANGELOG section, as TestFlight's "What to Test".
+      # TestFlight's "What to Test": ios/WhatToTest.txt, written for iPhone and iPad testers.
+      # The CHANGELOG is only the fallback - it is mostly Windows and Mac news, which is noise to
+      # someone trying the app on a phone. Update WhatToTest.txt when the iOS app changes.
       - name: Write the release notes
         if: github.event_name == 'push' || inputs.distribute || inputs.only_distribute
         run: |
           set -euo pipefail
           version="${{ steps.version.outputs.version }}"
+          if [ -s ios/WhatToTest.txt ]; then
+            cp ios/WhatToTest.txt "$RUNNER_TEMP/whats-new.txt"
+            wc -c "$RUNNER_TEMP/whats-new.txt"
+            exit 0
+          fi
           # TestFlight shows plain text, so the markdown's headings, bold and code marks go.
           awk -v v="## [$version]" 'index($0, v) == 1 {f=1; next} /^## \[/ {f=0} f' CHANGELOG.md \
             | sed -E 's/^#+ //; s/\*\*//g; s/`//g' > "$RUNNER_TEMP/whats-new.txt"

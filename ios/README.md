@@ -90,7 +90,9 @@ runs beside the Windows and macOS release workflows, on a GitHub-hosted Mac:
 2. It asks App Store Connect for the highest build number it has ever seen, and uses one more.
    Build numbers only go up, whichever route uploaded the last build.
 3. It uploads the build and waits for Apple to process it.
-4. It sets "What to Test" from that version's `CHANGELOG.md` section.
+4. It sets "What to Test" from `ios/WhatToTest.txt`, which is written for iPhone and iPad
+   testers; update it whenever the iOS app changes. If the file is missing, it falls back to
+   the version's `CHANGELOG.md` section, which is mostly Windows and Mac news.
 5. It adds the build to the external TestFlight group **External**, which has the
    [public invitation link](https://testflight.apple.com/join/6g7MFbHq). If there is no such group, it
    creates one with a public link.
