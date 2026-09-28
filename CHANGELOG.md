@@ -6,10 +6,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [1.2.0] - 2026-09-27
 
-Released first on 26 September without the updater, and again on 27 September with
-everything below. The 1.3.0 published in between is withdrawn; iPhone and iPad, Windows and
-the Mac now all share this version number.
-
 ### Added
 - **The Windows installer keeps RSS Quick up to date.** A few seconds after it starts, an
   installed copy checks for a newer version, downloads it in the background, and installs it when
@@ -59,12 +55,12 @@ the Mac now all share this version number.
   possible. It still installs for your account only with no administrator prompt, and now has no
   wizard pages at all. Updates arrive as a small difference from the version you have rather than
   the whole 55 MB.
-- **Moving from an earlier download** (1.1.0, or 1.2.0 as first released on 26 September): run
-  the new setup once. The first time the new version starts it removes the old copy, and if you had edited the old copy's `RSS.opml`, your list is kept
-  first: it becomes your default feed list, or, if you already have one, it is saved beside it as
-  `RSS-from-previous-install.opml` for Import to open. An old copy installed for all users is left
-  for you to remove from Installed Apps. Mac users with an earlier download need to download
-  this one once too; from then on the Mac says when there is a new version.
+- **Moving from an earlier version:** run the new setup once. The first time the new version
+  starts it removes the old copy, and if you had edited the old copy's `RSS.opml`, your list is
+  kept first: it becomes your default feed list, or, if you already have one, it is saved beside
+  it as `RSS-from-previous-install.opml` for Import to open. An old copy installed for all users
+  is left for you to remove from Installed Apps. Mac users with an earlier download need to
+  download this one once too; from then on the Mac says when there is a new version.
 - An update replaces the `RSS.opml` that ships with RSS Quick. Use Make This My Default (Alt+D)
   to keep a list of your own; that copy is never touched.
 - On Windows, a folder no longer reads out "3 of 20 feeds" for every feed as it loads; it says
