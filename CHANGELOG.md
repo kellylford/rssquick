@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.3.0] - 2026-09-27
 
 ### Added
 - **The Windows installer keeps RSS Quick up to date.** A few seconds after it starts, an
@@ -23,9 +23,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   wizard pages at all. Updates arrive as a small difference from the version you have rather than
   the whole 55 MB.
 - **Moving from 1.2.0 or earlier:** run the new setup once. The first time the new version starts
-  it removes the old copy, and if you had edited the old copy's `RSS.opml`, your list becomes your
-  default feed list first, so it is not lost. An old copy installed for all users is left for you
-  to remove from Installed Apps.
+  it removes the old copy, and if you had edited the old copy's `RSS.opml`, your list is kept
+  first: it becomes your default feed list, or, if you already have one, it is saved beside it as
+  `RSS-from-previous-install.opml` for Import to open. An old copy installed for all users is left
+  for you to remove from Installed Apps. Mac users on 1.2.0 need to download 1.3.0 once too; from
+  then on the Mac says when there is a new version.
 - An update replaces the `RSS.opml` that ships with RSS Quick. Use Make This My Default (Alt+D)
   to keep a list of your own; that copy is never touched.
 
