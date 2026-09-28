@@ -20,7 +20,7 @@ Commands:
         version. Build numbers then only ever go up, so a new build can never collide with an
         old one - including builds uploaded by hand from a Mac with release-testflight.sh.
 
-    asc.py distribute --version 1.3.0 --build 7 [--group External] [--whats-new FILE]
+    asc.py distribute --version 1.2.0 --build 3 [--group External] [--whats-new FILE]
         Waits for that build to finish processing, sets its "What to Test" text, adds it to the
         external group (creating the group, with a public link, if there is none), and submits
         it for Beta App Review.
@@ -191,6 +191,21 @@ def wait_for_build(client, app, version, number, timeout_minutes):
         time.sleep(60)
 
 
+def fit_whats_new(text, limit=4000):
+    """
+    App Store Connect caps "What to Test" at 4000 characters. A longer changelog is cut after
+    its last whole bullet, with a pointer to the rest, rather than mid-sentence.
+    """
+    if len(text) <= limit:
+        return text
+    more = "\n\nThe full list is in CHANGELOG.md at https://github.com/kellylford/rssquick"
+    cut = text[: limit - len(more)]
+    last_bullet = cut.rfind("\n- ")
+    if last_bullet > 0:
+        cut = cut[:last_bullet]
+    return cut.rstrip() + more
+
+
 def set_whats_new(client, build_id, text):
     localizations = client.get(f"/builds/{build_id}/betaBuildLocalizations")["data"]
     existing = next((l for l in localizations if l["attributes"].get("locale") == "en-US"), None)
@@ -249,8 +264,7 @@ def distribute(client, args):
         with open(args.whats_new, encoding="utf-8") as f:
             text = f.read().strip()
         if text:
-            # App Store Connect caps "What to Test" at 4000 characters.
-            set_whats_new(client, build_id, text[:4000])
+            set_whats_new(client, build_id, fit_whats_new(text))
             print("Set 'What to Test'")
 
     group, created = external_group(client, app, args.group)
