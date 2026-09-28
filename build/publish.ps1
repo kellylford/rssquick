@@ -24,6 +24,19 @@
 .PARAMETER SkipInstaller
     Produce only the portable ZIP.
 
+.PARAMETER Step
+    All (the default) does everything. Publish only compiles into artifacts\staging; Package
+    only zips and packs what Publish left there. The release workflow runs them separately so
+    it can sign RSSQuick.exe in between: the portable ZIP then carries a signed program, which
+    it would not if the ZIP were made before signing.
+
+.PARAMETER AzureSignFile
+    Signs the installer, the updater and the program inside the package through Azure
+    Artifact Signing, the same account QuickMail uses. A JSON file naming the endpoint,
+    account and certificate profile, passed to vpk as --azureTrustedSignFile; see
+    .github/workflows/release.yml. Needs an Azure login already in place. Without it nothing
+    is signed, which is what every local build does.
+
 .PARAMETER KeepReleaseFeed
     Leave artifacts\releases as it is instead of emptying it first. The release workflow runs
     `vpk download github` into it beforehand, so the previous version is there for vpk to build
@@ -38,6 +51,11 @@ param(
     [string] $Architecture = 'both',
 
     [switch] $SkipInstaller,
+
+    [ValidateSet('All', 'Publish', 'Package')]
+    [string] $Step = 'All',
+
+    [string] $AzureSignFile,
 
     [switch] $KeepReleaseFeed
 )
@@ -66,10 +84,17 @@ Write-Host "RSS Quick $version"
 Write-Host "Building: $($targets -join ', ')"
 Write-Host ''
 
-if (Test-Path $staging) { Remove-Item $staging -Recurse -Force }
+$publishing = $Step -ne 'Package'
+$packaging  = $Step -ne 'Publish'
+
+if ($publishing -and (Test-Path $staging)) { Remove-Item $staging -Recurse -Force }
 New-Item -ItemType Directory -Path $artifacts -Force | Out-Null
 
-if (-not $SkipInstaller) {
+if ($AzureSignFile -and -not (Test-Path $AzureSignFile)) {
+    throw "AzureSignFile names $AzureSignFile, which does not exist."
+}
+
+if ($packaging -and -not $SkipInstaller) {
     # Emptied unless asked not to: vpk refuses to pack a version the feed already holds, so a
     # second local run would otherwise fail on the first run's output.
     if ((Test-Path $releases) -and -not $KeepReleaseFeed) { Remove-Item $releases -Recurse -Force }
@@ -85,6 +110,7 @@ foreach ($arch in $targets) {
     $rid     = "win-$arch"
     $outDir  = Join-Path $staging $rid
 
+    if ($publishing) {
     Write-Host "[$rid] publishing..."
 
     # Self-contained single file. Native libraries are extracted rather than left loose so the
@@ -124,6 +150,12 @@ or use the "Import OPML File" button to load a different one.
 
 Source and issues: https://github.com/kellylford/rssquick
 "@ | Set-Content -Path (Join-Path $outDir 'README-PORTABLE.txt') -Encoding UTF8
+    }
+
+    if (-not $packaging) { continue }
+    if (-not (Test-Path (Join-Path $outDir 'RSSQuick.exe'))) {
+        throw "[$rid] nothing to package in $outDir - run with -Step Publish first."
+    }
 
     $zip = Join-Path $artifacts "RSSQuick-$version-portable-$rid.zip"
     if (Test-Path $zip) { Remove-Item $zip -Force }
@@ -137,8 +169,11 @@ Source and issues: https://github.com/kellylford/rssquick
         New-Item -ItemType Directory -Path $installerSource -Force | Out-Null
         Get-ChildItem $outDir -Exclude 'README-PORTABLE.txt' | Copy-Item -Destination $installerSource -Recurse -Force
 
-        # x64 stays on the default channel. Every installed x64 copy polls releases.win.json, so
-        # naming its channel now would strand them; ARM64 gets its own.
+        $signArgs = @()
+        if ($AzureSignFile) { $signArgs = @('--azureTrustedSignFile', (Resolve-Path $AzureSignFile).Path) }
+
+        # x64 is on the default channel and must stay there: every installed x64 copy polls
+        # releases.win.json, so renaming the channel later would strand them all. ARM64 has its own.
         if ($arch -eq 'arm64') {
             $channelArgs = @('--runtime', 'win-arm64', '--channel', 'win-arm64')
             $channel = 'win-arm64'
@@ -160,7 +195,8 @@ Source and issues: https://github.com/kellylford/rssquick
             --shortcuts StartMenuRoot `
             --instLocation PerUser `
             --outputDir $releases `
-            @channelArgs
+            @channelArgs `
+            @signArgs
 
         if ($LASTEXITCODE -ne 0) { throw "[$rid] vpk pack failed." }
 
@@ -192,7 +228,7 @@ foreach ($f in $built) {
     Write-Host ("  {0,-45} {1} MB" -f (Split-Path -Leaf $f), $sizeMb)
 }
 
-if (-not $SkipInstaller) {
+if ($packaging -and -not $SkipInstaller) {
     Write-Host ''
     Write-Host 'Update feed (artifacts\releases, every file goes on the release):'
     Get-ChildItem $releases | ForEach-Object { Write-Host "  $($_.Name)" }
