@@ -74,6 +74,29 @@ public class FeedDateTests
         }
     }
 
+    /// <summary>
+    /// Forms the library reads and FeedDate does not. Replacing the library's parser with
+    /// FeedDate, rather than putting FeedDate behind it, lost every one of these.
+    /// </summary>
+    [Theory]
+    [InlineData("Wed, 02 October 2002 13:00:00 GMT")]
+    [InlineData("02 Oct 02 13:00:00 GMT")]
+    [InlineData("Wed, 02 Oct 2002 1:00:00 GMT")]
+    [InlineData("2002-10-02T13:00Z")]
+    public void Dates_the_library_always_read_still_parse(string pubDate)
+    {
+        var article = Assert.Single(Parse($"""
+            <?xml version="1.0" encoding="UTF-8"?>
+            <rss version="2.0">
+              <channel><title>c</title>
+                <item><title>t</title><link>https://example.com/t</link><pubDate>{pubDate}</pubDate></item>
+              </channel>
+            </rss>
+            """));
+
+        Assert.NotNull(article.PublishedOn);
+    }
+
     // ── in feeds ─────────────────────────────────────────────────────────────
 
     private static RSSReaderWPF.ArticleItem[] Parse(string xml)
@@ -123,7 +146,10 @@ public class FeedDateTests
         Assert.Equal(new DateTimeOffset(2026, 3, 2, 9, 0, 0, TimeSpan.Zero), article.PublishedOn);
     }
 
-    /// <summary>The strict reader dropped these, and the article sank to the bottom of a folder.</summary>
+    /// <summary>
+    /// The library's own parser reads this; kept as a guard that adding FeedDate behind it did
+    /// not take anything away.
+    /// </summary>
     [Fact]
     public void An_rss_pubdate_written_as_iso_8601_keeps_its_date()
     {

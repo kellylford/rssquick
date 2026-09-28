@@ -170,6 +170,8 @@ namespace RSSReaderWPF
             InputBindings.Add(new KeyBinding(new RelayCommand(ShowKeyboardShortcuts), Key.F1, ModifierKeys.None));
             foreach (var key in new[] { Key.OemPlus, Key.Add })
                 InputBindings.Add(new KeyBinding(new RelayCommand(() => SetTextSize(TextScale.Larger(_textSize))), key, ModifierKeys.Control));
+            // On a US keyboard the plus is Shift+=, so "Ctrl+Plus" is really Ctrl+Shift+=.
+            InputBindings.Add(new KeyBinding(new RelayCommand(() => SetTextSize(TextScale.Larger(_textSize))), Key.OemPlus, ModifierKeys.Control | ModifierKeys.Shift));
             foreach (var key in new[] { Key.OemMinus, Key.Subtract })
                 InputBindings.Add(new KeyBinding(new RelayCommand(() => SetTextSize(TextScale.Smaller(_textSize))), key, ModifierKeys.Control));
             foreach (var key in new[] { Key.D0, Key.NumPad0 })
@@ -537,7 +539,9 @@ namespace RSSReaderWPF
 
             if (e.Key == Key.Right)
             {
-                if (!selected.IsCategory) return;
+                // Nothing to do on a feed, but still handled, so the key cannot fall through to
+                // the tree's scroll viewer and scroll it sideways.
+                if (!selected.IsCategory) { e.Handled = true; return; }
                 if (!node.IsExpanded)
                 {
                     node.IsExpanded = true;
@@ -696,6 +700,17 @@ namespace RSSReaderWPF
             ReportLoadOutcome("Loading cancelled");
         }
 
+        /// <summary>A cancelled load has finished unwinding.</summary>
+        /// <remarks>
+        /// Clears the loading flag only if this was still the current load. When it was replaced
+        /// by a newer one, that one is running and owns the flag - clearing it here stopped Escape
+        /// cancelling the newer load, because CancelLoad now checks the flag.
+        /// </remarks>
+        private void EndCancelledLoad(CancellationToken token)
+        {
+            if (_loadCancellation is { } current && current.Token == token) _isLoadingFeed = false;
+        }
+
         /// <summary>
         /// Writes how a load ended - loaded, failed, cancelled - to the status bar.
         /// </summary>
@@ -779,7 +794,7 @@ namespace RSSReaderWPF
             {
                 // Escape, or a newer load superseding this one. Either way the status bar has
                 // already been given something better to say.
-                _isLoadingFeed = false;
+                EndCancelledLoad(token);
             }
             catch (Exception ex)
             {
@@ -849,7 +864,7 @@ namespace RSSReaderWPF
             }
             catch (OperationCanceledException) when (token.IsCancellationRequested)
             {
-                _isLoadingFeed = false;
+                EndCancelledLoad(token);
             }
             catch (Exception ex)
             {
@@ -1087,7 +1102,7 @@ namespace RSSReaderWPF
         {
             // Said rather than silently ignored, as on the Mac: Alt+B or Enter that does nothing
             // leaves a screen reader user wondering whether the key was heard at all.
-            if (_viewModel.SelectedArticle is not { } article || HeadlinesList.SelectedIndex < 0)
+            if (HeadlinesList.SelectedItem is not ArticleItem article)
             {
                 _viewModel.StatusMessage = "Select a headline first";
                 return;
@@ -1103,10 +1118,10 @@ namespace RSSReaderWPF
                 {
                     Process.Start(new ProcessStartInfo
                     {
-                        FileName = _viewModel.SelectedArticle.Link,
+                        FileName = article.Link,
                         UseShellExecute = true
                     });
-                    _viewModel.StatusMessage = $"Opened article in browser: {_viewModel.SelectedArticle.Title}";
+                    _viewModel.StatusMessage = $"Opened article in browser: {article.Title}";
                 }
                 catch (Exception ex)
                 {
@@ -1229,7 +1244,10 @@ namespace RSSReaderWPF
         {
             // The same two words as the Mac, and only when focus actually moved: an empty panel's
             // own message is the one worth hearing.
-            if (IsWithin(FeedTree, Keyboard.FocusedElement as DependencyObject))
+            // Logical focus first: it is what the rest of the window tracks, and unlike keyboard
+            // focus it is set even when the window is not in the foreground.
+            var focused = (FocusManager.GetFocusedElement(this) ?? Keyboard.FocusedElement) as DependencyObject;
+            if (IsWithin(FeedTree, focused))
             {
                 if (FocusHeadlinesList()) _viewModel.StatusMessage = "Headlines";
             }

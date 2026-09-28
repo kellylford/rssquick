@@ -9,10 +9,9 @@ namespace RSSReaderWPF.Services
     /// Reads the date formats feeds actually use.
     /// </summary>
     /// <remarks>
-    /// <para>The syndication library reads only strict RFC 822 in RSS and strict RFC 3339 in
-    /// Atom, and the dates publishers write are often neither: a four-digit year where RFC 822
-    /// has two, no day name, an ISO 8601 date in an RSS feed. Each of those used to cost the
-    /// article its date, which also sank it to the bottom of a merged folder.</para>
+    /// <para>Used on its own for RSS 1.0 and Dublin Core dates, which the syndication library
+    /// never sees, and as a second chance behind the library's parser for RSS and Atom - never
+    /// in place of it, because the library accepts forms this does not.</para>
     /// <para>The macOS version is <c>macos/Sources/RSSQuickCore/FeedDate.swift</c>, and the two
     /// accept the same forms. Like it, this returns nothing rather than complaining: an unreadable
     /// date costs that one article its timestamp and nothing else.</para>
