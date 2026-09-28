@@ -25,7 +25,7 @@ Then:
    git push origin main --follow-tags
    ```
 
-Pushing the tag runs three workflows. `.github/workflows/release.yml` checks the tag against `VERSION`, runs the tests, rebuilds all four Windows artefacts on a clean runner, and opens a **draft** GitHub release with them attached. `.github/workflows/macos-release.yml` does the same for the disk image on a macOS runner and attaches it to that same draft. `.github/workflows/ios-release.yml` builds the iPhone and iPad version at the same version, uploads it to TestFlight, and submits it to the external Public Testers group for Beta App Review; unlike the draft, that goes to testers as soon as Apple approves it. See ios/README.md.
+Pushing the tag runs three workflows. `.github/workflows/release.yml` checks the tag against `VERSION`, runs the tests, rebuilds all four Windows artefacts on a clean runner, and opens a **draft** GitHub release with them attached. `.github/workflows/macos-release.yml` does the same for the disk image on a macOS runner and attaches it to that same draft. `.github/workflows/ios-release.yml` builds the iPhone and iPad version at the same version, uploads it to TestFlight, and submits it to the external External group for Beta App Review; unlike the draft, that goes to testers as soon as Apple approves it. See ios/README.md.
 
 The Windows job finishes first and is the one that creates the draft: the macOS job spends most of its time waiting on Apple's notary service, so by the time it uploads, the draft exists. If the Windows job fails, the macOS job creates the draft instead.
 

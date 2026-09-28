@@ -1,7 +1,7 @@
 name: iOS TestFlight Release
 
 # Builds RSS Quick for iPhone and iPad on a GitHub-hosted Mac, uploads it to App Store Connect,
-# and puts it in front of external testers: the "Public Testers" TestFlight group, created with a
+# and puts it in front of external testers: the "External" TestFlight group (the one with the public link), created with a
 # public link if it does not exist, with the build submitted for Beta App Review.
 #
 # It runs on the same v* tag as release.yml and macos-release.yml, so the iPhone and iPad version
@@ -28,7 +28,7 @@ on:
   workflow_dispatch:
     inputs:
       distribute:
-        description: 'After uploading, add the build to Public Testers and submit it for Beta App Review'
+        description: 'After uploading, add the build to External and submit it for Beta App Review'
         type: boolean
         default: true
       only_distribute:

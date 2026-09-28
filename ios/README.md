@@ -91,7 +91,7 @@ runs beside the Windows and macOS release workflows, on a GitHub-hosted Mac:
    Build numbers only go up, whichever route uploaded the last build.
 3. It uploads the build and waits for Apple to process it.
 4. It sets "What to Test" from that version's `CHANGELOG.md` section.
-5. It adds the build to the external **Public Testers** group. If there is no such group, it
+5. It adds the build to the external **External** group, whose public link is https://testflight.apple.com/join/6g7MFbHq. If there is no such group, it
    creates one with a public link.
 6. It submits the build for Beta App Review.
 

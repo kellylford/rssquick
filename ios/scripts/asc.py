@@ -20,7 +20,7 @@ Commands:
         version. Build numbers then only ever go up, so a new build can never collide with an
         old one - including builds uploaded by hand from a Mac with release-testflight.sh.
 
-    asc.py distribute --version 1.3.0 --build 7 [--group "Public Testers"] [--whats-new FILE]
+    asc.py distribute --version 1.3.0 --build 7 [--group External] [--whats-new FILE]
         Waits for that build to finish processing, sets its "What to Test" text, adds it to the
         external group (creating the group, with a public link, if there is none), and submits
         it for Beta App Review.
@@ -38,7 +38,7 @@ import requests
 
 BUNDLE_ID = "com.kellylford.rssquick"
 API = "https://api.appstoreconnect.apple.com/v1"
-DEFAULT_GROUP = "Public Testers"
+DEFAULT_GROUP = "External"
 
 
 class Client:
