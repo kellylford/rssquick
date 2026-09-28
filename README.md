@@ -1,7 +1,7 @@
 # RSS Quick
 
 A fast, accessible RSS reader for Windows and macOS, built first for people who use a screen
-reader, a braille display, or only the keyboard. An iPhone and iPad version is in testing.
+reader, a braille display, or only the keyboard. An iPhone and iPad version is in public testing through TestFlight.
 
 RSS Quick does one thing: it lets you move through a lot of headlines quickly and open the ones
 you want. There are two panels, your feeds on the left and their headlines on the right, and
@@ -85,9 +85,10 @@ same way, with Mac keys and a full menu bar. See the [macOS notes](macos/README.
 
 ### iPhone and iPad
 
-An iPhone and iPad version is in testing through TestFlight and is not yet on the App Store. It
-is deliberately simple: your feed list with folders, OPML import, and articles that open in
-Safari inside the app. It needs iOS 17 or newer. See the [iPhone and iPad notes](ios/README.md).
+An iPhone and iPad version is in public testing and is not yet on the App Store. To try it,
+install Apple's TestFlight app, then open the [RSS Quick TestFlight invitation](https://testflight.apple.com/join/6g7MFbHq)
+on your iPhone or iPad. It is deliberately simple: your feed list with folders, OPML import, and
+articles that open in Safari inside the app. It needs iOS 17 or newer. See the [iPhone and iPad notes](ios/README.md).
 
 ## Getting started
 

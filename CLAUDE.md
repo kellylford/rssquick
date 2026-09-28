@@ -179,7 +179,7 @@ and the `.xcodeproj` is committed as well, the same arrangement Scores uses. Run
 `ios/` after editing `project.yml` — and after adding a file to `RSSQuickCore`, because the committed
 project lists every source file and a new one is otherwise missing from the iOS build. A `v*` tag also runs
 `.github/workflows/ios-release.yml`, which builds on a GitHub Mac, uploads with the next unused build
-number, and sends the build to the external "Public Testers" TestFlight group for Beta App Review,
+number, and sends the build to the external "External" TestFlight group, the one with the public link, for Beta App Review,
 so all three platforms ship the same version. `ios/scripts/asc.py` does the App Store Connect side,
 and `ios-testflight-status.yml` reports it read-only - use that rather than guessing what Apple has.
 `ios/scripts/release-testflight.sh <build>` still uploads from the Mac by hand. Read `ios/README.md` first: it lists where iOS deliberately differs from
