@@ -294,18 +294,34 @@ namespace RSSReaderWPF.Services
                 .ThenByDescending(a => a.PublishedOn ?? DateTimeOffset.MinValue)
                 .ToArray();
 
-        /// <summary>Turns an exception into something worth putting in the status bar.</summary>
-        private static string DescribeFailure(Exception ex) => ex switch
+        /// <summary>
+        /// Turns an exception into something worth putting in the status bar.
+        /// </summary>
+        /// <remarks>
+        /// Every result finishes the sentence "this feed ...", for a folder's failures and a single
+        /// feed's alike. The macOS version is <c>ErrorText.describe</c>, and the two say the same
+        /// things: raw exception text such as "Response status code does not indicate success"
+        /// tells a reader nothing they can act on.
+        /// </remarks>
+        internal static string DescribeFailure(Exception ex) => ex switch
         {
             // HttpClient surfaces its own timeout as a cancellation with no token attached.
             TaskCanceledException or TimeoutException => "timed out",
-            HttpRequestException { StatusCode: { } status } => $"server said {(int)status} {status}",
+            HttpRequestException { StatusCode: { } status } => $"server said {(int)status} {Words(status)}",
+            HttpRequestException when !System.Net.NetworkInformation.NetworkInterface.GetIsNetworkAvailable()
+                => "could not be reached - there is no network",
             HttpRequestException => "could not be reached",
+            // What HttpClient throws for an address it cannot make a request from.
+            UriFormatException or InvalidOperationException => "has an address RSS Quick cannot read",
             XmlException => "is not valid XML",
             // SyndicationFeed.Load throws this for a well-formed document that is not RSS or Atom,
             // with a message about serializers that means nothing to a reader.
             NotSupportedException => "is not a feed RSS Quick understands",
             _ => ex.Message,
         };
+
+        /// <summary>"NotFound" as "not found", the way the Mac says it.</summary>
+        private static string Words(HttpStatusCode status) =>
+            System.Text.RegularExpressions.Regex.Replace(status.ToString(), "(?<=[a-z])(?=[A-Z])", " ").ToLowerInvariant();
     }
 }

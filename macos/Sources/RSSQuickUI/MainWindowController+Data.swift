@@ -204,7 +204,7 @@ extension MainWindowController: NSMenuItemValidation {
             return currentlyLoadedFeed != nil
 
         case #selector(stopLoading(_:)):
-            return loadTask != nil
+            return isLoadingFeed && loadTask != nil
 
         case #selector(makeDefaultFeedList(_:)):
             return currentFeedList != nil && !currentListIsDefault

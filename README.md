@@ -42,7 +42,8 @@ Most feed readers are designed to be looked at. RSS Quick is designed to be hear
 - **Browsing is silent.** Arrowing through the feed list fetches nothing. Only Enter loads, so
   you can move through a hundred feeds instantly.
 - **Your display settings are respected.** There are no fixed colours anywhere, so Windows high
-  contrast themes work, and Windows' "Make text bigger" setting applies. On the Mac, text size
+  contrast themes work, and Windows' "Make text bigger" setting applies. Ctrl+Plus and Ctrl+Minus
+  make the text larger or smaller on top of that until RSS Quick closes. On the Mac, text size
   is set in the View menu and remembered.
 
 All of this is checked by automated tests that drive the real window, covering tab order, where
@@ -68,9 +69,9 @@ Choose the file ending in **x64** for almost any PC, and the one ending in **arm
 ARM device such as a Surface Pro X or a Snapdragon laptop. Both carry their own copy of .NET, so
 there is nothing else to install.
 
-RSS Quick is not yet code-signed on Windows, so the first time you run it Windows may say
-"Windows protected your PC". To go ahead, activate the **More info** link, then the **Run
-anyway** button that appears.
+The Windows downloads are code-signed, so Windows knows who they come from. A newly signed
+program can still be unfamiliar to Windows for a while; if it says "Windows protected your PC",
+activate the **More info** link, then the **Run anyway** button that appears.
 
 ### macOS 13 Ventura or newer
 
@@ -111,13 +112,20 @@ your changes as your own default rather than editing the file in place.
 
 - **Tab** and **Shift+Tab**: move between the buttons, the feed tree and the headlines.
 - **F6** or **Ctrl+Tab**: jump between the feed tree and the headlines.
-- **Arrow keys**: move within a panel. Right and Left open and close folders.
+- **Ctrl+1** and **Ctrl+2**: go straight to the feed tree or the headlines.
+- **Arrow keys**: move within a panel. Right and Left open and close folders; Left on a feed
+  goes to its folder.
+- **Type a few letters**: jump to a feed or headline by name.
 - **Enter**: on a feed or folder, load its headlines. On a headline, open it.
 - **Alt+B**: open the current headline in your browser.
 - **F5**: reload what you are reading.
 - **Escape**: stop a load that is taking too long.
+- **Ctrl+O**: import an OPML file.
 - **Alt+D**: make the feed list on screen your default.
+- **Ctrl+Plus**, **Ctrl+Minus** and **Ctrl+0**: larger, smaller or your usual text, until RSS
+  Quick closes.
 - **Alt+U**: get a new version, once there is one.
+- **F1**: show this list in a window.
 
 The tab ring is usually just the Import button, the feed tree and the headlines. Other buttons
 join it only while they have something to do: Open in Browser once a headline is selected, the

@@ -83,6 +83,16 @@ namespace RSSReaderWPF
         /// </remarks>
         private string? _pendingUpdateNotice;
 
+        /// <summary>The window's text size from the Windows setting, before Ctrl+Plus and Minus.</summary>
+        private readonly double _baseFontSize;
+
+        /// <summary>Ctrl+Plus and Ctrl+Minus, on top of the Windows setting. Not kept between runs.</summary>
+        private double _textSize = 1.0;
+
+        /// <summary>What has been typed for type-ahead in the feed tree, and when.</summary>
+        private string _typeAhead = string.Empty;
+        private DateTime _typeAheadAt;
+
         /// <summary>
         /// True while the status bar still holds what a load did, and the reader has not moved since.
         /// </summary>
@@ -106,7 +116,8 @@ namespace RSSReaderWPF
             // Windows' "Make text bigger" setting. WPF ignores it on its own, so a user who has
             // asked for 200% text would otherwise get none of it here. Everything in the window
             // inherits from this, so one line covers the whole UI.
-            FontSize = SystemFonts.MessageFontSize * TextScale.Current;
+            _baseFontSize = SystemFonts.MessageFontSize * TextScale.Current;
+            FontSize = _baseFontSize;
 
             // Set up simplified interface (WebBrowser removed)
             // ArticleContent.Navigated += ArticleContent_Navigated;
@@ -149,6 +160,20 @@ namespace RSSReaderWPF
             // so it can say why when the button is greyed out, instead of doing nothing.
             var makeDefaultBinding = new KeyBinding(new RelayCommand(MakeCurrentListDefault), Key.D, ModifierKeys.Alt);
             InputBindings.Add(makeDefaultBinding);
+
+            // The rest match the Mac's menu keys, with Ctrl for Command: Import, the two panels
+            // directly, and text size. F1 is where Windows readers look for help, as Command-/
+            // and the Help menu are on the Mac.
+            InputBindings.Add(new KeyBinding(new RelayCommand(ImportOpml), Key.O, ModifierKeys.Control));
+            InputBindings.Add(new KeyBinding(new RelayCommand(() => FocusFeedTree()), Key.D1, ModifierKeys.Control));
+            InputBindings.Add(new KeyBinding(new RelayCommand(() => FocusHeadlinesList()), Key.D2, ModifierKeys.Control));
+            InputBindings.Add(new KeyBinding(new RelayCommand(ShowKeyboardShortcuts), Key.F1, ModifierKeys.None));
+            foreach (var key in new[] { Key.OemPlus, Key.Add })
+                InputBindings.Add(new KeyBinding(new RelayCommand(() => SetTextSize(TextScale.Larger(_textSize))), key, ModifierKeys.Control));
+            foreach (var key in new[] { Key.OemMinus, Key.Subtract })
+                InputBindings.Add(new KeyBinding(new RelayCommand(() => SetTextSize(TextScale.Smaller(_textSize))), key, ModifierKeys.Control));
+            foreach (var key in new[] { Key.D0, Key.NumPad0 })
+                InputBindings.Add(new KeyBinding(new RelayCommand(() => SetTextSize(1.0)), key, ModifierKeys.Control));
         }
 
         private void LoadDefaultOpml()
@@ -493,31 +518,106 @@ namespace RSSReaderWPF
                 }
                 e.Handled = true;
             }
-            else if (e.Key == Key.Right)
+        }
+
+        /// <summary>
+        /// Right and Left, the way other trees on Windows and the Mac's outline behave.
+        /// </summary>
+        /// <remarks>
+        /// Right opens a closed folder, and on an open one moves to its first feed. Left closes an
+        /// open folder, and anywhere else moves to the folder above. WPF's TreeView does only the
+        /// opening and closing, so Left on a feed used to do nothing at all: the only way back to
+        /// its folder was to arrow up through every feed above it. Preview, so this runs before
+        /// the TreeViewItem's own handling can swallow the key.
+        /// </remarks>
+        private void FeedTree_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key is not (Key.Left or Key.Right) || Keyboard.Modifiers != ModifierKeys.None) return;
+            if (FeedTree.SelectedItem is not FeedItem selected || GetTreeViewItemFromFeedItem(selected) is not { } node) return;
+
+            if (e.Key == Key.Right)
             {
-                // Expand the selected item if it's a category
-                if (selectedItem.IsCategory)
+                if (!selected.IsCategory) return;
+                if (!node.IsExpanded)
                 {
-                    var treeViewItem = GetTreeViewItemFromFeedItem(selectedItem);
-                    if (treeViewItem != null)
-                    {
-                        treeViewItem.IsExpanded = true;
-                    }
+                    node.IsExpanded = true;
                 }
-                e.Handled = true;
+                else
+                {
+                    node.UpdateLayout();
+                    if (node.ItemContainerGenerator.ContainerFromIndex(0) is TreeViewItem first) Select(first);
+                }
             }
-            else if (e.Key == Key.Left)
+            else if (selected.IsCategory && node.IsExpanded)
             {
-                // Collapse the selected item if it's a category
-                if (selectedItem.IsCategory)
+                node.IsExpanded = false;
+            }
+            else if (ItemsControl.ItemsControlFromItemContainer(node) is TreeViewItem parent)
+            {
+                Select(parent);
+            }
+
+            e.Handled = true;
+
+            static void Select(TreeViewItem item)
+            {
+                item.IsSelected = true;
+                item.Focus();
+                item.BringIntoView();
+            }
+        }
+
+        /// <summary>
+        /// Type-ahead: typing the start of a name moves to the next feed or folder that has it.
+        /// </summary>
+        /// <remarks>
+        /// The headlines list gets this from ListBox's own TextSearch; TreeView has none, and the
+        /// Mac's outline has always had it. Only rows that are showing are searched, so a feed
+        /// inside a closed folder is not jumped into. Letters typed within a second of each other
+        /// build a longer prefix; one letter pressed again moves on to the next match.
+        /// </remarks>
+        private void FeedTree_PreviewTextInput(object sender, TextCompositionEventArgs e)
+        {
+            if (string.IsNullOrEmpty(e.Text) || char.IsControl(e.Text[0])) return;
+
+            var now = DateTime.UtcNow;
+            _typeAhead = (now - _typeAheadAt).TotalSeconds > 1 ? e.Text : _typeAhead + e.Text;
+            _typeAheadAt = now;
+
+            var rows = VisibleRows(FeedTree).ToList();
+            if (rows.Count == 0) return;
+
+            var current = rows.FindIndex(row => ReferenceEquals(row.DataContext, FeedTree.SelectedItem));
+            // A fresh search starts after the current row, so pressing the same letter again moves
+            // on; a longer prefix may still match the row already selected.
+            var start = _typeAhead.Length == 1 ? current + 1 : Math.Max(current, 0);
+
+            for (var i = 0; i < rows.Count; i++)
+            {
+                var row = rows[(start + i) % rows.Count];
+                if (row.DataContext is FeedItem { Title: var title }
+                    && title.StartsWith(_typeAhead, StringComparison.CurrentCultureIgnoreCase))
                 {
-                    var treeViewItem = GetTreeViewItemFromFeedItem(selectedItem);
-                    if (treeViewItem != null)
-                    {
-                        treeViewItem.IsExpanded = false;
-                    }
+                    row.IsSelected = true;
+                    row.Focus();
+                    row.BringIntoView();
+                    e.Handled = true;
+                    return;
                 }
-                e.Handled = true;
+            }
+        }
+
+        /// <summary>The tree's rows in reading order, skipping those inside closed folders.</summary>
+        private static IEnumerable<TreeViewItem> VisibleRows(ItemsControl parent)
+        {
+            for (var i = 0; i < parent.Items.Count; i++)
+            {
+                if (parent.ItemContainerGenerator.ContainerFromIndex(i) is not TreeViewItem row) continue;
+                yield return row;
+                if (row.IsExpanded)
+                {
+                    foreach (var child in VisibleRows(row)) yield return child;
+                }
             }
         }
 
@@ -587,7 +687,10 @@ namespace RSSReaderWPF
         /// <summary>Escape: abandon the load in progress.</summary>
         private void CancelLoad()
         {
-            if (_loadCancellation is not { IsCancellationRequested: false }) return;
+            // Not once the load has finished. The token source outlives it, and without this Escape
+            // afterwards replaced the load's summary with "Loading cancelled" for a load that was
+            // not running. The Mac had the same bug.
+            if (!_isLoadingFeed || _loadCancellation is not { IsCancellationRequested: false }) return;
 
             _loadCancellation.Cancel();
             ReportLoadOutcome("Loading cancelled");
@@ -655,13 +758,12 @@ namespace RSSReaderWPF
 
             _viewModel.StatusMessage = $"Loading {feeds.Count} feeds in {categoryItem.Title}...";
 
-            // Marshalled back to the UI thread by the progress object, which captures the
-            // synchronization context where it is constructed - here.
-            var progress = new Progress<int>(done =>
-            {
-                if (!token.IsCancellationRequested)
-                    _viewModel.StatusMessage = $"Loading {categoryItem.Title} - {done} of {feeds.Count} feeds...";
-            });
+            // No progress count. The status bar is the live region, so every change to it is
+            // spoken, and a twenty-feed folder said "Loading News - 3 of 20 feeds" twenty times on
+            // the way to the one message that matters. The Mac writes its count without
+            // announcing it; Windows has no way to write the status bar silently, so it says when
+            // the load starts and what it found, and nothing in between.
+            IProgress<int>? progress = null;
 
             try
             {
@@ -754,12 +856,15 @@ namespace RSSReaderWPF
                 if (token.IsCancellationRequested) return;
 
                 _isLoadingFeed = false;
-                ReportLoadOutcome($"Could not load {feedItem.Title}: {ex.Message}");
+                // The same words a folder uses for a feed that failed, and the Mac for either:
+                // "server said 404 not found" rather than .NET's own exception text.
+                var reason = FeedLoader.DescribeFailure(ex);
+                ReportLoadOutcome($"Could not load {feedItem.Title}: {reason}");
 
                 // A modal box only where the user asked for one specific thing and got nothing.
                 // The folder path deliberately does not do this; see DescribeFolderLoad.
                 MessageBox.Show(
-                    $"Could not load {feedItem.Title}.\n\n{ex.Message}",
+                    $"Could not load {feedItem.Title}.\n\nThis feed {reason}.",
                     "Feed Load Error", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
         }
@@ -901,37 +1006,6 @@ namespace RSSReaderWPF
         }
 
         /// <summary>
-        /// Clean title text to remove problematic whitespace that causes braille "blank" issues
-        /// </summary>
-        private static string CleanTitleText(string title)
-        {
-            if (string.IsNullOrEmpty(title))
-                return "No Title";
-
-            // Remove zero-width characters that can cause braille display issues first
-            var cleaned = title.Replace("\u200B", "") // Zero-width space
-                              .Replace("\u200C", "") // Zero-width non-joiner
-                              .Replace("\u200D", "") // Zero-width joiner
-                              .Replace("\uFEFF", "") // Byte order mark / zero-width no-break space
-                              .Replace("\u00A0", " ") // Non-breaking space → regular space
-                              .Replace("\u2009", " ") // Thin space → regular space
-                              .Replace("\u202F", " ") // Narrow no-break space → regular space
-                              .Replace("\u2060", ""); // Word joiner
-
-            // Remove non-printable characters that might cause issues with screen readers
-            cleaned = System.Text.RegularExpressions.Regex.Replace(cleaned, @"[\x00-\x1F\x7F-\x9F]", "");
-
-            // More aggressive whitespace normalization
-            // Replace any sequence of whitespace characters (including tabs, newlines, etc.) with single space
-            cleaned = System.Text.RegularExpressions.Regex.Replace(cleaned, @"[\s\r\n\t]+", " ");
-
-            // Final trim to remove leading/trailing whitespace
-            cleaned = cleaned.Trim();
-
-            return string.IsNullOrWhiteSpace(cleaned) ? "No Title" : cleaned;
-        }
-
-        /// <summary>
         /// Sends focus that landed on the bare tree on to a node, and reports where focus is.
         /// </summary>
         /// <remarks>See <see cref="HeadlinesList_GotFocus"/> for why the guard is needed.</remarks>
@@ -974,7 +1048,10 @@ namespace RSSReaderWPF
             // This will allow normal TabIndex flow: FeedTree -> HeadlinesList -> OpenInBrowserButton -> (cycle)
         }
 
-        private void ImportOpml_Click(object sender, RoutedEventArgs e)
+        private void ImportOpml_Click(object sender, RoutedEventArgs e) => ImportOpml();
+
+        /// <summary>The Import button, or Ctrl+O.</summary>
+        private void ImportOpml()
         {
             var dialog = new OpenFileDialog
             {
@@ -985,25 +1062,42 @@ namespace RSSReaderWPF
 
             if (dialog.ShowDialog() == true)
             {
+                // The file's name, not its whole path: the status bar is read aloud, and a path is
+                // a long way to go to hear which list arrived. The same wording as the Mac.
+                var name = Path.GetFileName(dialog.FileName);
                 try
                 {
                     var list = OpenedFeedList.Parse(File.ReadAllBytes(dialog.FileName), isSaved: false);
                     ShowFeedList(list, isDefault: false);
+                    // Into the list just imported, which is where the reader will want to be next.
+                    FocusSelectedFeed();
                     _viewModel.StatusMessage =
-                        $"Successfully imported OPML file: {dialog.FileName} - press Alt+D to make it your default feed list";
+                        $"Imported {Feeds(list.Document.FeedCount)} from {name} - Alt+D makes it your default feed list";
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"Failed to import OPML file:\n{ex.Message}", "Import Error",
+                    _viewModel.StatusMessage = $"Could not import {name}: {ex.Message}";
+                    MessageBox.Show($"Could not import {name}.\n\n{ex.Message}", "Import Error",
                                    MessageBoxButton.OK, MessageBoxImage.Error);
-                    _viewModel.StatusMessage = $"Error importing OPML: {ex.Message}";
                 }
             }
         }
 
         private void OpenInBrowser_Click(object sender, RoutedEventArgs e)
         {
-            if (_viewModel.SelectedArticle != null && !string.IsNullOrEmpty(_viewModel.SelectedArticle.Link))
+            // Said rather than silently ignored, as on the Mac: Alt+B or Enter that does nothing
+            // leaves a screen reader user wondering whether the key was heard at all.
+            if (_viewModel.SelectedArticle is not { } article || HeadlinesList.SelectedIndex < 0)
+            {
+                _viewModel.StatusMessage = "Select a headline first";
+                return;
+            }
+            if (string.IsNullOrEmpty(article.Link))
+            {
+                _viewModel.StatusMessage = $"{article.Title} has no link to open";
+                return;
+            }
+
             {
                 try
                 {
@@ -1043,26 +1137,84 @@ namespace RSSReaderWPF
             else _ = LoadFeedAsync(loaded);
         }
 
-        private void OpenInBrowserCommand()
+        /// <summary>Alt+B. Runs even while the button is greyed out, so it can say why.</summary>
+        private void OpenInBrowserCommand() => OpenInBrowser_Click(OpenInBrowserButton, new RoutedEventArgs());
+
+        /// <summary>Ctrl+1, and F6 from the headlines.</summary>
+        /// <returns>False when there was nothing to go to.</returns>
+        /// <remarks>
+        /// Nothing is written when focus moves: the screen reader already says where it landed.
+        /// Only an empty panel is worth a message, because otherwise the key seems to do nothing.
+        /// </remarks>
+        private bool FocusFeedTree()
         {
-            // Trigger the same action as the button click
-            if (OpenInBrowserButton.IsEnabled)
+            if (FeedTree.Items.Count == 0)
             {
-                OpenInBrowser_Click(OpenInBrowserButton, new RoutedEventArgs());
+                _viewModel.StatusMessage = "Feed tree is empty - import an OPML file";
+                return false;
             }
-        }
-
-        private void FocusFeedTree()
-        {
             if (!FocusSelectedFeed()) FeedTree.Focus();
-            _viewModel.StatusMessage = "Focus on Feed Tree";
+            return true;
         }
 
-        private void FocusHeadlinesList()
+        /// <summary>Ctrl+2, and F6 from the feed tree.</summary>
+        /// <returns>False when there was nothing to go to.</returns>
+        private bool FocusHeadlinesList()
         {
+            if (HeadlinesList.Items.Count == 0)
+            {
+                _viewModel.StatusMessage = "Headlines list is empty - press Enter on a feed to load it";
+                return false;
+            }
             if (!FocusSelectedHeadline()) HeadlinesList.Focus();
-            _viewModel.StatusMessage = "Focus on Headlines List";
+            return true;
         }
+
+        /// <summary>Ctrl+Plus, Ctrl+Minus and Ctrl+0.</summary>
+        private void SetTextSize(double size)
+        {
+            _textSize = size;
+            FontSize = _baseFontSize * size;
+            _viewModel.StatusMessage = $"Text size {(int)Math.Round(size * 100)} percent";
+        }
+
+        /// <summary>
+        /// F1: the keys, in a window rather than in a README nobody has open. The Mac's is
+        /// Help, Keyboard Shortcuts.
+        /// </summary>
+        private void ShowKeyboardShortcuts()
+        {
+            var version = AppUpdater.CurrentVersion.ToString(3);
+            MessageBox.Show(this, KeyboardShortcuts(version), "RSS Quick Keyboard Shortcuts",
+                MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+
+        internal static string KeyboardShortcuts(string version) => $"""
+            Moving around
+              Tab or Shift+Tab: the buttons, the feed tree and the headlines
+              F6 or Ctrl+Tab: switch between the feed tree and the headlines
+              Ctrl+1 or Ctrl+2: go straight to the feed tree or the headlines
+              Arrow keys: move within a list. Right and Left open and close folders
+              Type a few letters: jump to a feed or headline by name
+
+            Reading
+              Enter: on a feed, load its headlines. On a folder, load all of them.
+                On a headline, open it in your browser.
+              Alt+B: open the selected headline in your browser
+              F5: reload what is on screen
+              Escape: stop a load that is taking too long
+
+            Text and files
+              Ctrl+Plus or Ctrl+Minus: larger or smaller text, until RSS Quick closes
+              Ctrl+0: back to your Windows text size
+              Ctrl+O: import a different OPML feed list
+              Alt+D: make the feed list on screen your default
+              Alt+U: get a new version, once there is one
+
+            Selecting a feed never fetches anything. Only Enter does.
+
+            RSS Quick {version}
+            """;
 
         /// <summary>
         /// F6 and Ctrl+Tab: move to the other panel.
@@ -1075,15 +1227,15 @@ namespace RSSReaderWPF
         /// </remarks>
         private void CycleSections()
         {
+            // The same two words as the Mac, and only when focus actually moved: an empty panel's
+            // own message is the one worth hearing.
             if (IsWithin(FeedTree, Keyboard.FocusedElement as DependencyObject))
             {
-                FocusHeadlinesList();
-                _viewModel.StatusMessage = "Now in Headlines List section";
+                if (FocusHeadlinesList()) _viewModel.StatusMessage = "Headlines";
             }
             else
             {
-                FocusFeedTree();
-                _viewModel.StatusMessage = "Now in Feed Tree section";
+                if (FocusFeedTree()) _viewModel.StatusMessage = "Feed tree";
             }
         }
 
