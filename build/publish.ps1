@@ -110,8 +110,9 @@ foreach ($arch in $targets) {
 RSS Quick $version - portable
 =============================
 
-Unzip anywhere and run RSSQuick.exe. Nothing is installed, and nothing is written
-outside this folder. A USB stick works fine.
+Unzip anywhere and run RSSQuick.exe. Nothing is installed, and a USB stick works fine.
+The one thing written outside this folder is a feed list you save with Make This My
+Default, which is kept in your Windows profile on this computer.
 
 .NET does not need to be installed - this build carries its own copy.
 
