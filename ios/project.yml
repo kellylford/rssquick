@@ -57,7 +57,7 @@ targets:
         DEVELOPMENT_TEAM: P887QF74N8
         # The marketing version is overridden from VERSION at the repository root by
         # scripts/release-testflight.sh; this value is only what a plain Xcode build shows.
-        MARKETING_VERSION: 1.3.0
+        MARKETING_VERSION: 1.2.0
         CURRENT_PROJECT_VERSION: 1
 
 schemes:

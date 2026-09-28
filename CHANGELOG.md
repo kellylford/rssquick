@@ -4,7 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.3.0] - 2026-09-27
+## [1.2.0] - 2026-09-28
+
+Released first on 26 September without the updater, and again on 28 September with
+everything below. The 1.3.0 published in between is withdrawn; iPhone and iPad, Windows and
+the Mac now all share this version number.
 
 ### Added
 - **The Windows installer keeps RSS Quick up to date.** A few seconds after it starts, an
@@ -24,37 +28,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   not a feed, and dates given only in Dublin Core form, which used to cost an article its date
   and sink it to the bottom of a folder.
 - **The Windows downloads are code-signed.**
-
-### Changed
-- **A new Windows installer.** Velopack's replaces Inno Setup, and it is what makes updating
-  possible. It still installs for your account only with no administrator prompt, and now has no
-  wizard pages at all. Updates arrive as a small difference from the version you have rather than
-  the whole 55 MB.
-- **Moving from 1.2.0 or earlier:** run the new setup once. The first time the new version starts
-  it removes the old copy, and if you had edited the old copy's `RSS.opml`, your list is kept
-  first: it becomes your default feed list, or, if you already have one, it is saved beside it as
-  `RSS-from-previous-install.opml` for Import to open. An old copy installed for all users is left
-  for you to remove from Installed Apps. Mac users on 1.2.0 need to download 1.3.0 once too; from
-  then on the Mac says when there is a new version.
-- An update replaces the `RSS.opml` that ships with RSS Quick. Use Make This My Default (Alt+D)
-  to keep a list of your own; that copy is never touched.
-- On Windows, a folder no longer reads out "3 of 20 feeds" for every feed as it loads; it says
-  when the load starts and what it found, as the Mac does.
-- On Windows, a feed that fails to load says why in plain words, "server said 404 not found" or
-  "could not be reached - there is no network", instead of .NET's own error text, and an import
-  names the file rather than reading out its whole path. Keys that have nothing to do say so:
-  Alt+B with no headline selected, a headline with no link, switching to an empty panel.
-- The Windows window is called "RSS Quick", with the space, as it is everywhere else.
-
-### Fixed
-- Pressing Escape after a load had finished said "Loading cancelled" and replaced the load's
-  summary, on Windows and the Mac.
-- On the Mac, switching to an empty headlines list said "Headlines" straight over the message
-  saying it was empty.
-
-## [1.2.0] - 2026-09-26
-
-### Added
 - **An iPhone and iPad version**, in `ios/`, available through TestFlight. It is kept small on
   purpose: the feed list with folders that expand and collapse, OPML import, and headlines that
   open in Safari inside the app, so Done returns you to the same headline. It shares the macOS
@@ -82,11 +55,35 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   to be usable without sight, which is why this came before anything else on the Mac side.
 
 ### Changed
+- **A new Windows installer.** Velopack's replaces Inno Setup, and it is what makes updating
+  possible. It still installs for your account only with no administrator prompt, and now has no
+  wizard pages at all. Updates arrive as a small difference from the version you have rather than
+  the whole 55 MB.
+- **Moving from an earlier download** (1.1.0, or 1.2.0 as first released on 26 September): run
+  the new setup once. The first time the new version starts
+  it removes the old copy, and if you had edited the old copy's `RSS.opml`, your list is kept
+  first: it becomes your default feed list, or, if you already have one, it is saved beside it as
+  `RSS-from-previous-install.opml` for Import to open. An old copy installed for all users is left
+  for you to remove from Installed Apps. Mac users with an earlier download need to download
+  this one once too; from then on the Mac says when there is a new version.
+- An update replaces the `RSS.opml` that ships with RSS Quick. Use Make This My Default (Alt+D)
+  to keep a list of your own; that copy is never touched.
+- On Windows, a folder no longer reads out "3 of 20 feeds" for every feed as it loads; it says
+  when the load starts and what it found, as the Mac does.
+- On Windows, a feed that fails to load says why in plain words, "server said 404 not found" or
+  "could not be reached - there is no network", instead of .NET's own error text, and an import
+  names the file rather than reading out its whole path. Keys that have nothing to do say so:
+  Alt+B with no headline selected, a headline with no link, switching to an empty panel.
+- The Windows window is called "RSS Quick", with the space, as it is everywhere else.
 - On iOS, importing a list no longer replaces your saved one. It is shown, and becomes the default
   only when you say so, as on the desktop versions. A list saved by the first TestFlight build
   still opens.
 
 ### Fixed
+- Pressing Escape after a load had finished said "Loading cancelled" and replaced the load's
+  summary, on Windows and the Mac.
+- On the Mac, switching to an empty headlines list said "Headlines" straight over the message
+  saying it was empty.
 - On the Mac, VoiceOver no longer reads each name in the feed tree twice ("Technology Technology
   collapsed"). The tooltip that shows a shortened name in full was also being passed to VoiceOver.
 
