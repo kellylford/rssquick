@@ -31,8 +31,7 @@
     it would not if the ZIP were made before signing.
 
 .PARAMETER AzureSignFile
-    Signs the installer, the updater and the program inside the package through Azure
-    Artifact Signing, the same account QuickMail uses. A JSON file naming the endpoint,
+    Signs the installer and the updater through Azure Artifact Signing, the same account QuickMail uses. A JSON file naming the endpoint,
     account and certificate profile, passed to vpk as --azureTrustedSignFile; see
     .github/workflows/release.yml. Needs an Azure login already in place. Without it nothing
     is signed, which is what every local build does.
@@ -111,28 +110,28 @@ foreach ($arch in $targets) {
     $outDir  = Join-Path $staging $rid
 
     if ($publishing) {
-    Write-Host "[$rid] publishing..."
+        Write-Host "[$rid] publishing..."
 
-    # Self-contained single file. Native libraries are extracted rather than left loose so the
-    # portable ZIP really is one executable plus the feed list.
-    & dotnet publish $project `
-        --configuration Release `
-        --runtime $rid `
-        --self-contained true `
-        --output $outDir `
-        -p:PublishSingleFile=true `
-        -p:IncludeNativeLibrariesForSelfExtract=true `
-        -p:EnableCompressionInSingleFile=true `
-        -p:DebugType=none `
-        --nologo
+        # Self-contained single file. Native libraries are extracted rather than left loose so the
+        # portable ZIP really is one executable plus the feed list.
+        & dotnet publish $project `
+            --configuration Release `
+            --runtime $rid `
+            --self-contained true `
+            --output $outDir `
+            -p:PublishSingleFile=true `
+            -p:IncludeNativeLibrariesForSelfExtract=true `
+            -p:EnableCompressionInSingleFile=true `
+            -p:DebugType=none `
+            --nologo
 
-    if ($LASTEXITCODE -ne 0) { throw "[$rid] publish failed." }
+        if ($LASTEXITCODE -ne 0) { throw "[$rid] publish failed." }
 
-    Copy-Item (Join-Path $repo 'README.md')  $outDir -Force
-    Copy-Item (Join-Path $repo 'LICENSE')    $outDir -Force
+        Copy-Item (Join-Path $repo 'README.md')  $outDir -Force
+        Copy-Item (Join-Path $repo 'LICENSE')    $outDir -Force
 
-    # A portable copy keeps everything in its own folder, so say so where someone will see it.
-    @"
+        # A portable copy keeps everything in its own folder, so say so where someone will see it.
+        @"
 RSS Quick $version - portable
 =============================
 
@@ -166,6 +165,8 @@ Source and issues: https://github.com/kellylford/rssquick
     if (-not $SkipInstaller) {
         # The installer payload is the portable tree minus its portable-only readme.
         $installerSource = Join-Path $staging "installer-$rid"
+        # Emptied first, so a second -Step Package cannot pick up files an earlier one left.
+        if (Test-Path $installerSource) { Remove-Item $installerSource -Recurse -Force }
         New-Item -ItemType Directory -Path $installerSource -Force | Out-Null
         Get-ChildItem $outDir -Exclude 'README-PORTABLE.txt' | Copy-Item -Destination $installerSource -Recurse -Force
 
