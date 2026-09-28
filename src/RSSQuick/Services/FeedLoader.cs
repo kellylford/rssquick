@@ -9,6 +9,7 @@ using System.ServiceModel.Syndication;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
+using System.Xml.Linq;
 
 namespace RSSReaderWPF.Services
 {
@@ -169,7 +170,39 @@ namespace RSSReaderWPF.Services
         /// <exception cref="XmlException">The document is not well-formed XML.</exception>
         public static IReadOnlyList<ArticleItem> Parse(Stream stream, string preferredTitle)
         {
-            using var reader = XmlReader.Create(stream, new XmlReaderSettings
+            // Read twice - once to see what kind of feed it is, once to read it - so buffered.
+            // The syndication formatters need an ordinary reader over the text: handed one built
+            // from an XDocument they fail on the first text node.
+            using var buffer = new MemoryStream();
+            stream.CopyTo(buffer);
+
+            SyndicationFeed parsed;
+            using (var probe = CreateReader(buffer))
+            {
+                probe.MoveToContent();
+                if (probe.LocalName == "RDF" && probe.NamespaceURI == Rdf.NamespaceName)
+                {
+                    parsed = ReadRdf(XElement.Load(probe));
+                }
+                else
+                {
+                    using var reader = CreateReader(buffer);
+                    parsed = ReadRssOrAtom(reader);
+                }
+            }
+
+            var feedTitle = string.IsNullOrWhiteSpace(preferredTitle)
+                ? FeedText.CleanTitle(parsed.Title?.Text)
+                : preferredTitle;
+
+            return SortNewestFirst(parsed.Items.Select(item => ArticleItem.FromSyndication(item, feedTitle)));
+        }
+
+        /// <summary>A reader over the whole buffer, from the start.</summary>
+        private static XmlReader CreateReader(MemoryStream buffer)
+        {
+            buffer.Position = 0;
+            return XmlReader.Create(buffer, new XmlReaderSettings
             {
                 // Feed XML is third-party input. Prohibiting DTDs closes entity expansion and
                 // external entity resolution; a null resolver means no network fetch can be
@@ -178,13 +211,79 @@ namespace RSSReaderWPF.Services
                 XmlResolver = null,
                 CloseInput = false,
             });
+        }
 
-            var parsed = SyndicationFeed.Load(reader);
-            var feedTitle = string.IsNullOrWhiteSpace(preferredTitle)
-                ? FeedText.CleanTitle(parsed.Title?.Text)
-                : preferredTitle;
+        private static readonly XNamespace Rdf = "http://www.w3.org/1999/02/22-rdf-syntax-ns#";
+        private static readonly XNamespace Rss1 = "http://purl.org/rss/1.0/";
+        internal static readonly XNamespace DublinCore = "http://purl.org/dc/elements/1.1/";
 
-            return SortNewestFirst(parsed.Items.Select(item => ArticleItem.FromSyndication(item, feedTitle)));
+        /// <summary>RSS 2.0 or Atom, with dates read by <see cref="FeedDate"/>.</summary>
+        /// <remarks>
+        /// The formatters are used directly rather than through SyndicationFeed.Load only so that
+        /// they can be handed a date parser that accepts what publishers actually write.
+        /// Anything neither of them reads still goes through Load, so a document that is not a
+        /// feed fails exactly as it always has.
+        /// </remarks>
+        private static SyndicationFeed ReadRssOrAtom(XmlReader reader)
+        {
+            var atom = new Atom10FeedFormatter { DateTimeParser = FeedDate.TryParse };
+            if (atom.CanRead(reader))
+            {
+                atom.ReadFrom(reader);
+                return atom.Feed;
+            }
+
+            var rss = new Rss20FeedFormatter { DateTimeParser = FeedDate.TryParse };
+            if (rss.CanRead(reader))
+            {
+                rss.ReadFrom(reader);
+                return rss.Feed;
+            }
+
+            return SyndicationFeed.Load(reader);
+        }
+
+        /// <summary>
+        /// RSS 1.0, which is RDF, and which the syndication library does not read at all.
+        /// </summary>
+        /// <remarks>
+        /// Built into a <see cref="SyndicationFeed"/> so that it becomes articles through
+        /// <see cref="ArticleItem.FromSyndication"/> like every other feed, rather than growing a
+        /// second way to build one. Nature, in the starter list, is an RSS 1.0 feed; the macOS
+        /// version has always read it.
+        /// </remarks>
+        private static SyndicationFeed ReadRdf(XElement root)
+        {
+            var feed = new SyndicationFeed(
+                root.Element(Rss1 + "channel")?.Element(Rss1 + "title")?.Value ?? string.Empty,
+                string.Empty,
+                feedAlternateLink: null);
+
+            var items = new List<SyndicationItem>();
+            foreach (var element in root.Elements(Rss1 + "item"))
+            {
+                var item = new SyndicationItem
+                {
+                    Title = new TextSyndicationContent(element.Element(Rss1 + "title")?.Value ?? string.Empty),
+                };
+
+                if (Uri.TryCreate(element.Element(Rss1 + "link")?.Value.Trim(), UriKind.Absolute, out var link))
+                    item.Links.Add(new SyndicationLink(link));
+
+                if (element.Element(Rss1 + "description")?.Value is { } description)
+                    item.Summary = new TextSyndicationContent(description);
+
+                if (FeedDate.Parse(element.Element(DublinCore + "date")?.Value) is { } date)
+                    item.PublishDate = date;
+
+                if (element.Element(DublinCore + "creator")?.Value is { Length: > 0 } creator)
+                    item.Authors.Add(new SyndicationPerson(null, creator, null));
+
+                items.Add(item);
+            }
+
+            feed.Items = items;
+            return feed;
         }
 
         private static ArticleItem[] SortNewestFirst(IEnumerable<ArticleItem> articles) =>
