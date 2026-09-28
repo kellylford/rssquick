@@ -1,9 +1,9 @@
-Welcome to RSS Quick for iPhone and iPad. This is the first public test: a simple RSS reader built for VoiceOver, braille displays and anyone who wants to get through a lot of headlines quickly.
+Welcome to RSS Quick for iPhone and iPad. This is the initial release, covering the basics of reading RSS: a simple feed reader built for VoiceOver, braille displays and anyone who wants to get through a lot of headlines quickly.
 
 What it does
-- Opens with a starter list of news, technology, science, culture, sports and accessibility feeds, arranged in folders.
+- Opens with a starter list of news, business, technology, science and health, culture, sports and accessibility feeds, arranged in folders.
 - Tap a folder to open or close it. Tap a feed to see its headlines, newest first.
-- To load every feed in a folder at once, use the Show all headlines action on the folder (swipe up or down with VoiceOver) or long-press it. The merged list names the feed each headline came from.
+- To load every feed in a folder at once, use the Show all headlines action on the folder (swipe up or down with VoiceOver), or long-press it and choose Show All Headlines. The merged list names the feed each headline came from.
 - Tap a headline to read the article in Safari inside the app. Done brings you back to the same headline.
 - Use your own feeds: in the Feed List menu at the top of the screen, choose Import OPML File to open one from Files, then Make This My Default Feed List so it opens every time. Use Starter Feed List goes back.
 - Refresh, in a list of headlines, fetches them again.
