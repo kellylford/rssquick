@@ -160,7 +160,21 @@ namespace RSSReaderWPF
             var updated = ReadOrIgnore(() => item.LastUpdatedTime);
             if (updated > DateTimeOffset.MinValue) return updated;
 
+            // Dublin Core's date, which RSS 2.0 feeds use in place of pubDate more often than the
+            // spec would suggest. The macOS reader has always taken it.
+            foreach (var extension in item.ElementExtensions)
+            {
+                if (extension.OuterName == "date" && extension.OuterNamespace == FeedLoader.DublinCore.NamespaceName)
+                    return FeedDate.Parse(ReadOrNull(() => extension.GetObject<string>()));
+            }
+
             return null;
+
+            static string? ReadOrNull(Func<string> read)
+            {
+                try { return read(); }
+                catch (Exception ex) when (ex is XmlException or System.Runtime.Serialization.SerializationException) { return null; }
+            }
 
             static DateTimeOffset ReadOrIgnore(Func<DateTimeOffset> read)
             {
