@@ -153,8 +153,11 @@ public class ParityTests
     }
 
     [WpfFact]
-    public void The_headlines_list_searches_by_title() =>
-        Assert.Equal("Title", TextSearch.GetTextPath(new FocusHarness(populate: false).Headlines));
+    public void The_headlines_list_searches_by_title()
+    {
+        using var ui = new FocusHarness(populate: false);
+        Assert.Equal("Title", TextSearch.GetTextPath(ui.Headlines));
+    }
 
     // ── keys that used to do nothing ────────────────────────────────────────
 
@@ -253,6 +256,30 @@ public class ParityTests
         Binding(ui, Key.Escape);
 
         Assert.Equal("Loaded 2 headlines from News", Status(ui));
+    }
+
+    /// <summary>
+    /// A load replaced by a newer one used to clear the loading flag as it unwound, so Escape
+    /// did nothing to the newer load still running.
+    /// </summary>
+    [WpfFact]
+    public void Escape_cancels_a_load_that_replaced_another()
+    {
+        using var server = new LocalFeedServer();
+        using var ui = new FocusHarness(populate: false);
+        ui.SetFeeds(
+            Feed("Slow one", server.Serve("a.xml", SampleFeed.WithItems("A", "a"), delay: TimeSpan.FromSeconds(5)).ToString()),
+            Feed("Slow two", server.Serve("b.xml", SampleFeed.WithItems("B", "b"), delay: TimeSpan.FromSeconds(5)).ToString()));
+
+        ui.PressEnterOnFeed(0);
+        ui.PressEnterOnFeed(1);
+        // Let the first load's cancellation unwind.
+        ui.PumpUntil(() => Status(ui) == "Loading feed: Slow two...", "the second load to start");
+        ui.Drain();
+
+        Binding(ui, Key.Escape);
+
+        Assert.Equal("Loading cancelled", Status(ui));
     }
 
     /// <summary>The words the Mac uses, rather than the enum name run together.</summary>

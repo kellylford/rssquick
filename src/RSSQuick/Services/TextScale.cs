@@ -43,10 +43,6 @@ namespace RSSReaderWPF.Services
         }
 
         /// <summary>
-        /// Turns the raw registry value into a multiplier. Separated from reading the registry so
-        /// the clamping can be tested without touching the machine's actual settings.
-        /// </summary>
-        /// <summary>
         /// The sizes Ctrl+Plus and Ctrl+Minus step through, on top of the Windows setting.
         /// </summary>
         /// <remarks>
@@ -65,6 +61,10 @@ namespace RSSReaderWPF.Services
         public static double Smaller(double current) =>
             Array.FindLast(Steps, step => step < current - 0.001) is var next && next > 0 ? next : Steps[0];
 
+        /// <summary>
+        /// Turns the raw registry value into a multiplier. Separated from reading the registry so
+        /// the clamping can be tested without touching the machine's actual settings.
+        /// </summary>
         internal static double FromRegistryValue(object? raw)
         {
             if (raw is not int percent) return 1.0;

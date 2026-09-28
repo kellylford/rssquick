@@ -145,8 +145,14 @@ namespace RSSReaderWPF.Services
 
         private static async Task<IReadOnlyList<ArticleItem>> FetchAsync(FeedItem feed, CancellationToken cancellationToken)
         {
+            // Checked here rather than left to HttpClient, whose InvalidOperationException for a
+            // bad address is too general a type to translate safely further up.
+            if (!Uri.TryCreate(feed.Url, UriKind.Absolute, out var address)
+                || (address.Scheme != Uri.UriSchemeHttp && address.Scheme != Uri.UriSchemeHttps))
+                throw new UriFormatException($"{feed.Url} is not a web address.");
+
             using var response = await Http
-                .GetAsync(feed.Url, HttpCompletionOption.ResponseContentRead, cancellationToken)
+                .GetAsync(address, HttpCompletionOption.ResponseContentRead, cancellationToken)
                 .ConfigureAwait(false);
 
             response.EnsureSuccessStatusCode();
@@ -217,23 +223,28 @@ namespace RSSReaderWPF.Services
         private static readonly XNamespace Rss1 = "http://purl.org/rss/1.0/";
         internal static readonly XNamespace DublinCore = "http://purl.org/dc/elements/1.1/";
 
-        /// <summary>RSS 2.0 or Atom, with dates read by <see cref="FeedDate"/>.</summary>
+        /// <summary>RSS 2.0 or Atom, with <see cref="FeedDate"/> behind the library's own dates.</summary>
         /// <remarks>
-        /// The formatters are used directly rather than through SyndicationFeed.Load only so that
-        /// they can be handed a date parser that accepts what publishers actually write.
-        /// Anything neither of them reads still goes through Load, so a document that is not a
-        /// feed fails exactly as it always has.
+        /// <para>The formatters are used directly rather than through SyndicationFeed.Load only so
+        /// that <see cref="FeedDate"/> can be added as a second chance for a date the library
+        /// cannot read. It is added, not substituted: the library's own parser is lenient in ways
+        /// FeedDate is not (full month names, two-digit years, a single-digit hour, the current
+        /// culture), and replacing it lost dates that had always parsed.</para>
+        /// <para>Anything neither formatter reads still goes through Load, so a document that is
+        /// not a feed fails exactly as it always has.</para>
         /// </remarks>
         private static SyndicationFeed ReadRssOrAtom(XmlReader reader)
         {
-            var atom = new Atom10FeedFormatter { DateTimeParser = FeedDate.TryParse };
+            var atom = new Atom10FeedFormatter();
+            atom.DateTimeParser = ThenFeedDate(atom.DateTimeParser);
             if (atom.CanRead(reader))
             {
                 atom.ReadFrom(reader);
                 return atom.Feed;
             }
 
-            var rss = new Rss20FeedFormatter { DateTimeParser = FeedDate.TryParse };
+            var rss = new Rss20FeedFormatter();
+            rss.DateTimeParser = ThenFeedDate(rss.DateTimeParser);
             if (rss.CanRead(reader))
             {
                 rss.ReadFrom(reader);
@@ -242,6 +253,11 @@ namespace RSSReaderWPF.Services
 
             return SyndicationFeed.Load(reader);
         }
+
+        /// <summary>The library's own date parser, then <see cref="FeedDate"/> if it gives up.</summary>
+        private static TryParseDateTimeCallback ThenFeedDate(TryParseDateTimeCallback library) =>
+            (XmlDateTimeData data, out DateTimeOffset date) =>
+                library(data, out date) || FeedDate.TryParse(data, out date);
 
         /// <summary>
         /// RSS 1.0, which is RDF, and which the syndication library does not read at all.
@@ -311,8 +327,8 @@ namespace RSSReaderWPF.Services
             HttpRequestException when !System.Net.NetworkInformation.NetworkInterface.GetIsNetworkAvailable()
                 => "could not be reached - there is no network",
             HttpRequestException => "could not be reached",
-            // What HttpClient throws for an address it cannot make a request from.
-            UriFormatException or InvalidOperationException => "has an address RSS Quick cannot read",
+            // Thrown by FetchAsync for an address it cannot make a request from.
+            UriFormatException => "has an address RSS Quick cannot read",
             XmlException => "is not valid XML",
             // SyndicationFeed.Load throws this for a well-formed document that is not RSS or Atom,
             // with a message about serializers that means nothing to a reader.

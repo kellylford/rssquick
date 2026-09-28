@@ -269,8 +269,9 @@ extension MainWindowController {
                 show(result.articles, status: MainWindowController.describeFolderLoad(title, result))
             } catch is CancellationError {
                 // Escape, or a newer load superseding this one. Either way the status line has
-                // already been given something better to say.
-                self?.isLoadingFeed = false
+                // already been given something better to say. isLoadingFeed is left alone:
+                // cancelLoad has cleared it for Escape, and a newer load owns it otherwise -
+                // clearing it here stopped Escape cancelling that newer load.
             } catch {
                 guard !Task.isCancelled, let self else { return }
 

@@ -21,9 +21,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   on a feed goes to its folder; Ctrl+Plus, Ctrl+Minus and Ctrl+0 change the text size until RSS
   Quick closes, on top of the Windows setting; and F1 lists every key with the version number.
 - **Windows reads RSS 1.0 feeds**, such as Nature in the starter list, which it used to reject as
-  not a feed, and the looser dates publishers write: ISO dates in RSS feeds, Dublin Core dates,
-  and RFC 822 dates with a four-digit year or no day name. Each of those used to cost an article
-  its date and sink it to the bottom of a folder.
+  not a feed, and dates given only in Dublin Core form, which used to cost an article its date
+  and sink it to the bottom of a folder.
 - **The Windows downloads are code-signed.**
 
 ### Changed

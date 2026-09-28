@@ -161,14 +161,16 @@ extension MainWindowController: NSMenuItemValidation {
 
     @objc func refresh(_ sender: Any?) { refreshCurrentFeed() }
 
+    // As in cycleSections: the panel's name only when focus moved there, so an empty panel's own
+    // message is not replaced before it can be heard.
     @objc func focusFeedTreeCommand(_ sender: Any?) {
         focusFeedTree()
-        setStatus("Feed tree")
+        if outline.numberOfRows > 0 { setStatus("Feed tree") }
     }
 
     @objc func focusHeadlinesCommand(_ sender: Any?) {
         focusHeadlines()
-        setStatus("Headlines")
+        if table.numberOfRows > 0 { setStatus("Headlines") }
     }
 
     @objc func cyclePanes(_ sender: Any?) { cycleSections() }
