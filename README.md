@@ -168,8 +168,8 @@ A few seconds after it starts, RSS Quick asks GitHub whether there is a newer ve
 None of this moves focus. If the news arrives while a feed is loading, it is read out after the
 load's result rather than over it. The check sends nothing about you or your feeds.
 
-**On 1.2.0 or earlier?** Those versions cannot update themselves, so download the current
-version once by hand. On Windows, installing it removes the old installed copy. If you had edited
+**Downloaded RSS Quick before 28 September 2026?** Those copies (1.1.0, and 1.2.0 as it was
+first released) cannot update themselves, so download the current version once by hand. On Windows, installing it removes the old installed copy. If you had edited
 the old copy's feed list, it is kept: it becomes your default, or, if you already have one, it
 is saved beside it as `RSS-from-previous-install.opml` for you to import. An old copy that was
 installed for all users, in Program Files, is left for you to remove from Installed Apps.

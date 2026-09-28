@@ -30,10 +30,10 @@ package.cmd
 That builds both architectures and puts four files in `artifacts/`:
 
 ```
-RSSQuick-1.3.0-setup-win-x64.exe        installer, Intel/AMD
-RSSQuick-1.3.0-portable-win-x64.zip     portable, Intel/AMD
-RSSQuick-1.3.0-setup-win-arm64.exe      installer, ARM
-RSSQuick-1.3.0-portable-win-arm64.zip   portable, ARM
+RSSQuick-1.2.0-setup-win-x64.exe        installer, Intel/AMD
+RSSQuick-1.2.0-portable-win-x64.zip     portable, Intel/AMD
+RSSQuick-1.2.0-setup-win-arm64.exe      installer, ARM
+RSSQuick-1.2.0-portable-win-arm64.zip   portable, ARM
 ```
 
 and the update feed in `artifacts/releases/`: a `.nupkg` package per architecture, and the
