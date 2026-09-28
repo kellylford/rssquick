@@ -35,5 +35,6 @@ jobs:
           ASC_KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.NOTARY_ISSUER_ID }}
         run: |
-          pip install --quiet pyjwt cryptography requests
-          python3 ios/scripts/asc.py status
+          python3 -m venv "$RUNNER_TEMP/asc"
+          "$RUNNER_TEMP/asc/bin/pip" install --quiet pyjwt cryptography requests
+          "$RUNNER_TEMP/asc/bin/python" ios/scripts/asc.py status

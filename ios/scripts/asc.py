@@ -87,10 +87,12 @@ class ApiError(Exception):
 
 
 def app_id(client):
+    # The filter is not guaranteed to be an exact match, so the result is checked.
     apps = client.get("/apps", **{"filter[bundleId]": BUNDLE_ID})["data"]
-    if not apps:
+    app = next((a for a in apps if a["attributes"].get("bundleId") == BUNDLE_ID), None)
+    if app is None:
         sys.exit(f"No app in App Store Connect has the bundle ID {BUNDLE_ID}.")
-    return apps[0]["id"], apps[0]["attributes"]["name"]
+    return app["id"], app["attributes"]["name"]
 
 
 def builds(client, app, **extra):
@@ -142,13 +144,22 @@ def status(client, _args):
 
 
 def highest_build_number(client, app):
+    """Across every build, following App Store Connect's pages rather than stopping at 200."""
     highest = 0
-    for build in builds(client, app)["data"]:
-        try:
-            highest = max(highest, int(build["attributes"]["version"]))
-        except ValueError:
-            pass
-    return highest
+    page = builds(client, app, **{"fields[builds]": "version"})
+    while True:
+        for build in page["data"]:
+            try:
+                highest = max(highest, int(build["attributes"]["version"]))
+            except ValueError:
+                pass
+        following = page.get("links", {}).get("next")
+        if not following:
+            return highest
+        client._authorise()
+        response = client._session.get(following, timeout=60)
+        response.raise_for_status()
+        page = response.json()
 
 
 def next_build_number(client, _args):
@@ -195,15 +206,37 @@ def set_whats_new(client, build_id, text):
 
 
 def external_group(client, app, name):
-    """The named external group, created with a public link if it does not exist."""
+    """The named external group, and whether it was created just now."""
     for group in client.get(f"/apps/{app}/betaGroups")["data"]:
         if group["attributes"]["name"] == name and not group["attributes"].get("isInternalGroup"):
-            return group
-    print(f"Creating the external TestFlight group '{name}' with a public link")
-    return client.request("POST", "/betaGroups", json={"data": {
+            return group, False
+    # Created without the public link, which Apple can refuse on a group with no approved build;
+    # the link is turned on once the build is in the group and submitted.
+    print(f"Creating the external TestFlight group '{name}'")
+    group = client.request("POST", "/betaGroups", json={"data": {
         "type": "betaGroups",
-        "attributes": {"name": name, "publicLinkEnabled": True, "publicLinkLimitEnabled": False},
+        "attributes": {"name": name},
         "relationships": {"app": {"data": {"type": "apps", "id": app}}}}})["data"]
+    return group, True
+
+
+# Where a build has been handed to Apple, or through it. Anything else after a refused submission
+# means it is not in review, and the run must not look as though it succeeded.
+SUBMITTED = {"WAITING_FOR_REVIEW", "IN_REVIEW", "APPROVED"}
+EXTERNAL_OK = {"WAITING_FOR_BETA_REVIEW", "IN_BETA_REVIEW", "BETA_APPROVED",
+               "READY_FOR_BETA_TESTING", "IN_BETA_TESTING"}
+
+
+def review_state(client, build_id):
+    """(Beta App Review state, external build state) for a build, either possibly None."""
+    review = None
+    try:
+        data = client.get(f"/builds/{build_id}/betaAppReviewSubmission").get("data")
+        review = data["attributes"].get("betaReviewState") if data else None
+    except ApiError:
+        pass
+    detail = client.get(f"/builds/{build_id}/buildBetaDetail").get("data") or {}
+    return review, detail.get("attributes", {}).get("externalBuildState")
 
 
 def distribute(client, args):
@@ -220,17 +253,10 @@ def distribute(client, args):
             set_whats_new(client, build_id, text[:4000])
             print("Set 'What to Test'")
 
-    group = external_group(client, app, args.group)
+    group, created = external_group(client, app, args.group)
     client.request("POST", f"/betaGroups/{group['id']}/relationships/builds",
                    json={"data": [{"type": "builds", "id": build_id}]})
     print(f"Added to '{args.group}'")
-
-    if not group["attributes"].get("publicLinkEnabled"):
-        try:
-            client.request("PATCH", f"/betaGroups/{group['id']}", json={"data": {
-                "type": "betaGroups", "id": group["id"], "attributes": {"publicLinkEnabled": True}}})
-        except ApiError as e:
-            print(f"Could not turn on the public link yet: {e}")
 
     try:
         client.request("POST", "/betaAppReviewSubmissions", json={"data": {
@@ -238,11 +264,27 @@ def distribute(client, args):
             "relationships": {"build": {"data": {"type": "builds", "id": build_id}}}}})
         print("Submitted for Beta App Review")
     except ApiError as e:
-        # Already submitted, or approved without review - both mean there is nothing to do.
-        if e.status == 409:
-            print(f"Not submitted: {e}")
+        # A refusal can mean it is already submitted or approved - fine - or that something is
+        # missing, such as the app's TestFlight Test Information, which blocks the first external
+        # build. Only the build's own state says which.
+        review, external = review_state(client, build_id)
+        if review in SUBMITTED or external in EXTERNAL_OK:
+            print(f"Already with Apple: review {review}, external testing {external}")
         else:
-            raise
+            sys.exit(f"Not submitted for Beta App Review ({e}). Review state {review}, external state "
+                     f"{external}. If this is the first external build, fill in TestFlight -> Test "
+                     "Information in App Store Connect, then run the workflow with only_distribute.")
+
+    # A group made just now gets its public link. An existing group is left as it is: if its link
+    # is off, someone turned it off.
+    if created:
+        try:
+            client.request("PATCH", f"/betaGroups/{group['id']}", json={"data": {
+                "type": "betaGroups", "id": group["id"],
+                "attributes": {"publicLinkEnabled": True, "publicLinkLimitEnabled": False}}})
+        except ApiError as e:
+            print(f"Could not turn on the public link yet (it can be turned on once the build is "
+                  f"approved): {e}")
 
     refreshed = client.get(f"/betaGroups/{group['id']}")["data"]["attributes"]
     if refreshed.get("publicLinkEnabled") and refreshed.get("publicLink"):

@@ -76,6 +76,10 @@ at the repository root.
    "Internal" → add **kelly@kellford.com**. Internal testers must already be App Store Connect
    users on the team. If that address isn't one yet, add it under Users and Access first.
    Turn on automatic distribution so every new build reaches the group without extra clicks.
+4. **Fill in the TestFlight Test Information**: in the app → TestFlight → Test Information. It
+   needs a beta app description, a feedback email and the Beta App Review contact details.
+   External testing, and so `ios-release.yml`'s submission, is refused until these are filled in.
+   If they're missing, the workflow stops with that error rather than going green.
 
 ### Each release: from GitHub
 
@@ -91,7 +95,10 @@ runs beside the Windows and macOS release workflows, on a GitHub-hosted Mac:
    creates one with a public link.
 6. It submits the build for Beta App Review.
 
-To upload the version on a branch without tagging, run it by hand from the Actions tab.
+To upload the version on a branch without tagging, run it by hand from the Actions tab. If a
+build uploaded but distributing it failed, for example because it took too long to process,
+run it again with **only_distribute** and that build's number. That distributes the existing
+build without building a new one. Only one run goes at a time.
 
 `ios-testflight-status.yml`, run by hand, is read-only. For every build it lists the version,
 processing state and Beta App Review state; it also lists the App Store versions and each
@@ -106,8 +113,10 @@ macOS, and Apple rejects App Store builds made on one. Both are driven by
 **Repository secrets.**
 - **App Store Connect API key:** the workflows use the one the macOS release already uses
   (`NOTARY_KEY_ID`, `NOTARY_ISSUER_ID`, `NOTARY_KEY_P8`). That key needs the **App Manager**
-  or **Admin** role to manage groups and submit builds. With the Developer role, the status
-  workflow works but distributing fails with a 403.
+  or **Admin** role. Automatic signing needs it to create the App Store provisioning profile,
+  and distributing needs it to manage groups and submit builds. Check the role under Users and
+  Access → Integrations before the first tag. A Developer-role key can still run the status
+  workflow.
 - **Apple Distribution certificate:** not the Developer ID certificate the Mac build uses. Set
   it once, from this Mac:
 

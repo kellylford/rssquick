@@ -48,3 +48,7 @@ publish-test/
 ios/build/
 ios/RSSQuick.xcodeproj/xcuserdata/
 ios/RSSQuick.xcodeproj/project.xcworkspace/xcuserdata/
+
+# Python
+__pycache__/
+*.pyc
