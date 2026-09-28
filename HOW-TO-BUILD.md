@@ -57,6 +57,15 @@ powershell -File build/publish.ps1 -Architecture x64 -SkipInstaller
 workflow runs `vpk download github` into it beforehand, so vpk can build a delta package against
 the previous version, and installed copies download the difference rather than 55 MB.
 
+### Signing
+
+Local builds are not signed. Releases are: on a `v*` tag, `release.yml` signs through Azure
+Artifact Signing, the same account QuickMail uses, with no certificate stored anywhere. It runs
+`publish.ps1` in two steps, `-Step Publish` and then `-Step Package`, and signs `RSSQuick.exe`
+between them, so the portable ZIP carries a signed program as well as the installer. See the
+comments in `release.yml` and the *Packaging* section of CLAUDE.md for what the Azure side
+needs.
+
 ## Why the packages are built this way
 
 **Both packages are self-contained**, meaning each one carries its own copy of the .NET runtime. That is why they are ~55 MB rather than ~400 KB.

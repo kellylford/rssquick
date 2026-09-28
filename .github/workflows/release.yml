@@ -13,10 +13,17 @@ on:
 
 permissions:
   contents: write   # create the draft release
+  id-token: write   # the OIDC token azure/login exchanges for Azure credentials, for signing
 
 jobs:
   package:
     runs-on: windows-latest
+    # Runs in the `azure-signing` environment so the OIDC token's subject is
+    # repo:kellylford/rssquick:environment:azure-signing, which is what the Azure federated
+    # credential trusts - the tenant does not accept wildcard tag subjects. The same arrangement
+    # as QuickMail. It is only there to match that claim: add no protection rules to it, or every
+    # run will wait for approval. Signing itself still happens only on v* tags, below.
+    environment: azure-signing
 
     steps:
       - uses: actions/checkout@v7
@@ -63,9 +70,73 @@ jobs:
         continue-on-error: true
         run: dotnet tool run vpk download github --repoUrl https://github.com/${{ github.repository }} --channel win-arm64 --outputDir artifacts/releases
 
+      - name: Publish
+        shell: pwsh
+        run: ./build/publish.ps1 -Architecture ${{ inputs.architecture || 'both' }} -Step Publish
+
+      # --- Code signing (Azure Artifact Signing via GitHub OIDC) -------------------------------
+      # No certificate or long-lived secret is stored: azure/login trades this run's OIDC token
+      # for Azure credentials, and both the signing action and vpk's bundled signtool use that
+      # session. The same signing account and certificate profile as QuickMail. Tags only, so a
+      # manual run produces an unsigned build for trying things out.
+      - name: Azure login (code signing)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: azure/login@v3
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      # Before the ZIPs are made, so the portable download carries a signed program too. vpk
+      # signs the installer and the updater during packing, and signs its own copy of this one
+      # again, which only replaces the signature with an identical one.
+      - name: Sign RSSQuick.exe
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: azure/artifact-signing-action@v2.0.0
+        with:
+          endpoint: https://eus.codesigning.azure.net/
+          signing-account-name: kellylford
+          certificate-profile-name: kellyford-public
+          files-folder: ${{ github.workspace }}/artifacts/staging
+          files-folder-filter: exe
+          files-folder-recurse: true
+          file-digest: SHA256
+          timestamp-rfc3161: http://timestamp.acs.microsoft.com
+          timestamp-digest: SHA256
+
+      # UTF-8 without a byte-order mark, which is what vpk's reader needs; WriteAllText writes that.
+      - name: Write signing metadata
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: pwsh
+        run: |
+          $json = @{
+            Endpoint               = 'https://eus.codesigning.azure.net/'
+            CodeSigningAccountName = 'kellylford'
+            CertificateProfileName = 'kellyford-public'
+          } | ConvertTo-Json
+          [System.IO.File]::WriteAllText("$env:RUNNER_TEMP\signing-metadata.json", $json)
+
       - name: Build the installer, portable ZIP and update feed
         shell: pwsh
-        run: ./build/publish.ps1 -Architecture ${{ inputs.architecture || 'both' }} -KeepReleaseFeed
+        run: |
+          $sign = @{}
+          if ('${{ github.ref }}' -like 'refs/tags/v*') { $sign.AzureSignFile = "$env:RUNNER_TEMP\signing-metadata.json" }
+          ./build/publish.ps1 -Architecture ${{ inputs.architecture || 'both' }} -Step Package -KeepReleaseFeed @sign
+
+      # A tag must never publish an unsigned download: SmartScreen would warn everyone who runs it.
+      - name: Check every download is signed
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: pwsh
+        run: |
+          $check = @(Get-ChildItem artifacts\*.exe)
+          foreach ($zip in Get-ChildItem artifacts\*.zip) {
+            $into = Join-Path $env:RUNNER_TEMP $zip.BaseName
+            Expand-Archive $zip.FullName $into -Force
+            $check += Get-Item (Join-Path $into 'RSSQuick.exe')
+          }
+          $bad = $check | Where-Object { (Get-AuthenticodeSignature $_.FullName).Status -ne 'Valid' }
+          $check | ForEach-Object { $sig = Get-AuthenticodeSignature $_.FullName; Write-Host "$($sig.Status)  $($sig.SignerCertificate.Subject)  $($_.FullName)" }
+          if ($bad) { throw "Not signed: $($bad.FullName -join ', ')" }
 
       - name: Upload artefacts
         uses: actions/upload-artifact@v7
