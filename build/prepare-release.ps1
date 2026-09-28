@@ -20,7 +20,10 @@ param(
 $ErrorActionPreference = 'Stop'
 
 $repo = Split-Path -Parent $PSScriptRoot
-Set-Content -Path (Join-Path $repo 'VERSION') -Value $Version -NoNewline -Encoding UTF8
+# No byte-order mark. Windows PowerShell 5.1's Set-Content -Encoding UTF8 always writes one,
+# and while .NET skips it, the macOS build reads VERSION with `tr` in bash: the mark survives
+# into the bundle's version string and makes the release workflow's tag check fail.
+[System.IO.File]::WriteAllText((Join-Path $repo 'VERSION'), $Version, (New-Object System.Text.UTF8Encoding($false)))
 
 Write-Host "VERSION set to $Version."
 Write-Host ''
