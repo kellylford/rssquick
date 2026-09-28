@@ -88,8 +88,8 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       # Before the ZIPs are made, so the portable download carries a signed program too. vpk
-      # signs the installer and the updater during packing, and signs its own copy of this one
-      # again, which only replaces the signature with an identical one.
+      # signs Setup, the updater and its launcher stub during packing; it sees that this one is
+      # already signed and skips it.
       - name: Sign RSSQuick.exe
         if: startsWith(github.ref, 'refs/tags/v')
         uses: azure/artifact-signing-action@v2.0.0
@@ -123,7 +123,9 @@ jobs:
           if ('${{ github.ref }}' -like 'refs/tags/v*') { $sign.AzureSignFile = "$env:RUNNER_TEMP\signing-metadata.json" }
           ./build/publish.ps1 -Architecture ${{ inputs.architecture || 'both' }} -Step Package -KeepReleaseFeed @sign
 
-      # A tag must never publish an unsigned download: SmartScreen would warn everyone who runs it.
+      # A tag must never publish an unsigned program: SmartScreen would warn everyone who runs it.
+      # Covers the downloads, and every program inside the full update packages, which is what an
+      # installed copy runs after updating.
       - name: Check every download is signed
         if: startsWith(github.ref, 'refs/tags/v')
         shell: pwsh
@@ -133,6 +135,12 @@ jobs:
             $into = Join-Path $env:RUNNER_TEMP $zip.BaseName
             Expand-Archive $zip.FullName $into -Force
             $check += Get-Item (Join-Path $into 'RSSQuick.exe')
+          }
+          foreach ($pkg in Get-ChildItem artifacts/releases/*-full.nupkg) {
+            $into = Join-Path $env:RUNNER_TEMP $pkg.BaseName
+            Copy-Item $pkg.FullName "$into.zip"
+            Expand-Archive "$into.zip" $into -Force
+            $check += Get-ChildItem (Join-Path $into 'lib/app') -Filter *.exe
           }
           $bad = $check | Where-Object { (Get-AuthenticodeSignature $_.FullName).Status -ne 'Valid' }
           $check | ForEach-Object { $sig = Get-AuthenticodeSignature $_.FullName; Write-Host "$($sig.Status)  $($sig.SignerCertificate.Subject)  $($_.FullName)" }
