@@ -328,7 +328,10 @@ extension MainWindowController {
 
     /// Escape: abandon the load in progress.
     func cancelLoad() {
-        guard let loadTask, !loadTask.isCancelled else { return }
+        // Not once the load has finished. loadTask is kept after it completes, and without the
+        // isLoadingFeed check Escape afterwards replaced the load's summary with "Loading
+        // cancelled" for a load that was not running. Windows had the same bug.
+        guard isLoadingFeed, let loadTask, !loadTask.isCancelled else { return }
 
         loadTask.cancel()
         self.loadTask = nil
@@ -405,12 +408,14 @@ extension MainWindowController {
     /// rather than on the container, so every press went the same way and the key only ever
     /// moved one direction.
     func cycleSections() {
+        // Only when focus actually moved: an empty panel's own message is the one worth hearing,
+        // and "Headlines" straight after it replaced it before it could be read.
         if isWithin(outline, window?.firstResponder) {
             focusHeadlines()
-            setStatus("Headlines")
+            if table.numberOfRows > 0 { setStatus("Headlines") }
         } else {
             focusFeedTree()
-            setStatus("Feed tree")
+            if outline.numberOfRows > 0 { setStatus("Feed tree") }
         }
     }
 

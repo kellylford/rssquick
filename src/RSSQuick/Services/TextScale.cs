@@ -46,6 +46,25 @@ namespace RSSReaderWPF.Services
         /// Turns the raw registry value into a multiplier. Separated from reading the registry so
         /// the clamping can be tested without touching the machine's actual settings.
         /// </summary>
+        /// <summary>
+        /// The sizes Ctrl+Plus and Ctrl+Minus step through, on top of the Windows setting.
+        /// </summary>
+        /// <remarks>
+        /// The same steps as the Mac's View menu (<c>macos/Sources/RSSQuickUI/TextScale.swift</c>).
+        /// Unlike the Mac, the choice lasts only until RSS Quick closes: Windows already has a
+        /// remembered text size in Settings, which is <see cref="Current"/>, and this build keeps
+        /// no settings file of its own.
+        /// </remarks>
+        private static readonly double[] Steps = [1.0, 1.25, 1.5, 1.75, 2.0, 2.5, 3.0, 4.0];
+
+        /// <summary>The next step up, or the largest.</summary>
+        public static double Larger(double current) =>
+            Array.Find(Steps, step => step > current + 0.001) is var next && next > 0 ? next : Steps[^1];
+
+        /// <summary>The next step down, or the smallest.</summary>
+        public static double Smaller(double current) =>
+            Array.FindLast(Steps, step => step < current - 0.001) is var next && next > 0 ? next : Steps[0];
+
         internal static double FromRegistryValue(object? raw)
         {
             if (raw is not int percent) return 1.0;

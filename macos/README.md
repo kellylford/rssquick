@@ -281,7 +281,8 @@ Most of the Windows constraints carry straight across. These are the ones that c
   text size for ordinary views just as WPF ignores the Windows one, so it is the reader's own
   setting here, in the View menu. A low-vision reader re-enlarging the text on every launch is a
   poor trade for the Windows build's tidiness about storage. Window position is remembered too,
-  which is standard macOS behaviour.
+  which is standard macOS behaviour. Windows has the same Ctrl+Plus, Ctrl+Minus and Ctrl+0 steps
+  on top of its own remembered setting, but only until RSS Quick closes.
 
 ## Tests
 

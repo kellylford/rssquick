@@ -16,6 +16,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   Download Update button (Alt+U) that opens the release page; on the Mac the status line says so,
   and the RSS Quick menu has Check for Updates…, which becomes Download RSS Quick <version>… once
   there is one. Neither replaces itself. On iPhone and iPad, TestFlight delivers updates as before.
+- **Windows now does what the Mac already did.** Ctrl+1 and Ctrl+2 go straight to the feed tree
+  or the headlines; Ctrl+O imports; typing a few letters jumps to a feed or headline by name; Left
+  on a feed goes to its folder; Ctrl+Plus, Ctrl+Minus and Ctrl+0 change the text size until RSS
+  Quick closes, on top of the Windows setting; and F1 lists every key with the version number.
+- **Windows reads RSS 1.0 feeds**, such as Nature in the starter list, which it used to reject as
+  not a feed, and the looser dates publishers write: ISO dates in RSS feeds, Dublin Core dates,
+  and RFC 822 dates with a four-digit year or no day name. Each of those used to cost an article
+  its date and sink it to the bottom of a folder.
+- **The Windows downloads are code-signed.**
 
 ### Changed
 - **A new Windows installer.** Velopack's replaces Inno Setup, and it is what makes updating
@@ -30,6 +39,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   then on the Mac says when there is a new version.
 - An update replaces the `RSS.opml` that ships with RSS Quick. Use Make This My Default (Alt+D)
   to keep a list of your own; that copy is never touched.
+- On Windows, a folder no longer reads out "3 of 20 feeds" for every feed as it loads; it says
+  when the load starts and what it found, as the Mac does.
+- On Windows, a feed that fails to load says why in plain words, "server said 404 not found" or
+  "could not be reached - there is no network", instead of .NET's own error text, and an import
+  names the file rather than reading out its whole path. Keys that have nothing to do say so:
+  Alt+B with no headline selected, a headline with no link, switching to an empty panel.
+- The Windows window is called "RSS Quick", with the space, as it is everywhere else.
+
+### Fixed
+- Pressing Escape after a load had finished said "Loading cancelled" and replaced the load's
+  summary, on Windows and the Mac.
+- On the Mac, switching to an empty headlines list said "Headlines" straight over the message
+  saying it was empty.
 
 ## [1.2.0] - 2026-09-26
 
