@@ -115,6 +115,9 @@ namespace RSSReaderWPF.Services
                 return saved.Path;
             }
 
+            // Already the saved default: nothing more to keep.
+            if (saved.Load() is { } current && current.AsSpan().SequenceEqual(content)) return null;
+
             var aside = Path.Join(Path.GetDirectoryName(saved.Path)!, KeptListName);
             File.WriteAllBytes(aside, content);
             return aside;

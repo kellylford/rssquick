@@ -109,7 +109,7 @@ The installer is Velopack's, and it is what makes an installed copy update itsel
 
 Installed copies read the feed from the latest *published* release. `release.yml` makes a draft, so nothing updates until a person has checked the build and published it.
 
-Velopack replaces the whole program folder on update, so the `RSS.opml` beside the executable is always the shipped one; a reader's own list lives in `Default.opml`. Versions 1.1.0 and 1.2.0 were installed by Inno Setup, and `PreviousInstall.Retire` removes that copy on every start of an installed copy until it is gone — first copying its `RSS.opml` to `Default.opml` if it was edited and nothing is saved yet, because Inno's uninstaller deletes it. An all-users Inno install is left alone: removing it would need an administrator prompt.
+Velopack replaces the whole program folder on update, so the `RSS.opml` beside the executable is always the shipped one; a reader's own list lives in `Default.opml`. Versions 1.1.0 and 1.2.0 were installed by Inno Setup, and `PreviousInstall.Retire` removes that copy on every start of an installed copy until it is gone — first keeping its `RSS.opml` if it was edited (as `Default.opml` when nothing is saved yet, otherwise beside it as `RSS-from-previous-install.opml`), because Inno's uninstaller deletes it. An all-users Inno install is left alone: removing it would need an administrator prompt.
 
 `RSSQUICK_UPDATE_FEED` points an installed copy at a folder of `vpk pack` output instead of GitHub; HOW-TO-BUILD.md has the steps for trying an update end to end.
 

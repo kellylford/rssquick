@@ -140,6 +140,16 @@ public sealed class PreviousInstallTests : IDisposable
     }
 
     [Fact]
+    public void An_edited_list_that_is_already_the_default_is_not_copied_again()
+    {
+        var old = OldInstallWith(Edited);
+        Saved.Save(Encoding.UTF8.GetBytes(Edited));
+
+        Assert.Null(PreviousInstall.KeepEditedList(old, Saved, Starter));
+        Assert.False(File.Exists(Path.Join(Path.GetDirectoryName(Saved.Path), PreviousInstall.KeptListName)));
+    }
+
+    [Fact]
     public void No_list_in_the_old_folder_is_nothing_to_keep()
     {
         var old = OldInstallWith(list: null);
