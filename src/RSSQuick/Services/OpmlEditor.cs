@@ -14,7 +14,16 @@ namespace RSSReaderWPF.Services
     /// The folder's <see cref="FeedItem.OutlinePath"/>. Null for the top level, which the tree
     /// shows as "Uncategorized".
     /// </param>
-    public sealed record FolderChoice(string Name, IReadOnlyList<int>? Path);
+    public sealed record FolderChoice(string Name, IReadOnlyList<int>? Path)
+    {
+        /// <summary>The name alone.</summary>
+        /// <remarks>
+        /// Load-bearing: WPF names a list item for a screen reader by its ToString, and a record's
+        /// is every field - so the Folder list in Subscribe to Feed read each folder out as
+        /// "FolderChoice { Name = News, Path = System.Int32[] }".
+        /// </remarks>
+        public override string ToString() => Name;
+    }
 
     /// <summary>
     /// Adds feeds to an OPML file and takes them out again.
