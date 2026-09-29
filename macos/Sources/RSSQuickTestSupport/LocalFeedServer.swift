@@ -55,6 +55,21 @@ public final class LocalFeedServer: @unchecked Sendable {
         }
     }
 
+    /// Starts a server without blocking a Swift concurrency thread. Use this from async tests.
+    ///
+    /// The initializer waits for its listener on a semaphore. From an async test that blocks a
+    /// thread of the cooperative pool, which has only as many threads as the machine has cores;
+    /// once enough suites started servers at the same moment, every one of those threads was
+    /// waiting, and the first test in each suite failed with `didNotStart` on every CI run. The
+    /// wait happens on a GCD thread here instead.
+    public static func start(routes: [String: Route]) async throws -> LocalFeedServer {
+        try await withCheckedThrowingContinuation { continuation in
+            DispatchQueue.global().async {
+                continuation.resume(with: Result { try LocalFeedServer(routes: routes) })
+            }
+        }
+    }
+
     /// A listener on a loopback port, ready, and the port.
     ///
     /// Tried more than once. With several suites each starting a server at the same moment, the

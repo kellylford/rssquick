@@ -41,7 +41,7 @@ struct FeedDiscoveryTests {
 
     @Test("A feed address is used as it is, and named by the feed")
     func feedAddress() async throws {
-        let server = try LocalFeedServer(routes: ["/news.xml": .init(body: SampleFeeds.rss2)])
+        let server = try await LocalFeedServer.start(routes: ["/news.xml": .init(body: SampleFeeds.rss2)])
         defer { server.stop() }
 
         let found = try await FeedDiscovery.find(server.url(for: "/news.xml"))
@@ -51,7 +51,7 @@ struct FeedDiscoveryTests {
 
     @Test("A website address leads to the feed it links to")
     func websiteAddress() async throws {
-        let server = try LocalFeedServer(routes: [
+        let server = try await LocalFeedServer.start(routes: [
             "/feed.xml": .init(body: SampleFeeds.rss2),
             "/index.html": .init(body: """
                 <!DOCTYPE html>
@@ -67,7 +67,7 @@ struct FeedDiscoveryTests {
 
     @Test("A page with no feed says so")
     func noFeed() async throws {
-        let server = try LocalFeedServer(routes: [
+        let server = try await LocalFeedServer.start(routes: [
             "/plain.html": .init(body: "<!DOCTYPE html><html><body>Nothing here</body></html>", contentType: "text/html"),
         ])
         defer { server.stop() }
@@ -80,7 +80,7 @@ struct FeedDiscoveryTests {
 
     @Test("A missing page reports what the server said")
     func missing() async throws {
-        let server = try LocalFeedServer(routes: [:])
+        let server = try await LocalFeedServer.start(routes: [:])
         defer { server.stop() }
 
         do {

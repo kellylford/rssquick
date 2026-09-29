@@ -11,7 +11,7 @@ struct FeedLoaderTests {
 
     @Test("A feed served over HTTP comes back parsed and sorted")
     func loadsOneFeed() async throws {
-        let server = try LocalFeedServer(routes: ["/news.xml": .init(body: SampleFeeds.rss2)])
+        let server = try await LocalFeedServer.start(routes: ["/news.xml": .init(body: SampleFeeds.rss2)])
         defer { server.stop() }
 
         let articles = try await FeedLoader.loadFeed(feed("Example", server.url(for: "/news.xml")))
@@ -24,7 +24,7 @@ struct FeedLoaderTests {
     /// the nineteen feeds that worked.
     @Test("A folder keeps going when one of its feeds fails")
     func folderSurvivesAFailure() async throws {
-        let server = try LocalFeedServer(routes: [
+        let server = try await LocalFeedServer.start(routes: [
             "/good.xml": .init(body: SampleFeeds.rss2),
             "/broken.xml": .init(status: 500, body: "server on fire"),
             "/atom.xml": .init(body: SampleFeeds.atom),
@@ -45,7 +45,7 @@ struct FeedLoaderTests {
 
     @Test("A failure is described in words a reader can act on")
     func failureReasons() async throws {
-        let server = try LocalFeedServer(routes: [
+        let server = try await LocalFeedServer.start(routes: [
             "/missing.xml": .init(status: 404, body: "nope"),
             "/nonsense.xml": .init(body: SampleFeeds.notAFeed),
             "/garbled.xml": .init(body: SampleFeeds.malformedXML),
@@ -82,7 +82,7 @@ struct FeedLoaderTests {
             ($0, LocalFeedServer.Route(body: SampleFeeds.rss2, delay: 0.25))
         })
 
-        let server = try LocalFeedServer(routes: routes)
+        let server = try await LocalFeedServer.start(routes: routes)
         defer { server.stop() }
 
         let feeds = paths.enumerated().map { feed("Feed \($0.offset)", server.url(for: $0.element)) }
@@ -95,7 +95,7 @@ struct FeedLoaderTests {
 
     @Test("Progress is reported once per feed")
     func progressReported() async throws {
-        let server = try LocalFeedServer(routes: [
+        let server = try await LocalFeedServer.start(routes: [
             "/a.xml": .init(body: SampleFeeds.rss2),
             "/b.xml": .init(body: SampleFeeds.atom),
         ])
@@ -117,7 +117,7 @@ struct FeedLoaderTests {
             ($0, LocalFeedServer.Route(body: SampleFeeds.rss2, delay: 3))
         })
 
-        let server = try LocalFeedServer(routes: routes)
+        let server = try await LocalFeedServer.start(routes: routes)
         defer { server.stop() }
 
         let feeds = paths.enumerated().map { feed("Slow \($0.offset)", server.url(for: $0.element)) }
@@ -143,7 +143,7 @@ struct FeedLoaderTests {
         </channel></rss>
         """
 
-        let server = try LocalFeedServer(routes: ["/a.xml": .init(body: older), "/b.xml": .init(body: newer)])
+        let server = try await LocalFeedServer.start(routes: ["/a.xml": .init(body: older), "/b.xml": .init(body: newer)])
         defer { server.stop() }
 
         let result = try await FeedLoader.loadFolder([
