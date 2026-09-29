@@ -206,7 +206,7 @@ private struct FeedNodeRow: View {
         Binding(
             get: { expanded.contains(name) },
             set: { isOpen in
-                if isOpen { expanded.insert(node.id) } else { expanded.remove(node.id) }
+                if isOpen { expanded.insert(name) } else { expanded.remove(name) }
             }
         )
     }
