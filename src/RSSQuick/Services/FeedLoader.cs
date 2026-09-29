@@ -165,7 +165,14 @@ namespace RSSReaderWPF.Services
         /// otherwise block a thread pool thread on the network for the length of the download.
         /// <see cref="FeedDiscovery"/> uses it for web pages as well as feeds.
         /// </remarks>
-        internal static async Task<byte[]> DownloadAsync(Uri address, CancellationToken cancellationToken)
+        internal static async Task<byte[]> DownloadAsync(Uri address, CancellationToken cancellationToken) =>
+            (await DownloadFromAsync(address, cancellationToken).ConfigureAwait(false)).Payload;
+
+        /// <summary>
+        /// <see cref="DownloadAsync"/>, and the address the document came from once redirects
+        /// were followed - which is what a web page's relative links are relative to.
+        /// </summary>
+        internal static async Task<(byte[] Payload, Uri Address)> DownloadFromAsync(Uri address, CancellationToken cancellationToken)
         {
             using var response = await Http
                 .GetAsync(address, HttpCompletionOption.ResponseContentRead, cancellationToken)
@@ -173,7 +180,8 @@ namespace RSSReaderWPF.Services
 
             response.EnsureSuccessStatusCode();
 
-            return await response.Content.ReadAsByteArrayAsync(cancellationToken).ConfigureAwait(false);
+            var payload = await response.Content.ReadAsByteArrayAsync(cancellationToken).ConfigureAwait(false);
+            return (payload, response.RequestMessage?.RequestUri ?? address);
         }
 
         /// <summary>

@@ -143,6 +143,26 @@ public sealed class MenuAndFeedCommandsTests : IDisposable
         Assert.Equal("No headlines match storm in 1 of 2 feeds; 1 could not be loaded", Status(ui));
     }
 
+    /// <summary>
+    /// The list empties when a search starts, taking the focused row with it. With nothing found,
+    /// focus has to land somewhere, and the tree is the one place left.
+    /// </summary>
+    [WpfFact]
+    public void A_search_from_the_headlines_that_finds_nothing_leaves_focus_in_the_tree()
+    {
+        using var server = new LocalFeedServer();
+        using var ui = new FocusHarness(populate: false);
+        Show(ui, FeedList(("News", "One", server.Serve("one.xml", SampleFeed.WithItems("One", "Storm")))));
+        _ = ui.Window.SearchAsync("storm");
+        ui.PumpUntil(() => ui.Headlines.Items.Count == 1, "the first search to finish");
+        Assert.True(FocusHarness.IsWithin(ui.Headlines, ui.Focused));
+
+        _ = ui.Window.SearchAsync("zebra");
+        ui.PumpUntil(() => Status(ui).StartsWith("No headlines", StringComparison.Ordinal), "the second search to finish");
+
+        Assert.True(FocusHarness.IsWithin(ui.FeedTree, ui.Focused), $"Focus was left on {FocusHarness.Describe(ui.Focused)}.");
+    }
+
     [WpfFact]
     public void F5_runs_the_search_again()
     {
@@ -212,7 +232,50 @@ public sealed class MenuAndFeedCommandsTests : IDisposable
         Assert.False(SavedFeedList.ForThisUser.Exists);
     }
 
+    /// <summary>
+    /// The folder is a position in the list. A feed removed while the new one is being looked
+    /// for moves every folder after it, so the subscription stops rather than guessing.
+    /// </summary>
+    [WpfFact]
+    public void A_list_that_changes_while_a_feed_is_found_is_not_changed_again()
+    {
+        using var server = new LocalFeedServer();
+        using var ui = new FocusHarness(populate: false);
+        Show(ui, FeedList(
+            ("News", "One", new Uri("https://example.com/one.xml")),
+            ("Sport", "Two", new Uri("https://example.com/two.xml"))), isDefault: true);
+        var slow = server.Serve("slow.xml", SampleFeed.WithItems("Slow Feed", "A"), delay: TimeSpan.FromSeconds(1));
+        var sport = OpmlEditor.Folders(ui.FeedTree.Items.OfType<FeedItem>()).First(f => f.Name == "Sport");
+
+        _ = ui.Window.SubscribeAsync(slow.ToString(), sport);
+        ui.Window.RemoveFeed(ui.FeedTree.Items.OfType<FeedItem>().First().Children[0]);
+        ui.PumpUntil(() => Status(ui).StartsWith("Your feed list changed", StringComparison.Ordinal), "the subscription to stop");
+
+        var saved = OpenedFeedList.Parse(SavedFeedList.ForThisUser.Load()!, isSaved: true).Document;
+        Assert.Equal(new[] { "Two" }, saved.Roots.SelectMany(r => r.Children).Select(f => f.Title));
+    }
+
     // ── removing ────────────────────────────────────────────────────────────
+
+    [WpfFact]
+    public void Open_folders_stay_open_after_a_removal()
+    {
+        using var ui = new FocusHarness(populate: false);
+        Show(ui, FeedList(
+            ("News", "One", new Uri("https://example.com/one.xml")),
+            ("Sport", "Two", new Uri("https://example.com/two.xml")),
+            ("Sport", "Three", new Uri("https://example.com/three.xml"))), isDefault: true);
+        ui.FeedTree.UpdateLayout();
+        ((TreeViewItem)ui.FeedTree.ItemContainerGenerator.ContainerFromIndex(0)!).IsExpanded = true;
+        ui.Drain();
+
+        ui.Window.RemoveFeed(ui.FeedTree.Items.OfType<FeedItem>().Last().Children[0]);
+        ui.Drain();
+
+        ui.FeedTree.UpdateLayout();
+        Assert.True(((TreeViewItem)ui.FeedTree.ItemContainerGenerator.ContainerFromIndex(0)!).IsExpanded, "News was closed by removing a feed from Sport.");
+        Assert.Equal("Three", Selected(ui).Title);
+    }
 
     [WpfFact]
     public void Removing_a_feed_saves_the_list_and_moves_to_the_next_feed()

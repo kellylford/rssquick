@@ -59,10 +59,13 @@ public enum FeedDiscovery {
     public static func find(_ input: String) async throws -> DiscoveredFeed {
         guard let address = normalize(input) else { throw FeedLoader.MalformedURL() }
 
-        let data = try await FeedLoader.download(address)
-        if let feed = readFeed(data, address: address) { return feed }
+        // Where it ended up, not what was typed: "example.com" that redirects to
+        // www.example.com/blog/ has links relative to the blog, and the feed's own address is
+        // the one worth keeping.
+        let (data, landed) = try await FeedLoader.downloadFrom(address)
+        if let feed = readFeed(data, address: landed) { return feed }
 
-        for link in feedLinks(in: String(decoding: data, as: UTF8.self), page: address).prefix(3) {
+        for link in feedLinks(in: String(decoding: data, as: UTF8.self), page: landed).prefix(3) {
             try Task.checkCancellation()
 
             // A page can name a feed that has since gone. Try the next one it names.

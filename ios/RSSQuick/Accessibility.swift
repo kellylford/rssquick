@@ -1,8 +1,13 @@
 import SwiftUI
 
 extension FeedItem: Identifiable {
-    /// Rows are identified by object, as the macOS outline view identifies them.
-    public var id: ObjectIdentifier { ObjectIdentifier(self) }
+    /// Rows are identified by where they sit in the file, not by object. Subscribing or removing a
+    /// feed rebuilds every item; identified by object, every row was new, and VoiceOver's focus
+    /// went back to the top of the list after each swipe to remove.
+    public var id: String {
+        guard let outlinePath else { return "top:" + title }
+        return outlinePath.map(String.init).joined(separator: ".") + ":" + url
+    }
 }
 
 /// What the navigation stack pushes: the headlines of one feed, or of every feed in a folder.

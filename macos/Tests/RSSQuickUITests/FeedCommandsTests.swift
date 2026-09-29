@@ -148,7 +148,44 @@ struct FeedCommandsTests {
         #expect(!harness.controller.savedList.exists)
     }
 
+    /// The folder is a position in the list. A feed removed while the new one is being looked for
+    /// moves every folder after it, so the subscription stops rather than guessing.
+    @Test("A list that changes while a feed is found is not changed again")
+    func listChangesDuringSubscribe() async throws {
+        let harness = try await FocusHarness.make()
+        let server = try await LocalFeedServer.start(routes: ["/slow.xml": .init(body: Self.other, delay: 1)])
+        defer { server.stop() }
+        try show(harness, Self.feedList([
+            ("News", "One", "https://example.com/one.xml"),
+            ("Sport", "Two", "https://example.com/two.xml"),
+        ]), isDefault: true)
+        let sport = try #require(OpmlEditor.folders(harness.controller.roots).first { $0.name == "Sport" })
+
+        harness.controller.subscribe(to: server.url(for: "/slow.xml"), into: sport)
+        harness.controller.remove(harness.controller.roots[0].children[0])
+        await harness.controller.subscribeTask?.value
+
+        #expect(harness.controller.status.hasPrefix("Your feed list changed"))
+        #expect(try savedTitles(harness) == ["Two"])
+    }
+
     // MARK: Removing
+
+    @Test("Open folders stay open after a removal")
+    func foldersStayOpen() async throws {
+        let harness = try await FocusHarness.make()
+        try show(harness, Self.feedList([
+            ("News", "One", "https://example.com/one.xml"),
+            ("Sport", "Two", "https://example.com/two.xml"),
+            ("Sport", "Three", "https://example.com/three.xml"),
+        ]), isDefault: true)
+        harness.outline.expandItem(harness.controller.roots[0])
+
+        harness.controller.remove(harness.controller.roots[1].children[0])
+
+        #expect(harness.outline.isItemExpanded(harness.controller.roots[0]))
+        #expect(selected(harness)?.title == "Three")
+    }
 
     @Test("Removing a feed saves the list and moves to the next feed")
     func removeMovesToNext() async throws {

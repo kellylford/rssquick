@@ -215,8 +215,11 @@ namespace RSSReaderWPF
         {
             if (e.Text != "/") return;
 
-            var focused = FocusManager.GetFocusedElement(this) as DependencyObject;
-            if (focused is System.Windows.Controls.Primitives.TextBoxBase || IsWithin(MainMenu, focused)) return;
+            // Keyboard focus, not the window's logical focus: the menu is a focus scope of its own,
+            // so logical focus never reports a menu item even while one has the keyboard.
+            if (Keyboard.FocusedElement is System.Windows.Controls.Primitives.TextBoxBase
+                || FocusManager.GetFocusedElement(this) is System.Windows.Controls.Primitives.TextBoxBase
+                || MainMenu.IsKeyboardFocusWithin) return;
 
             e.Handled = true;
             Dispatcher.BeginInvoke(new Action(SearchAllFeeds), DispatcherPriority.Input);
@@ -317,7 +320,10 @@ namespace RSSReaderWPF
         /// True when this is the list RSS Quick opens at startup, which is what greys out
         /// Make This My Default.
         /// </param>
-        internal void ShowFeedList(OpenedFeedList list, bool isDefault)
+        /// <param name="announce">
+        /// False when the caller says what happened itself, so the live region speaks once.
+        /// </param>
+        internal void ShowFeedList(OpenedFeedList list, bool isDefault, bool announce = true)
         {
             _viewModel.FeedCategories.Clear();
             foreach (var root in list.Document.Roots) _viewModel.FeedCategories.Add(root);
@@ -326,9 +332,12 @@ namespace RSSReaderWPF
             _currentListIsDefault = isDefault;
             UpdateFeedListButtons();
 
-            _viewModel.StatusMessage = list.IsSaved
-                ? $"Loaded {Feeds(list.Document.FeedCount)} from your default feed list"
-                : $"Loaded {Feeds(list.Document.FeedCount)} from OPML file";
+            if (announce)
+            {
+                _viewModel.StatusMessage = list.IsSaved
+                    ? $"Loaded {Feeds(list.Document.FeedCount)} from your default feed list"
+                    : $"Loaded {Feeds(list.Document.FeedCount)} from OPML file";
+            }
 
             FeedTree.ItemsSource = _viewModel.FeedCategories;
         }

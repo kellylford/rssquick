@@ -158,6 +158,12 @@ public enum FeedLoader {
     /// Fetches a document whole, on the same session, timeout and size limit as a feed.
     /// `FeedDiscovery` uses it for web pages as well as feeds.
     static func download(_ url: URL) async throws -> Data {
+        try await downloadFrom(url).data
+    }
+
+    /// `download`, and the address the document came from once redirects were followed - which
+    /// is what a web page's relative links are relative to.
+    static func downloadFrom(_ url: URL) async throws -> (data: Data, url: URL) {
         let (data, response) = try await session.data(from: url)
 
         if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
@@ -166,7 +172,7 @@ public enum FeedLoader {
 
         guard data.count <= maxResponseBytes else { throw ResponseTooLarge() }
 
-        return data
+        return (data, response.url ?? url)
     }
 
 }
