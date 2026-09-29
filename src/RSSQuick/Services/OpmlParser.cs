@@ -25,7 +25,7 @@ namespace RSSReaderWPF.Services
         private const string UnnamedOutline = "Unknown";
 
         /// <summary>Holds feeds the file listed at the top level, outside any folder.</summary>
-        private const string UncategorizedFolder = "Uncategorized";
+        internal const string UncategorizedFolder = "Uncategorized";
 
         /// <summary>
         /// Parses OPML content.
@@ -51,18 +51,21 @@ namespace RSSReaderWPF.Services
                     "This does not look like an OPML file - it has no <body> element.");
 
             var roots = new List<FeedItem>();
-            var feedCount = ReadOutlines(body.Elements("outline"), parent: null, roots);
+            var feedCount = ReadOutlines(body.Elements("outline"), parent: null, parentPath: [], roots);
 
             return new OpmlDocument(roots, feedCount);
         }
 
         /// <summary>Walks one level of outlines, recursing into folders. Returns feeds added.</summary>
-        private static int ReadOutlines(IEnumerable<XElement> outlines, FeedItem? parent, List<FeedItem> roots)
+        private static int ReadOutlines(IEnumerable<XElement> outlines, FeedItem? parent, int[] parentPath, List<FeedItem> roots)
         {
             var feedCount = 0;
+            var index = -1;
 
             foreach (var outline in outlines)
             {
+                index++;
+                int[] path = [.. parentPath, index];
                 var title = ReadTitle(outline);
                 var url = outline.Attribute("xmlUrl")?.Value;
 
@@ -77,6 +80,7 @@ namespace RSSReaderWPF.Services
                         Url = url,
                         Category = parent?.Title ?? UncategorizedFolder,
                         IsCategory = false,
+                        OutlinePath = path,
                     }, parent, roots);
 
                     feedCount++;
@@ -88,12 +92,13 @@ namespace RSSReaderWPF.Services
                         Title = title,
                         Category = title,
                         IsCategory = true,
+                        OutlinePath = path,
                     };
 
                     if (parent is null) roots.Add(folder);
                     else parent.Children.Add(folder);
 
-                    feedCount += ReadOutlines(outline.Elements("outline"), folder, roots);
+                    feedCount += ReadOutlines(outline.Elements("outline"), folder, path, roots);
                 }
             }
 

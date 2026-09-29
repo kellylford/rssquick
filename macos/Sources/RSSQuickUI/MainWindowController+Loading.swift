@@ -48,7 +48,7 @@ extension MainWindowController {
     func loadDefaultOpml() {
         let startup: StartupFeedList
         do {
-            startup = try StartupFeedList.choose(saved: Self.savedFeedList, starter: StarterOpml.find())
+            startup = try StartupFeedList.choose(saved: savedList, starter: StarterOpml.find())
         } catch {
             status = "Could not read the default feed list: \(ErrorText.describe(error))"
             DispatchQueue.main.async { [weak self] in
@@ -121,7 +121,7 @@ extension MainWindowController {
         }
 
         do {
-            try Self.savedFeedList.save(list.data)
+            try savedList.save(list.data)
         } catch {
             setStatus("Could not save your default feed list: \(error.localizedDescription)")
             return
@@ -135,7 +135,7 @@ extension MainWindowController {
     /// File, Use Starter Feed List: forget the saved default and go back to the shipped list.
     @objc func useStarterFeedList(_ sender: Any?) {
         do {
-            try Self.savedFeedList.forget()
+            try savedList.forget()
         } catch {
             setStatus("Could not remove your default feed list: \(error.localizedDescription)")
             return
@@ -197,6 +197,7 @@ extension MainWindowController {
         isLoadingFeed = true
         loadSummaryShowing = false
         currentlyLoadedFeed = target
+        currentSearch = nil
         headlinesAreMerged = merged
         headlines = []
         lastSelectedHeadlineRow = -1
@@ -342,6 +343,11 @@ extension MainWindowController {
 
     /// Refresh: reload whatever is currently in the headlines list.
     func refreshCurrentFeed() {
+        if let query = currentSearch {
+            search(for: query)
+            return
+        }
+
         guard let loaded = currentlyLoadedFeed else {
             setStatus("Nothing to refresh yet - press Return on a feed first")
             return

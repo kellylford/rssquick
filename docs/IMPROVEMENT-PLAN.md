@@ -104,9 +104,15 @@ Neither has been checked by eye in an actual high contrast theme yet — the ass
 
 ### 3.3 Feed management in the app
 
+*Partly done:* subscribe (by feed or website address), remove, and export, on all three
+platforms, editing the OPML file itself through `OpmlEditor`. Rename and reorder are still to do.
+
 Adding or removing a feed means editing `RSS.opml` in a text editor. Add, rename, remove, and reorder in the tree, writing back to OPML. The biggest functional gap against what people expect from a reader.
 
 ### 3.4 Search and filter across headlines
+
+*Partly done:* Search All Feeds (/ on the desktop) fetches every feed and lists the matching
+headlines. A filter over the list already on screen is still to do.
 
 Type-ahead in the headlines list, and a filter box. QuickMail has a hand-rolled type-ahead accumulator (`TypeAheadPrefixTracker`) worth borrowing, along with its note on why WPF's built-in `TextSearch` is not enough for a `TreeView`.
 

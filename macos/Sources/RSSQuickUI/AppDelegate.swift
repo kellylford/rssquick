@@ -106,14 +106,20 @@ public final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValid
           Return               On a feed, load its headlines. On a folder, load all of them.
                                On a headline, open it in your browser.
           Command-B            Open the selected headline in your browser
-          Command-R or F5      Reload what is on screen
-          Escape or Command-.  Stop a load that is taking too long
+          / or Command-F       Search the headlines of every feed
+          Command-R or F5      Reload what is on screen, or run the search again
+          Escape or Command-.  Stop a load or a search that is taking too long
 
-        Text and files
-          Command-Plus/Minus   Larger or smaller text, remembered between launches
-          Command-0            Back to the standard size
+        Feeds and files
+          Command-N            Subscribe to a feed, by its address or its website's
+          Command-Delete       Remove the feed selected in the tree
+          Command-E            Export your feed list as an OPML file
           Command-O            Import a different OPML feed list
           Command-D            Make the feed list on screen your default
+
+        Text size
+          Command-Plus/Minus   Larger or smaller text, remembered between launches
+          Command-0            Back to the standard size
 
         Selecting a feed never fetches anything. Only Return does.
         """

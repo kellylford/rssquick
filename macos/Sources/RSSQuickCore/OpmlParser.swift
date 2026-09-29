@@ -60,13 +60,15 @@ public enum OpmlParser {
         let url: String
         let category: String
         let isCategory: Bool
+        let outlinePath: [Int]?
         var children: [Node] = []
 
-        init(title: String, url: String, category: String, isCategory: Bool) {
+        init(title: String, url: String, category: String, isCategory: Bool, outlinePath: [Int]?) {
             self.title = title
             self.url = url
             self.category = category
             self.isCategory = isCategory
+            self.outlinePath = outlinePath
         }
 
         var frozen: FeedItem {
@@ -75,7 +77,8 @@ public enum OpmlParser {
                 url: url,
                 category: category,
                 isCategory: isCategory,
-                children: children.map(\.frozen)
+                children: children.map(\.frozen),
+                outlinePath: outlinePath
             )
         }
     }
@@ -94,6 +97,12 @@ public enum OpmlParser {
         /// tracked so `didEndElement` knows whether to close a folder.
         private var isFolder: [Bool] = []
 
+        /// The path of each outline currently open, innermost last, and how many outlines each
+        /// open element - `<body>` first - has had so far. Together they give every outline its
+        /// `FeedItem.outlinePath`.
+        private var openPaths: [[Int]] = []
+        private var outlinesSeen: [Int] = []
+
         func parser(
             _ parser: XMLParser,
             didStartElement elementName: String,
@@ -104,10 +113,18 @@ public enum OpmlParser {
             if elementName == "body" {
                 sawBody = true
                 inBody = true
+                openPaths = [[]]
+                outlinesSeen = [0]
                 return
             }
 
             guard inBody, elementName == "outline" else { return }
+
+            let index = outlinesSeen[outlinesSeen.count - 1]
+            outlinesSeen[outlinesSeen.count - 1] += 1
+            let path = openPaths[openPaths.count - 1] + [index]
+            openPaths.append(path)
+            outlinesSeen.append(0)
 
             let title = readTitle(attributes)
             let url = attributes["xmlUrl"]?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
@@ -116,7 +133,7 @@ public enum OpmlParser {
             // distinguishes them - there is no type attribute worth trusting, and plenty of
             // exporters omit the type="rss" the old documentation told people to look for.
             if url.isEmpty {
-                let folder = Node(title: title, url: "", category: title, isCategory: true)
+                let folder = Node(title: title, url: "", category: title, isCategory: true, outlinePath: path)
                 attach(folder)
                 openFolders.append(folder)
                 isFolder.append(true)
@@ -125,7 +142,8 @@ public enum OpmlParser {
                     title: title,
                     url: url,
                     category: openFolders.last?.title ?? OpmlParser.uncategorizedFolder,
-                    isCategory: false
+                    isCategory: false,
+                    outlinePath: path
                 )
                 addFeed(feed)
                 feedCount += 1
@@ -145,6 +163,8 @@ public enum OpmlParser {
             }
 
             guard inBody, elementName == "outline", let wasFolder = isFolder.popLast() else { return }
+            openPaths.removeLast()
+            outlinesSeen.removeLast()
             if wasFolder, !openFolders.isEmpty { openFolders.removeLast() }
         }
 
@@ -170,7 +190,8 @@ public enum OpmlParser {
                     title: OpmlParser.uncategorizedFolder,
                     url: "",
                     category: OpmlParser.uncategorizedFolder,
-                    isCategory: true
+                    isCategory: true,
+                    outlinePath: nil
                 )
                 uncategorized = folder
                 roots.append(folder)

@@ -26,6 +26,11 @@
 		EA59550EEA14FE5C1C90667F /* RSS.opml in Resources */ = {isa = PBXBuildFile; fileRef = CAB59556865EF3AB073DB002 /* RSS.opml */; };
 		F695F1DDDDE68A5185248F1F /* FeedItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A74B1B801FC87BC587609C4 /* FeedItem.swift */; };
 		FB4DE9EE0298E9BEE2E091EC /* FeedStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD9EC26EE5860D264CA83B31 /* FeedStore.swift */; };
+		4B72C46F4F3C6FABB7FB31B9 /* SearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5DEF7B0FE378A7BD4470CFC /* SearchView.swift */; };
+		7DE9DA32A42F0F18DE684634 /* SubscribeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B7EA6B69773FB0FF08D42AD /* SubscribeView.swift */; };
+		BB83434AA47EB0F844B3D53B /* OpmlEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6B7ECEFA38A8BBE42C2D81B /* OpmlEditor.swift */; };
+		16BDCDAE396A0F8AD9898CC5 /* FeedDiscovery.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BE56E861A7D79B544E9FC51 /* FeedDiscovery.swift */; };
+		A5D9620272393C6D8D7D0720 /* HeadlineSearch.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89C0F415CCF4313AB5C4D791 /* HeadlineSearch.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -50,6 +55,11 @@
 		F1E14B73F30F66C517AE4F53 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		F27ACC8E17FA45CC3089CBF7 /* RSSQuick.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = RSSQuick.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		FD41DDA5BD58F469C0DA4DB4 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		A5DEF7B0FE378A7BD4470CFC /* SearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchView.swift; sourceTree = "<group>"; };
+		5B7EA6B69773FB0FF08D42AD /* SubscribeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscribeView.swift; sourceTree = "<group>"; };
+		B6B7ECEFA38A8BBE42C2D81B /* OpmlEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpmlEditor.swift; sourceTree = "<group>"; };
+		4BE56E861A7D79B544E9FC51 /* FeedDiscovery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedDiscovery.swift; sourceTree = "<group>"; };
+		89C0F415CCF4313AB5C4D791 /* HeadlineSearch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeadlineSearch.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -73,6 +83,8 @@
 				B4DF209EA00A1B1AB6ABAFF2 /* HeadlinesView.swift */,
 				F1E14B73F30F66C517AE4F53 /* Info.plist */,
 				FD41DDA5BD58F469C0DA4DB4 /* PrivacyInfo.xcprivacy */,
+				A5DEF7B0FE378A7BD4470CFC /* SearchView.swift */,
+				5B7EA6B69773FB0FF08D42AD /* SubscribeView.swift */,
 				A22E83D565D7273E9910F780 /* RSSQuickApp.swift */,
 			);
 			path = RSSQuick;
@@ -116,6 +128,9 @@
 				69DF5C67EC4C9F36F4314902 /* OpmlParser.swift */,
 				87AD38D3E548677ADD3B4AF5 /* ReleaseCheck.swift */,
 				365EFC5BC034C630535E9F62 /* SavedFeedList.swift */,
+				B6B7ECEFA38A8BBE42C2D81B /* OpmlEditor.swift */,
+				4BE56E861A7D79B544E9FC51 /* FeedDiscovery.swift */,
+				89C0F415CCF4313AB5C4D791 /* HeadlineSearch.swift */,
 				4883AACCA80894B3C82981EF /* XMLSafety.swift */,
 			);
 			path = RSSQuickCore;
@@ -233,6 +248,11 @@
 				AD6296A2AAA271AA7B036CEE /* ReleaseCheck.swift in Sources */,
 				8844CD3B7FB08CD13DD71ABC /* SavedFeedList.swift in Sources */,
 				5BA416EE422DF027D949A9BA /* RSSQuickApp.swift in Sources */,
+				4B72C46F4F3C6FABB7FB31B9 /* SearchView.swift in Sources */,
+				7DE9DA32A42F0F18DE684634 /* SubscribeView.swift in Sources */,
+				BB83434AA47EB0F844B3D53B /* OpmlEditor.swift in Sources */,
+				16BDCDAE396A0F8AD9898CC5 /* FeedDiscovery.swift in Sources */,
+				A5D9620272393C6D8D7D0720 /* HeadlineSearch.swift in Sources */,
 				8872F328DB0D275CC01A40A2 /* XMLSafety.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

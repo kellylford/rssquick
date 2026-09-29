@@ -137,6 +137,13 @@ extension MainWindowController: NSMenuItemValidation {
 
         guard modifiers.isEmpty || modifiers == .shift else { return false }
 
+        // / is Search All Feeds, as it is on Windows - but not while typing, where it is a /.
+        // `characters` rather than the key, so it is whichever key types / on this layout.
+        if event.characters == "/", !(window?.firstResponder is NSText) {
+            searchAllFeeds(nil)
+            return true
+        }
+
         switch key {
         case String(NSEvent.SpecialKey.f5.unicodeScalar):
             refreshCurrentFeed()
@@ -196,14 +203,24 @@ extension MainWindowController: NSMenuItemValidation {
     }
 
     public func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
+        // A sheet in front - a search or a subscription being typed - finishes first. Command-F
+        // there would otherwise queue a second sheet behind it.
+        guard window?.attachedSheet == nil else { return false }
+
         switch menuItem.action {
+        case #selector(removeFeed(_:)):
+            return (outline.item(atRow: outline.selectedRow) as? FeedItem).map { !$0.isCategory } ?? false
+
+        case #selector(exportFeedList(_:)):
+            return currentFeedList != nil
+
         case #selector(openInBrowser(_:)):
             return table.selectedRow >= 0
                 && headlines.indices.contains(table.selectedRow)
                 && !headlines[table.selectedRow].link.isEmpty
 
         case #selector(refresh(_:)):
-            return currentlyLoadedFeed != nil
+            return currentlyLoadedFeed != nil || currentSearch != nil
 
         case #selector(stopLoading(_:)):
             return isLoadingFeed && loadTask != nil
@@ -212,7 +229,7 @@ extension MainWindowController: NSMenuItemValidation {
             return currentFeedList != nil && !currentListIsDefault
 
         case #selector(useStarterFeedList(_:)):
-            return Self.savedFeedList.exists
+            return savedList.exists
 
         case #selector(increaseTextSize(_:)):
             return TextScale.current < TextScale.maximum

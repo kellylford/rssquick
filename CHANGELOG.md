@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **Search All Feeds**, on Windows, Mac, iPhone and iPad. Press / (or Ctrl+F, Command-F, or the
+  magnifying glass) and type a few words: RSS Quick fetches every feed in your list and shows the
+  headlines containing all of them, in the headline or the feed's name, ignoring case and
+  accents. F5 runs the search again, and Escape stops it.
+- **Subscribe to a feed** by its address or by its website's, which RSS Quick searches for the
+  feed it links to, into the folder of your choice. **Remove Feed** takes one out again. Either
+  saves your feed list as your default at once, so nothing is lost when RSS Quick closes.
+- **Export Feed List** saves your list as an OPML file, including anything you have subscribed
+  to, for another reader or another computer.
+- **A menu bar on Windows**, with the same File, Edit, Article, View and Help menus as the Mac and
+  every command in it. Alt or F10 reaches it; it is not in the tab ring.
+
 ## [1.2.0] - 2026-09-27
 
 ### Added

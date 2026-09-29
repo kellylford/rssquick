@@ -133,6 +133,87 @@ final class FeedStore {
         }
     }
 
+    // MARK: Subscribing, removing and exporting
+
+    /// Every folder a new feed can go into, and the top level.
+    var folderChoices: [FolderChoice] { OpmlEditor.folders(current?.document.roots ?? []) }
+
+    /// The top level, which is where a subscription goes unless the reader picks a folder.
+    var topLevel: FolderChoice {
+        OpmlEditor.suggest(folderChoices, roots: roots, selected: nil)
+    }
+
+    /// The list on screen, exactly as read or last changed, for Export Feed List.
+    var exportData: Data? { current?.data }
+
+    /// Finds the feed at an address, adds it to the list, and saves the list as the default.
+    ///
+    /// Saving is not optional, as on the desktop: a subscription that vanished the next time the
+    /// app opened would be worse than none. Nothing changes until the feed has been found and the
+    /// list saved.
+    ///
+    /// - Returns: A sentence for the reader to hear, and whether it worked, so the sheet knows
+    ///   whether to close.
+    func subscribe(to address: String, into folder: FolderChoice) async -> (message: String, succeeded: Bool) {
+        if let typed = FeedDiscovery.normalize(address),
+           let known = OpmlEditor.findFeed(roots, url: typed.absoluteString) {
+            return ("You already subscribe to \(known.title), in \(known.category).", false)
+        }
+
+        let feed: DiscoveredFeed
+        do {
+            feed = try await FeedDiscovery.find(address)
+        } catch {
+            return ("Could not subscribe. \(address) \(ErrorText.describe(error)).", false)
+        }
+
+        if let existing = OpmlEditor.findFeed(roots, url: feed.url) {
+            return ("You already subscribe to \(existing.title), in \(existing.category).", false)
+        }
+
+        switch change({ try OpmlEditor.addFeed(to: $0, folder: folder.path, title: feed.title, url: feed.url) }) {
+        case .failure(let reason):
+            return ("Could not add \(feed.title) to your feed list. \(reason)", false)
+        case .success(let note):
+            return ("Subscribed to \(feed.title) in \(folder.name).\(note)", true)
+        }
+    }
+
+    /// Takes a feed out of the list and saves the list as the default.
+    func remove(_ feed: FeedItem) -> String {
+        guard !feed.isCategory, let path = feed.outlinePath else { return "Only a feed can be removed." }
+
+        switch change({ try OpmlEditor.remove(from: $0, at: path) }) {
+        case .failure(let reason):
+            return "Could not remove \(feed.title). \(reason)"
+        case .success(let note):
+            return "Removed \(feed.title).\(note)"
+        }
+    }
+
+    private enum Change {
+        /// What to add when this made the list the default, which the reader did not ask for in
+        /// so many words.
+        case success(note: String)
+        case failure(String)
+    }
+
+    private func change(_ edit: (Data) throws -> Data) -> Change {
+        let list: OpenedFeedList
+        do {
+            let data = try edit(current?.data ?? OpmlEditor.empty)
+            list = try OpenedFeedList(data: data, isSaved: true)
+            try saved.save(data)
+        } catch {
+            return .failure(Self.describe(error))
+        }
+
+        let note = isShowingDefault ? "" : " This feed list is now your default, so it opens every time RSS Quick starts."
+        show(list, isDefault: true)
+        hasSavedList = true
+        return .success(note: note)
+    }
+
     private func show(_ list: OpenedFeedList, isDefault: Bool) {
         current = list
         isShowingDefault = isDefault
@@ -144,6 +225,7 @@ final class FeedStore {
     private static func describe(_ error: Error) -> String {
         switch error {
         case let failure as OpmlParser.Failure: failure.description
+        case let failure as OpmlEditor.Failure: failure.description
         case is XMLSafety.DoctypeRejected: "The file declares a DOCTYPE, which RSS Quick does not accept."
         default: error.localizedDescription
         }

@@ -9,6 +9,12 @@ What it does
 - Refresh, in a list of headlines, fetches them again.
 - Nothing is tracked and nothing is stored except the feed list you choose to keep. Headlines are fetched fresh each time.
 
+New in this build
+- Search All Feeds: the magnifying glass at the top of the feed list, or Command-F on a hardware keyboard. Type a few words and press Search; every feed is fetched and the headlines containing all your words are listed. VoiceOver should announce how many were found.
+- Subscribe to Feed, in the Feed List menu: type a feed's address or just a website's, such as a blog, choose a folder, and Subscribe. The folder should open with the new feed in it.
+- Remove a feed: swipe left on it, or use the Remove action with VoiceOver, or long-press it.
+- Export Feed List, in the Feed List menu, saves your list as an OPML file in Files.
+
 What to try
 - Move around with VoiceOver: folders, feeds, headlines and the Feed List menu should all say clearly what they are and whether a folder is open.
 - Load a folder of feeds. VoiceOver should announce how many headlines arrived, and how many feeds failed if any did.

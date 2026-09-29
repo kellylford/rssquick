@@ -20,6 +20,12 @@ public enum ErrorText {
         case let failure as OpmlParser.Failure:
             return failure.description
 
+        case let failure as OpmlEditor.Failure:
+            return failure.description
+
+        case let failure as FeedDiscovery.NoFeedFound:
+            return failure.description
+
         case is XMLSafety.DoctypeRejected:
             return XMLSafety.DoctypeRejected().description
 
