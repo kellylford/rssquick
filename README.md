@@ -104,6 +104,28 @@ File** and **Make This My Default Feed List** in the File menu. RSS Quick keeps 
 the file, so moving or deleting the original does not matter. **Use Starter Feed List** goes back
 to the list RSS Quick comes with.
 
+### Your own feeds
+
+- **Subscribe to Feed** adds a feed by its address, or by its website's address: RSS Quick finds
+  the feed the site links to. Choose the folder it goes in; it starts as the folder you are in.
+  On Windows it is Ctrl+N or the File menu, on the Mac Command-N or the File menu, and on iPhone
+  and iPad the Feed List menu.
+- **Remove Feed** takes the selected feed out: Delete in the Windows feed tree, Command-Delete on
+  the Mac, or a swipe (the Remove action, with VoiceOver) on iPhone and iPad.
+- **Export Feed List** saves your list as an OPML file for another reader or another computer.
+
+Subscribing or removing saves the list as your default straight away, so a change is never lost
+when RSS Quick closes. If the list on screen was one you had imported, it becomes your default,
+and RSS Quick says so.
+
+### Searching
+
+**Search All Feeds** (**/** or Ctrl+F on Windows, **/** or Command-F on the Mac, the magnifying
+glass on iPhone and iPad) fetches every feed in your list and shows the headlines containing all
+the words you type, in the headline or in the feed's name, ignoring case and accents. "bbc storm"
+finds the BBC's storm stories. RSS Quick keeps no copy of any feed, so a search fetches them all,
+the way loading a folder does; Escape stops it, and F5 runs it again.
+
 An update replaces the starter list that comes with RSS Quick, so if you want to change it, save
 your changes as your own default rather than editing the file in place.
 
@@ -111,6 +133,8 @@ your changes as your own default rather than editing the file in place.
 
 ### Windows
 
+- **Alt** or **F10**: the menu bar - File, Edit, Article, View and Help, the same menus as the
+  Mac. Every command is there, with its key.
 - **Tab** and **Shift+Tab**: move between the buttons, the feed tree and the headlines.
 - **F6** or **Ctrl+Tab**: jump between the feed tree and the headlines.
 - **Ctrl+1** and **Ctrl+2**: go straight to the feed tree or the headlines.
@@ -119,8 +143,12 @@ your changes as your own default rather than editing the file in place.
 - **Type a few letters**: jump to a feed or headline by name.
 - **Enter**: on a feed or folder, load its headlines. On a headline, open it.
 - **Alt+B**: open the current headline in your browser.
-- **F5**: reload what you are reading.
-- **Escape**: stop a load that is taking too long.
+- **/** or **Ctrl+F**: search the headlines of every feed.
+- **F5**: reload what you are reading, or run the search again.
+- **Escape**: stop a load or a search that is taking too long.
+- **Ctrl+N**: subscribe to a feed.
+- **Delete**: in the feed tree, remove the selected feed.
+- **Ctrl+E**: export your feed list.
 - **Ctrl+O**: import an OPML file.
 - **Alt+D**: make the feed list on screen your default.
 - **Ctrl+Plus**, **Ctrl+Minus** and **Ctrl+0**: larger, smaller or your usual text, until RSS
@@ -143,8 +171,12 @@ is a new version.
 - **Type a few letters**: jump to a feed or headline by name.
 - **Return**: on a feed or folder, load its headlines. On a headline, open it.
 - **Command-B**: open the current headline in your browser.
-- **Command-R** or **F5**: reload what you are reading.
-- **Escape** or **Command-Period**: stop a load that is taking too long.
+- **/** or **Command-F**: search the headlines of every feed.
+- **Command-R** or **F5**: reload what you are reading, or run the search again.
+- **Escape** or **Command-Period**: stop a load or a search that is taking too long.
+- **Command-N**: subscribe to a feed.
+- **Command-Delete**: remove the feed selected in the tree.
+- **Command-E**: export your feed list.
 - **Command-O**: import an OPML file.
 - **Command-D**: make the feed list on screen your default.
 - **Command-Plus**, **Command-Minus** and **Command-0**: larger, smaller or standard text.

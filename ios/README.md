@@ -16,6 +16,8 @@ loader with its per-feed failure reporting. Those are tested by `macos/Tests` (`
 | `RSSQuick/FeedStore.swift` | The feed tree, OPML import, and the one thing kept between runs |
 | `RSSQuick/FeedListView.swift` | The tree: `DisclosureGroup` folders, feeds as navigation links |
 | `RSSQuick/HeadlinesView.swift` | Headlines for a feed or a whole folder, and the in-app Safari view |
+| `RSSQuick/SearchView.swift` | Search All Feeds |
+| `RSSQuick/SubscribeView.swift` | Subscribe to Feed, and the OPML file Export Feed List saves |
 | `RSSQuick/Accessibility.swift` | Row identity, the navigation route, and VoiceOver announcements |
 
 ## Decisions that differ from the desktop versions
@@ -32,6 +34,18 @@ loader with its per-feed failure reporting. Those are tested by `macos/Tests` (`
 - **Tapping a folder expands it.** That is what a disclosure row does everywhere on iOS. Loading
   every feed in a folder, which Enter does on Windows, is the **Show all headlines** VoiceOver
   action (swipe up or down on the folder) or a long press.
+- **Search All Feeds is its own screen**, behind the magnifying glass in the toolbar (Command-F
+  from a hardware keyboard), rather than a key: there is no / key to press on a touch screen. It
+  uses the system search field, and a search starts when Search is pressed, not on every letter,
+  because each one fetches every feed.
+- **Subscribe to Feed and Export Feed List are in the ••• menu.** Subscribe is a sheet that stays
+  open on a failure, with the reason under the address, so a typing mistake can be corrected.
+  Export uses the system's Save to Files.
+- **A feed is removed with a swipe**, which VoiceOver offers as the Remove action, or a long
+  press. There is no confirmation, as there is none for removing a row anywhere else on iOS; the
+  desktop versions ask first.
+- **Open folders stay open** when subscribing or removing rebuilds the tree, because they are
+  remembered by name rather than by row.
 - **Announcements** go through `AccessibilityNotification.Announcement`, and only when a load
   finishes: "45 headlines", or the count plus how many feeds failed. The message is delayed
   slightly, because an announcement made during a screen change is dropped.

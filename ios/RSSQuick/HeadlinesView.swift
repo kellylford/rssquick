@@ -108,7 +108,7 @@ struct HeadlinesView: View {
     }
 
     /// SFSafariViewController takes http and https only, and throws on anything else.
-    private static func readableURL(_ link: String) -> URL? {
+    static func readableURL(_ link: String) -> URL? {
         guard let url = URL(string: link.trimmingCharacters(in: .whitespacesAndNewlines)),
               let scheme = url.scheme?.lowercased(), scheme == "http" || scheme == "https"
         else { return nil }
@@ -173,7 +173,7 @@ struct HeadlinesView: View {
 
 /// One headline. The title comes first and stands alone, so a braille display shows the part
 /// that matters without the reader panning past a date to find it.
-private struct HeadlineRow: View {
+struct HeadlineRow: View {
     let article: ArticleItem
     let showsFeed: Bool
     let action: () -> Void

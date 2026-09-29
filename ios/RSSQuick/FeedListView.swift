@@ -6,7 +6,13 @@ struct FeedListView: View {
     @Environment(FeedStore.self) private var store
     @State private var path: [HeadlinesRoute] = []
     @State private var isImporting = false
-    @State private var expanded: Set<ObjectIdentifier> = []
+    @State private var isSubscribing = false
+    @State private var isExporting = false
+    @State private var isSearching = false
+    /// Open folders, by name with the folders above them ("News / Wires"), the same form as
+    /// `FolderChoice.name`. By name rather than by object, so a folder stays open when
+    /// subscribing or removing a feed rebuilds the tree underneath it.
+    @State private var expanded: Set<String> = []
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -15,12 +21,31 @@ struct FeedListView: View {
                 .navigationDestination(for: HeadlinesRoute.self) { route in
                     HeadlinesView(source: route.source)
                 }
+                .navigationDestination(isPresented: $isSearching) {
+                    SearchView()
+                }
                 .toolbar {
+                    // Its own button rather than a menu item, because it is the one reached for
+                    // most. Command-F from a hardware keyboard, as on the Mac.
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button("Search All Feeds", systemImage: "magnifyingglass") {
+                            isSearching = true
+                        }
+                        .keyboardShortcut("f", modifiers: .command)
+                        .disabled(store.roots.isEmpty)
+                    }
                     ToolbarItem(placement: .primaryAction) {
                         Menu {
+                            Button("Subscribe to Feed…", systemImage: "plus") {
+                                isSubscribing = true
+                            }
                             Button("Import OPML File…", systemImage: "square.and.arrow.down") {
                                 isImporting = true
                             }
+                            Button("Export Feed List…", systemImage: "square.and.arrow.up") {
+                                isExporting = true
+                            }
+                            .disabled(store.exportData == nil)
                             // Dimmed rather than hidden when there is nothing for them to do, so
                             // VoiceOver reads them as unavailable and the reader learns they exist.
                             Button("Make This My Default Feed List", systemImage: "star") {
@@ -41,6 +66,34 @@ struct FeedListView: View {
                     // Said once the screen is up: without it the reader has no way to know the
                     // list in front of them is not their own.
                     if let problem = store.takeStartupProblem() { Announcer.announce(problem) }
+                }
+                .sheet(isPresented: $isSubscribing) {
+                    // Opens the folder the feed went into, and those above it, so the new feed
+                    // is there to be found.
+                    SubscribeView { folder in
+                        var name = ""
+                        for part in folder.name.components(separatedBy: " / ") {
+                            name = name.isEmpty ? part : "\(name) / \(part)"
+                            expanded.insert(name)
+                        }
+                    }
+                }
+                // On a view of its own: a fileExporter and a fileImporter on the same view
+                // interfere, and only one of them presents.
+                .background {
+                    Color.clear.fileExporter(
+                        isPresented: $isExporting,
+                        document: store.exportData.map(OpmlFile.init(data:)),
+                        contentType: OpmlFile.opml,
+                        defaultFilename: "RSS Quick Feeds"
+                    ) { result in
+                        switch result {
+                        case .success(let url):
+                            Announcer.announce("Exported \(FeedStore.feeds(store.feedCount)) to \(url.lastPathComponent).")
+                        case .failure(let error):
+                            Announcer.announce("Could not export the feed list. \(error.localizedDescription)")
+                        }
+                    }
                 }
                 .fileImporter(
                     isPresented: $isImporting,
@@ -71,7 +124,7 @@ struct FeedListView: View {
         } else {
             List {
                 ForEach(store.roots) { node in
-                    FeedNodeRow(node: node, expanded: $expanded) { path.append($0) }
+                    FeedNodeRow(node: node, name: node.title, expanded: $expanded) { path.append($0) }
                 }
             }
             .listStyle(.sidebar)
@@ -85,8 +138,11 @@ struct FeedListView: View {
 
 /// One node of the tree, and everything under it.
 private struct FeedNodeRow: View {
+    @Environment(FeedStore.self) private var store
     let node: FeedItem
-    @Binding var expanded: Set<ObjectIdentifier>
+    /// The folder's name with those above it, which is its key in `expanded`.
+    let name: String
+    @Binding var expanded: Set<String>
     /// Pushes a headlines screen, for the accessibility action a `NavigationLink` cannot serve.
     let openHeadlines: (HeadlinesRoute) -> Void
 
@@ -94,7 +150,7 @@ private struct FeedNodeRow: View {
         if node.isCategory {
             DisclosureGroup(isExpanded: isExpanded) {
                 ForEach(node.children) { child in
-                    FeedNodeRow(node: child, expanded: $expanded, openHeadlines: openHeadlines)
+                    FeedNodeRow(node: child, name: "\(name) / \(child.title)", expanded: $expanded, openHeadlines: openHeadlines)
                 }
             } label: {
                 folderLabel
@@ -102,6 +158,15 @@ private struct FeedNodeRow: View {
         } else {
             NavigationLink(value: HeadlinesRoute(source: node)) {
                 Text(node.title)
+            }
+            // A swipe for touch, and the same action in VoiceOver's actions rotor, which is where
+            // a swipe action appears for a VoiceOver user. No confirmation: that is how removing
+            // a row works everywhere else on iOS.
+            .swipeActions {
+                Button("Remove", systemImage: "trash", role: .destructive, action: remove)
+            }
+            .contextMenu {
+                Button("Remove Feed", systemImage: "trash", role: .destructive, action: remove)
             }
         }
     }
@@ -129,13 +194,17 @@ private struct FeedNodeRow: View {
         }
     }
 
+    private func remove() {
+        Announcer.announce(store.remove(node), after: .milliseconds(300))
+    }
+
     private func showAll() {
         openHeadlines(HeadlinesRoute(source: node))
     }
 
     private var isExpanded: Binding<Bool> {
         Binding(
-            get: { expanded.contains(node.id) },
+            get: { expanded.contains(name) },
             set: { isOpen in
                 if isOpen { expanded.insert(node.id) } else { expanded.remove(node.id) }
             }

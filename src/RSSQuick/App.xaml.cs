@@ -32,7 +32,18 @@ namespace RSSReaderWPF
             MainWindow = window;
             window.Show();
 
+            // Help, Check for Updates asks the same question on demand.
+            window.CheckForUpdates = () => CheckNowAsync(window);
+
             _ = OfferUpdateAsync(window);
+        }
+
+        /// <summary>Asks now, and tells the window about anything newer.</summary>
+        private async Task<UpdateOffer?> CheckNowAsync(MainWindow window)
+        {
+            var offer = await _updater.CheckAsync();
+            if (offer is not null && window.IsLoaded) window.ShowUpdate(offer, _updater.RestartAndUpdate);
+            return offer;
         }
 
         /// <summary>

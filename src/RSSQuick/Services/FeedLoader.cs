@@ -151,18 +151,29 @@ namespace RSSReaderWPF.Services
                 || (address.Scheme != Uri.UriSchemeHttp && address.Scheme != Uri.UriSchemeHttps))
                 throw new UriFormatException($"{feed.Url} is not a web address.");
 
+            var payload = await DownloadAsync(address, cancellationToken).ConfigureAwait(false);
+
+            using var stream = new MemoryStream(payload, writable: false);
+            return Parse(stream, feed.Title);
+        }
+
+        /// <summary>
+        /// Fetches a document whole, on the same client, timeout and size limit as a feed.
+        /// </summary>
+        /// <remarks>
+        /// Buffered before parsing, because SyndicationFeed.Load reads synchronously and would
+        /// otherwise block a thread pool thread on the network for the length of the download.
+        /// <see cref="FeedDiscovery"/> uses it for web pages as well as feeds.
+        /// </remarks>
+        internal static async Task<byte[]> DownloadAsync(Uri address, CancellationToken cancellationToken)
+        {
             using var response = await Http
                 .GetAsync(address, HttpCompletionOption.ResponseContentRead, cancellationToken)
                 .ConfigureAwait(false);
 
             response.EnsureSuccessStatusCode();
 
-            // Buffered before parsing, because SyndicationFeed.Load reads synchronously and would
-            // otherwise block a thread pool thread on the network for the length of the download.
-            var payload = await response.Content.ReadAsByteArrayAsync(cancellationToken).ConfigureAwait(false);
-
-            using var stream = new MemoryStream(payload, writable: false);
-            return Parse(stream, feed.Title);
+            return await response.Content.ReadAsByteArrayAsync(cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -174,7 +185,15 @@ namespace RSSReaderWPF.Services
         /// own title is the fallback for an OPML entry that gave none.
         /// </param>
         /// <exception cref="XmlException">The document is not well-formed XML.</exception>
-        public static IReadOnlyList<ArticleItem> Parse(Stream stream, string preferredTitle)
+        public static IReadOnlyList<ArticleItem> Parse(Stream stream, string preferredTitle) =>
+            ParseFeed(stream, preferredTitle).Articles;
+
+        /// <summary>
+        /// <see cref="Parse"/>, and the feed's own title as well, cleaned: what
+        /// <see cref="FeedDiscovery"/> names a new subscription, since a feed with no entries
+        /// today has no article to carry it.
+        /// </summary>
+        internal static (string OwnTitle, IReadOnlyList<ArticleItem> Articles) ParseFeed(Stream stream, string preferredTitle)
         {
             // Read twice - once to see what kind of feed it is, once to read it - so buffered.
             // The syndication formatters need an ordinary reader over the text: handed one built
@@ -197,11 +216,10 @@ namespace RSSReaderWPF.Services
                 }
             }
 
-            var feedTitle = string.IsNullOrWhiteSpace(preferredTitle)
-                ? FeedText.CleanTitle(parsed.Title?.Text)
-                : preferredTitle;
+            var ownTitle = FeedText.CleanTitle(parsed.Title?.Text);
+            var feedTitle = string.IsNullOrWhiteSpace(preferredTitle) ? ownTitle : preferredTitle;
 
-            return SortNewestFirst(parsed.Items.Select(item => ArticleItem.FromSyndication(item, feedTitle)));
+            return (ownTitle, SortNewestFirst(parsed.Items.Select(item => ArticleItem.FromSyndication(item, feedTitle))));
         }
 
         /// <summary>A reader over the whole buffer, from the start.</summary>

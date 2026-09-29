@@ -56,6 +56,12 @@ public final class MainWindowController: NSWindowController {
     /// the suite.
     static var savedFeedList = SavedFeedList(url: StarterOpml.savedListURL)
 
+    /// `savedFeedList` as it was when this window was made, and the one it reads and writes.
+    ///
+    /// Kept per window so a test that awaits - a subscription, a search - still writes where its
+    /// own window was pointed, even if a suite running alongside has moved the static on since.
+    let savedList: SavedFeedList
+
     /// The feed list in the tree, kept so it can be saved as the default.
     var currentFeedList: OpenedFeedList?
 
@@ -78,6 +84,15 @@ public final class MainWindowController: NSWindowController {
     /// it, for the same reason as `keepLoadSummary`.
     var loadSummaryShowing = false
 
+    /// What the headlines list is showing a search for, so Refresh runs it again.
+    var currentSearch: String?
+
+    /// The last search, to start Search All Feeds with. Not kept between runs.
+    var lastSearch = ""
+
+    /// A subscription still looking for its feed. A second one cancels it.
+    var subscribeTask: Task<Void, Never>?
+
     /// The status line, and the only thing that writes to it.
     var status: String = "" {
         didSet { statusField.stringValue = status }
@@ -99,6 +114,7 @@ public final class MainWindowController: NSWindowController {
     }
 
     public override init(window: NSWindow?) {
+        savedList = Self.savedFeedList
         super.init(window: window)
         buildInterface()
         loadDefaultOpml()

@@ -19,7 +19,7 @@ translated from UI Automation, because several of them do not carry over.
 |---|---|
 | `./run.sh` | Debug build + launch — the normal development loop |
 | `./build.sh [debug\|release\|test\|clean]` | Debug is the default |
-| `./build.sh test` | `swift test` — 116 tests |
+| `./build.sh test` | `swift test` — the tests |
 | `./build.sh release` | Universal (arm64 + x86_64) `artifacts/RSS Quick.app` |
 | `./build.sh dist` | Signed, notarised, stapled `artifacts/RSSQuick-<version>-macos.dmg` |
 
@@ -171,11 +171,22 @@ signing key behind on a runner that may be reused.
 | Type a few letters | Jump to a feed or a headline by name |
 | Return | On a feed, load it. On a folder, load every feed under it. On a headline, open it. |
 | Command-B | Open the selected headline in the browser |
-| Command-R, F5 | Reload what is on screen |
-| Escape, Command-. | Stop a load that is taking too long |
+| /, Command-F | Search the headlines of every feed (Edit menu) |
+| Command-R, F5 | Reload what is on screen, or run the search again |
+| Escape, Command-. | Stop a load or a search that is taking too long |
+| Command-N | Subscribe to a feed, by its address or its website's |
+| Command-Delete | Remove the feed selected in the tree, after asking |
+| Command-E | Export the feed list as an OPML file |
 | Command-Plus / Minus / 0 | Larger, smaller, standard text |
 | Command-O | Import a different OPML file |
 | Command-/ | The list above, in a window |
+
+/ is handled in the window's key monitor rather than as a menu key equivalent: an equivalent with
+no modifier would take the / out of every text field, including the address in Subscribe to Feed.
+Command-F is the menu's. Subscribe, remove and search are sheets on the window; each hands its
+answer to a method the tests call directly (`search(for:)`, `subscribe(to:into:)`, `remove(_:)`,
+`exportFeedList(to:)`), and each window keeps its own `savedList` so a test that awaits still
+writes where its own window was pointed.
 
 Selecting a feed never fetches anything. Only Return does — so arrow-key browsing of a hundred
 and ninety feeds never touches the network.
@@ -187,6 +198,7 @@ Sources/RSSQuickCore/     Pure functions and value types. No AppKit.
   FeedText, FeedDate, XMLSafety, ErrorText
   FeedItem, ArticleItem
   OpmlParser, FeedParser, FeedLoader
+  OpmlEditor, FeedDiscovery, HeadlineSearch   (search, subscribe, remove, export)
 Sources/RSSQuickUI/       The window, the menus, and all the focus management.
 Sources/rssquick/         Ten lines that start the application.
 Sources/RSSQuickTestSupport/  A loopback HTTP server and the sample feeds.
@@ -286,7 +298,7 @@ Most of the Windows constraints carry straight across. These are the ones that c
 
 ## Tests
 
-`swift test` — 116 tests, no network.
+`swift test` — the tests, no network.
 
 `LocalFeedServer` serves canned feeds on a loopback port, so the real `FeedLoader` runs against a
 server the test controls. Nothing in the application grew an interface to make this possible.

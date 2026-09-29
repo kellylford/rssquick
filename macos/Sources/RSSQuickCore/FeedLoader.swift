@@ -152,6 +152,12 @@ public enum FeedLoader {
     private static func fetch(_ feed: FeedItem) async throws -> [ArticleItem] {
         guard let url = URL(string: feed.url), url.scheme != nil else { throw MalformedURL() }
 
+        return try FeedParser.parse(try await download(url), preferredTitle: feed.title)
+    }
+
+    /// Fetches a document whole, on the same session, timeout and size limit as a feed.
+    /// `FeedDiscovery` uses it for web pages as well as feeds.
+    static func download(_ url: URL) async throws -> Data {
         let (data, response) = try await session.data(from: url)
 
         if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
@@ -160,7 +166,7 @@ public enum FeedLoader {
 
         guard data.count <= maxResponseBytes else { throw ResponseTooLarge() }
 
-        return try FeedParser.parse(data, preferredTitle: feed.title)
+        return data
     }
 
 }

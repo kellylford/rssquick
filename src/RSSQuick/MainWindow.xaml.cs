@@ -103,6 +103,21 @@ namespace RSSReaderWPF
         /// </remarks>
         private bool _loadSummaryShowing;
 
+        /// <summary>What the headlines list is showing a search for, so F5 runs it again.</summary>
+        private string? _currentSearch;
+
+        /// <summary>The last search, to start Search All Feeds with. Not kept between runs.</summary>
+        private string _lastSearch = string.Empty;
+
+        /// <summary>Stops a subscription still looking for its feed when another starts.</summary>
+        private CancellationTokenSource? _subscribeCancellation;
+
+        /// <summary>
+        /// Help, Check for Updates. Set by App, so the tests, which build windows directly, never
+        /// reach GitHub.
+        /// </summary>
+        internal Func<Task<UpdateOffer?>>? CheckForUpdates { get; set; }
+
         public MainWindow()
         {
             InitializeComponent();
@@ -131,6 +146,8 @@ namespace RSSReaderWPF
             // Nothing stops a second copy of RSS Quick saving or forgetting the default, so the
             // buttons are re-checked whenever this window comes back to the front.
             Activated += (_, _) => UpdateFeedListButtons();
+
+            PreviewTextInput += Window_PreviewTextInput;
         }
 
         private void SetupKeyboardNavigation()
@@ -176,6 +193,33 @@ namespace RSSReaderWPF
                 InputBindings.Add(new KeyBinding(new RelayCommand(() => SetTextSize(TextScale.Smaller(_textSize))), key, ModifierKeys.Control));
             foreach (var key in new[] { Key.D0, Key.NumPad0 })
                 InputBindings.Add(new KeyBinding(new RelayCommand(() => SetTextSize(1.0)), key, ModifierKeys.Control));
+
+            // Subscribing, exporting and searching: Command-N, Command-E and Command-F on the Mac.
+            // Search is also /, which is handled as typed text rather than as a key - see
+            // Window_PreviewTextInput - so it is the / key on every keyboard layout, not just the
+            // one where / happens to be Key.OemQuestion.
+            InputBindings.Add(new KeyBinding(new RelayCommand(Subscribe), Key.N, ModifierKeys.Control));
+            InputBindings.Add(new KeyBinding(new RelayCommand(ExportFeedList), Key.E, ModifierKeys.Control));
+            InputBindings.Add(new KeyBinding(new RelayCommand(SearchAllFeeds), Key.F, ModifierKeys.Control));
+        }
+
+        /// <summary>
+        /// /: Search All Feeds, from anywhere in the window except a text box or the open menu.
+        /// </summary>
+        /// <remarks>
+        /// Preview, on the window, so it runs before the feed tree's type-ahead and the headline
+        /// list's TextSearch can take the / as the start of a name. Deferred, so the dialog does
+        /// not open in the middle of the keystroke that asked for it.
+        /// </remarks>
+        private void Window_PreviewTextInput(object sender, TextCompositionEventArgs e)
+        {
+            if (e.Text != "/") return;
+
+            var focused = FocusManager.GetFocusedElement(this) as DependencyObject;
+            if (focused is System.Windows.Controls.Primitives.TextBoxBase || IsWithin(MainMenu, focused)) return;
+
+            e.Handled = true;
+            Dispatcher.BeginInvoke(new Action(SearchAllFeeds), DispatcherPriority.Input);
         }
 
         private void LoadDefaultOpml()
@@ -273,7 +317,7 @@ namespace RSSReaderWPF
         /// True when this is the list RSS Quick opens at startup, which is what greys out
         /// Make This My Default.
         /// </param>
-        private void ShowFeedList(OpenedFeedList list, bool isDefault)
+        internal void ShowFeedList(OpenedFeedList list, bool isDefault)
         {
             _viewModel.FeedCategories.Clear();
             foreach (var root in list.Document.Roots) _viewModel.FeedCategories.Add(root);
@@ -346,6 +390,14 @@ namespace RSSReaderWPF
         /// </summary>
         private void UseStarterList_Click(object sender, RoutedEventArgs e)
         {
+            // Reachable from the File menu when there is nothing to forget, where the button
+            // would be greyed out.
+            if (!SavedFeedList.ForThisUser.Exists)
+            {
+                _viewModel.StatusMessage = "You have no default feed list of your own, so the starter feed list already opens at startup";
+                return;
+            }
+
             try
             {
                 SavedFeedList.ForThisUser.Forget();
@@ -427,6 +479,9 @@ namespace RSSReaderWPF
             }
             AutomationProperties.SetAcceleratorKey(UpdateButton, "Alt+U");
             UpdateButton.Visibility = Visibility.Visible;
+            // Help's item says so too, as the Mac's RSS Quick menu does.
+            UpdateMenuItem.Header = UpdateButton.Content;
+            UpdateMenuItem.InputGestureText = "Alt+U";
 
             if (_isLoadingFeed) _pendingUpdateNotice = notice;
             else if (_loadSummaryShowing) _viewModel.StatusMessage = $"{_viewModel.StatusMessage}. {notice}";
@@ -518,6 +573,11 @@ namespace RSSReaderWPF
                     // Load individual feed
                     _ = LoadFeedAsync(selectedItem);
                 }
+                e.Handled = true;
+            }
+            else if (e.Key == Key.Delete && Keyboard.Modifiers == ModifierKeys.None)
+            {
+                RemoveSelectedFeed();
                 e.Handled = true;
             }
         }
@@ -669,6 +729,7 @@ namespace RSSReaderWPF
             _isLoadingFeed = true;
             _loadSummaryShowing = false;
             _currentlyLoadedFeed = target;
+            _currentSearch = null;
             _viewModel.Headlines.Clear();
             _lastSelectedHeadlineIndex = -1;
             OpenInBrowserButton.IsEnabled = false;
@@ -1142,6 +1203,12 @@ namespace RSSReaderWPF
         /// </remarks>
         private void RefreshCurrentFeed()
         {
+            if (_currentSearch is { } search)
+            {
+                _ = SearchAsync(search);
+                return;
+            }
+
             if (_currentlyLoadedFeed is not { } loaded)
             {
                 _viewModel.StatusMessage = "Nothing to refresh yet - press Enter on a feed first";
@@ -1206,6 +1273,7 @@ namespace RSSReaderWPF
 
         internal static string KeyboardShortcuts(string version) => $"""
             Moving around
+              Alt or F10: the menu bar, where every command is
               Tab or Shift+Tab: the buttons, the feed tree and the headlines
               F6 or Ctrl+Tab: switch between the feed tree and the headlines
               Ctrl+1 or Ctrl+2: go straight to the feed tree or the headlines
@@ -1216,15 +1284,21 @@ namespace RSSReaderWPF
               Enter: on a feed, load its headlines. On a folder, load all of them.
                 On a headline, open it in your browser.
               Alt+B: open the selected headline in your browser
-              F5: reload what is on screen
-              Escape: stop a load that is taking too long
+              / or Ctrl+F: search the headlines of every feed
+              F5: reload what is on screen, or run the search again
+              Escape: stop a load or a search that is taking too long
 
-            Text and files
-              Ctrl+Plus or Ctrl+Minus: larger or smaller text, until RSS Quick closes
-              Ctrl+0: back to your Windows text size
+            Feeds and files
+              Ctrl+N: subscribe to a feed, by its address or its website's
+              Delete: in the feed tree, remove the selected feed
+              Ctrl+E: export your feed list as an OPML file
               Ctrl+O: import a different OPML feed list
               Alt+D: make the feed list on screen your default
               Alt+U: get a new version, once there is one
+
+            Text size
+              Ctrl+Plus or Ctrl+Minus: larger or smaller text, until RSS Quick closes
+              Ctrl+0: back to your Windows text size
 
             Selecting a feed never fetches anything. Only Enter does.
 

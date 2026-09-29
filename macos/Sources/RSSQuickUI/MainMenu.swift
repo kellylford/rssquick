@@ -54,6 +54,13 @@ public enum MainMenu {
     private static func fileMenu() -> NSMenuItem {
         let menu = NSMenu(title: "File")
         menu.addItem(withTitle: "Import OPML File…", action: #selector(MainWindowController.importOpml(_:)), keyEquivalent: "o")
+        menu.addItem(withTitle: "Export Feed List…", action: #selector(MainWindowController.exportFeedList(_:)), keyEquivalent: "e")
+        menu.addItem(.separator())
+        menu.addItem(withTitle: "Subscribe to Feed…", action: #selector(MainWindowController.subscribeToFeed(_:)), keyEquivalent: "n")
+
+        // Command-Delete, as Move to Trash is in the Finder. Delete on Windows.
+        menu.addItem(withTitle: "Remove Feed", action: #selector(MainWindowController.removeFeed(_:)), keyEquivalent: "\u{8}")
+        menu.addItem(.separator())
 
         // Dimmed rather than hidden when there is nothing for them to do, so VoiceOver reads
         // them as unavailable and the reader learns they exist. See validateMenuItem.
@@ -80,6 +87,11 @@ public enum MainMenu {
         menu.addItem(withTitle: "Copy", action: #selector(NSText.copy(_:)), keyEquivalent: "c")
         menu.addItem(withTitle: "Paste", action: #selector(NSText.paste(_:)), keyEquivalent: "v")
         menu.addItem(withTitle: "Select All", action: #selector(NSText.selectAll(_:)), keyEquivalent: "a")
+        menu.addItem(.separator())
+
+        // / as well, as on Windows; that is handled in the window, because a menu equivalent with
+        // no modifier would take the / out of every text field too.
+        menu.addItem(withTitle: "Search All Feeds…", action: #selector(MainWindowController.searchAllFeeds(_:)), keyEquivalent: "f")
         return wrap(menu)
     }
 

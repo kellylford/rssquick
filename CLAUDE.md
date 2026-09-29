@@ -33,13 +33,16 @@ The application lives in `src/RSSQuick/`:
 
 ```
 Models/         FeedItem, ArticleItem (with the FromSyndication factory)
-Services/       FeedLoader, FeedText, OpmlParser, TextScale, SavedFeedList,
-                ReleaseCheck, AppUpdater (Velopack), PreviousInstall
+Services/       FeedLoader, FeedText, OpmlParser, OpmlEditor, FeedDiscovery,
+                HeadlineSearch, TextScale, SavedFeedList, ReleaseCheck,
+                AppUpdater (Velopack), PreviousInstall
 ViewModels/     MainViewModel, RelayCommand
 Converters.cs   IValueConverters, exposed as static Instance singletons and
                 referenced from XAML via {x:Static}
 Program.cs      the entry point: Velopack first, then WPF
-MainWindow.*    the window, and all the focus management
+MainWindow.*    the window, and all the focus management; MainWindow.Commands.cs
+                holds the menu bar's handlers and search, subscribe, remove, export
+InputDialog.cs  the one-field modal used by Search All Feeds and Subscribe to Feed
 ```
 
 `MainWindow.xaml.cs` is ~800 lines and is now almost entirely focus and event handling. Everything in `Services/` is a pure function or a stateless static, which is why it is all directly tested.
@@ -51,6 +54,8 @@ Flow:
 3. **Feed → headlines** — Enter in the tree calls `LoadFeedAsync` (one feed) or `LoadAllFeedsInCategoryAsync` (a folder). Both call `BeginLoad`, which cancels whatever load was already running, then hand off to `FeedLoader`. A folder fetches six feeds at a time and reports per-feed failures rather than failing as a whole.
 4. **Headline → browser** — Enter or Alt+B runs `Process.Start` on the article link.
 5. **Updates** — `Program.Main` runs `VelopackApp.Build().Run()` before WPF starts (Setup launches the executable with its own arguments to install and update, and that call handles them and exits), then retires any old Inno Setup install. Five seconds after the window opens, `App.OfferUpdateAsync` asks `AppUpdater`: an installed copy checks and downloads through Velopack and installs on exit; a portable or dev copy only asks `ReleaseCheck` whether GitHub has something newer. Either way the window gets `ShowUpdate`. The check lives in App, not the window, so the tests — which build windows directly — never reach GitHub.
+
+6. **Search, subscribe, remove, export** — Search All Feeds fetches every feed in the tree (once each, by address) through `FeedLoader.LoadFolderAsync` and keeps what `HeadlineSearch` matches; it goes through `BeginLoad`/`ShowArticles` like any load, and `_currentSearch` is what F5 re-runs. Subscribing runs `FeedDiscovery` (a feed address, or a web page's `<link rel="alternate">`), then `OpmlEditor` edits the list's own XML at the node's `FeedItem.OutlinePath` — never rebuilding the file from the tree — and the result is saved as the default at once, so a subscription cannot be lost at exit. Each command is split: the dialog half is untestable, the `internal` half (`SearchAsync`, `SubscribeAsync`, `RemoveFeed`, `ExportFeedList(path)`) is what the tests call.
 
 ### Traps this codebase has already fallen into
 
@@ -67,6 +72,8 @@ Flow:
 - **Neither items control is its own tab stop.** `IsTabStop="False"` on both `FeedTree` and `HeadlinesList`, plus an `ItemContainerStyle` that sets `IsTabStop="True"` on `TreeViewItem` (unlike `ListBoxItem`, it is not one by default). With `TabNavigation="Once"` each panel is a single stop that lands on an item. Setting `IsTabStop="True"` on a container reintroduces the 1.1.0 Shift+Tab bug: focus lands on a container that reports no name, value or state, and the `GotFocus` handler pushes it straight back in, so Shift+Tab appears to do nothing. `tests/RSSQuick.Tests/TabOrderTests.cs` measures this — every test there was verified to fail against the unfixed window.
 - **The `GotFocus` handlers are guarded on `e.OriginalSource`.** They redirect only focus that landed on the container itself. Without the guard they run for every focus change bubbling through the panel, so each arrow-key step re-focuses the row it just left.
 - `FeedText.CleanTitle()` strips zero-width characters (U+200B/C/D, U+FEFF, U+2060), normalizes exotic spaces (U+00A0, U+2009, U+202F) to plain spaces, replaces control characters with a space, and collapses whitespace. Invisible characters and stray whitespace render as confusing blank cells on a braille display. Do not bypass it for text that reaches a headline.
+- **The menu bar is not in the tab ring** (`KeyboardNavigation.TabNavigation="None"`, `IsTabStop="False"`); Alt or F10 reaches it. Its items are never disabled, because WPF skips a disabled menu item when arrowing and a reader would never learn it was there — each command says in the status bar why it did nothing instead. Access keys avoid D, B and U, which are Alt+D, Alt+B and Alt+U bindings. A key shown in a menu must be an `InputBinding`; `MenuAndFeedCommandsTests` checks.
+- **/ is Search All Feeds, handled as text input** (`Window_PreviewTextInput`), not as a key binding, so it is whichever key types / on the reader's layout. It is ignored in a text box and while the menu is open.
 - Tab order is explicit and fixed: Import (0) → Make This My Default (1) → Use Starter Feed List (2) → Update (3) → FeedTree (4) → HeadlinesList (5) → Open in Browser (6). The two default-list buttons are disabled when they have nothing to do, and a disabled button leaves the tab ring; the Update button is `Collapsed` until `ShowUpdate` offers a newer version. So the ring is usually four stops. Adding a focusable control means renumbering deliberately and updating `TabOrderTests` (and `UpdateOfferTests`, which walks the ring with the Update button showing).
 - **A button that disables itself must move focus first.** WPF drops keyboard focus from a control that becomes disabled and moves it nowhere. `MoveFocusOffDisabledButton()` sends it to the feed tree; `DefaultFeedListTests` fails without it.
 - **Two things compete for the status bar**: what a load just did, and where you are in the list. `_keepLoadSummary` stops the selection a load makes from overwriting the summary it just wrote — without it, "3 of 20 feeds failed" is replaced by "BBC News - 1 of 45" before anyone can read it. Position takes over from the first arrow key.
@@ -77,7 +84,7 @@ Flow:
 - **No literal colours anywhere in the XAML.** Everything is a `DynamicResource` on a `SystemColors.*BrushKey`, so a Windows high contrast theme works and follows a live theme switch. Folders are marked out by font weight, never colour. `ThemeTests` asserts this against the live visual tree — and note that `ReadLocalValue` is useless for checking it, because content inside a `DataTemplate` records its values as `ParentTemplate` rather than `Local`; use `DependencyPropertyHelper.GetValueSource`.
 - **`TextScale.Current` is applied to the window's `FontSize` in the constructor.** WPF honours display scaling through the manifest's per-monitor DPI awareness, but ignores the Accessibility "Make text bigger" setting completely. Removing that one line silently drops text-scaling support.
 
-Key bindings are registered in `SetupKeyboardNavigation()` as `InputBindings`: F5 refresh, F6 / Ctrl+Tab cycle panels, Ctrl+1 / Ctrl+2 go to a panel, Alt+B open in browser, Alt+D make the list on screen the default, Ctrl+O import, Ctrl+Plus / Minus / 0 text size for the session, F1 the shortcuts list. They mirror the Mac's menu keys with Ctrl for Command, and `ParityTests` holds them to it. Alt+D and Alt+B are bindings rather than access keys so they can say in the status bar why they did nothing when their button is disabled. Left/Right are handled in `FeedTree_PreviewKeyDown` - Left on a feed goes to its folder, which WPF's TreeView does not do - and type-ahead in `FeedTree_PreviewTextInput`, because TreeView has none; the headlines list gets it from `TextSearch.TextPath`.
+Key bindings are registered in `SetupKeyboardNavigation()` as `InputBindings`: F5 refresh, F6 / Ctrl+Tab cycle panels, Ctrl+1 / Ctrl+2 go to a panel, Alt+B open in browser, Alt+D make the list on screen the default, Ctrl+O import, Ctrl+N subscribe, Ctrl+E export, Ctrl+F search (and / as text input), Delete in the tree removes a feed, Ctrl+Plus / Minus / 0 text size for the session, F1 the shortcuts list. They mirror the Mac's menu keys with Ctrl for Command, and `ParityTests` holds them to it. Alt+D and Alt+B are bindings rather than access keys so they can say in the status bar why they did nothing when their button is disabled. Left/Right are handled in `FeedTree_PreviewKeyDown` - Left on a feed goes to its folder, which WPF's TreeView does not do - and type-ahead in `FeedTree_PreviewTextInput`, because TreeView has none; the headlines list gets it from `TextSearch.TextPath`.
 
 **A folder load does not report progress.** Every change to the status bar is spoken, so "3 of 20 feeds" twenty times buried the result. The Mac writes its count without announcing it; Windows has no silent way to write the status bar, so it says only when a load starts and what it found.
 
@@ -121,7 +128,7 @@ Velopack replaces the whole program folder on update, so the `RSS.opml` beside t
 
 `macos/` is a native AppKit version, sharing `RSS.opml` and the behaviour but none of the code —
 there is no .NET in it. It is a Swift package with no Xcode project: `./build.sh test` runs its
-116 tests, `./run.sh` builds and launches it, and `build/make-app.sh` assembles the bundle. It
+tests, `./run.sh` builds and launches it, and `build/make-app.sh` assembles the bundle. It
 reads `VERSION` from the repository root like everything else.
 
 `./build.sh dist` is the release: `build/release.sh` runs the tests, builds the universal app,

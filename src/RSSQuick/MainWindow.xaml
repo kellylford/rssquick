@@ -10,12 +10,59 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
+        <!-- The menu bar: the same menus as the Mac's, in the same order, less the two that are
+             the Mac's own (the application menu and Window). Alt or F10 reaches it; it is not in
+             the tab ring, as a menu bar never is on Windows. Every item is a command the window
+             already had, so each one calls the same method as its key and says in the status bar
+             why it did nothing, rather than being greyed out - WPF skips a disabled menu item
+             when arrowing, so a reader would never learn it was there.
+             The access keys avoid D, B and U, which are Alt+D, Alt+B and Alt+U bindings. -->
+        <Menu Grid.Row="0" Name="MainMenu" KeyboardNavigation.TabNavigation="None" IsTabStop="False">
+            <MenuItem Header="_File">
+                <MenuItem Header="_Import OPML File..." InputGestureText="Ctrl+O" Click="ImportOpml_Click"/>
+                <MenuItem Header="_Export Feed List..." InputGestureText="Ctrl+E" Click="ExportFeedList_Click"/>
+                <Separator/>
+                <MenuItem Header="_Subscribe to Feed..." InputGestureText="Ctrl+N" Click="Subscribe_Click"/>
+                <MenuItem Header="_Remove Feed" InputGestureText="Delete" Click="RemoveFeed_Click"/>
+                <Separator/>
+                <MenuItem Header="_Make This My Default Feed List" InputGestureText="Alt+D" Click="MakeDefault_Click"/>
+                <MenuItem Header="Use S_tarter Feed List" Click="UseStarterList_Click"/>
+                <Separator/>
+                <MenuItem Header="Re_fresh" InputGestureText="F5" Click="Refresh_Click"/>
+                <MenuItem Header="Sto_p Loading" InputGestureText="Esc" Click="StopLoading_Click"/>
+                <Separator/>
+                <MenuItem Header="E_xit" InputGestureText="Alt+F4" Click="Exit_Click"/>
+            </MenuItem>
+            <MenuItem Header="_Edit">
+                <MenuItem Header="_Search All Feeds..." InputGestureText="/ or Ctrl+F" Click="Search_Click"/>
+            </MenuItem>
+            <MenuItem Header="_Article">
+                <MenuItem Header="_Open in Browser" InputGestureText="Alt+B" Click="OpenInBrowser_Click"/>
+            </MenuItem>
+            <MenuItem Header="_View">
+                <MenuItem Header="Feed _Tree" InputGestureText="Ctrl+1" Click="FocusFeedTree_Click"/>
+                <MenuItem Header="_Headlines" InputGestureText="Ctrl+2" Click="FocusHeadlines_Click"/>
+                <MenuItem Header="_Next Pane" InputGestureText="F6" Click="NextPane_Click"/>
+                <Separator/>
+                <MenuItem Header="_Larger Text" InputGestureText="Ctrl+Plus" Click="LargerText_Click"/>
+                <MenuItem Header="_Smaller Text" InputGestureText="Ctrl+Minus" Click="SmallerText_Click"/>
+                <MenuItem Header="_Actual Size" InputGestureText="Ctrl+0" Click="ActualSize_Click"/>
+            </MenuItem>
+            <MenuItem Header="_Help">
+                <MenuItem Header="_Keyboard Shortcuts" InputGestureText="F1" Click="KeyboardShortcuts_Click"/>
+                <MenuItem Name="UpdateMenuItem" Header="_Check for Updates" Click="CheckForUpdates_Click"/>
+                <Separator/>
+                <MenuItem Name="AboutMenuItem" Header="_About RSS Quick" Click="About_Click"/>
+            </MenuItem>
+        </Menu>
+
         <!-- Top Controls -->
-        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="10">
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="10">
             <Button Name="ImportOpmlButton" Content="Import OPML File (Ctrl+O)"
                     Click="ImportOpml_Click" Margin="0,0,10,0" Padding="10,5"
                     TabIndex="0"
@@ -43,7 +90,7 @@
         </StackPanel>
 
         <!-- Main Content -->
-        <Grid Grid.Row="1" Margin="10">
+        <Grid Grid.Row="2" Margin="10">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="400"/>
                 <ColumnDefinition Width="5"/>
@@ -147,7 +194,7 @@
         </Grid>
 
         <!-- Status Bar -->
-        <StatusBar Grid.Row="2" Name="MainStatusBar"
+        <StatusBar Grid.Row="3" Name="MainStatusBar"
                    Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}"
                    Foreground="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}">
             <StatusBarItem>
