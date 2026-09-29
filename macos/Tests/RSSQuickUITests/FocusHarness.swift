@@ -31,23 +31,24 @@ final class FocusHarness {
     /// are not laid out while it is being constructed. A test that acts before that has happened
     /// races it, and the deferred block lands in the middle of whatever the test is asserting.
     static func make() async throws -> FocusHarness {
-        let harness = try FocusHarness()
-        await harness.settle()
-        return harness
-    }
-
-    private init() throws {
-        // A window cannot be made before the application object exists. Accessory rather than
-        // regular: the test runner should not take over the screen or steal the Dock.
-        _ = NSApplication.shared
-        NSApp.setActivationPolicy(.accessory)
-
-        server = try LocalFeedServer(routes: [
+        let server = try await LocalFeedServer.start(routes: [
             "/news.xml": .init(body: SampleFeeds.rss2),
             "/atom.xml": .init(body: SampleFeeds.atom),
             "/broken.xml": .init(status: 500, body: "server on fire"),
             "/slow.xml": .init(body: SampleFeeds.rss2, delay: 3),
         ])
+        let harness = FocusHarness(server: server)
+        await harness.settle()
+        return harness
+    }
+
+    private init(server: LocalFeedServer) {
+        // A window cannot be made before the application object exists. Accessory rather than
+        // regular: the test runner should not take over the screen or steal the Dock.
+        _ = NSApplication.shared
+        NSApp.setActivationPolicy(.accessory)
+
+        self.server = server
 
         goodFeed = FeedItem(title: "Example News", url: server.url(for: "/news.xml"))
         otherFeed = FeedItem(title: "Atom Example", url: server.url(for: "/atom.xml"))

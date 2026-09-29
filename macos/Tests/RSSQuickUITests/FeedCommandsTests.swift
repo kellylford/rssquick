@@ -51,7 +51,7 @@ struct FeedCommandsTests {
     @Test("Search fetches every feed and shows only what matches")
     func searchFindsMatches() async throws {
         let harness = try await FocusHarness.make()
-        let server = try LocalFeedServer(routes: ["/other.xml": .init(body: Self.other)])
+        let server = try await LocalFeedServer.start(routes: ["/other.xml": .init(body: Self.other)])
         defer { server.stop() }
         try show(harness, Self.feedList([
             ("News", "Example News", harness.server.url(for: "/news.xml")),
@@ -103,7 +103,7 @@ struct FeedCommandsTests {
     @Test("Subscribing adds the feed, saves the list, and selects the new feed")
     func subscribe() async throws {
         let harness = try await FocusHarness.make()
-        let server = try LocalFeedServer(routes: ["/other.xml": .init(body: Self.other)])
+        let server = try await LocalFeedServer.start(routes: ["/other.xml": .init(body: Self.other)])
         defer { server.stop() }
         try show(harness, Self.feedList([("News", "Example News", harness.server.url(for: "/news.xml"))]))
         let news = try #require(OpmlEditor.folders(harness.controller.roots).first { $0.name == "News" })
@@ -135,7 +135,7 @@ struct FeedCommandsTests {
     @Test("An address with no feed says why, and changes nothing")
     func subscribeToNothing() async throws {
         let harness = try await FocusHarness.make()
-        let server = try LocalFeedServer(routes: [
+        let server = try await LocalFeedServer.start(routes: [
             "/page.html": .init(body: "<!DOCTYPE html><html><body>No feeds</body></html>", contentType: "text/html"),
         ])
         defer { server.stop() }
@@ -194,7 +194,7 @@ struct FeedCommandsTests {
     @Test("Export writes the list on screen, including a new subscription")
     func export() async throws {
         let harness = try await FocusHarness.make()
-        let server = try LocalFeedServer(routes: ["/other.xml": .init(body: Self.other)])
+        let server = try await LocalFeedServer.start(routes: ["/other.xml": .init(body: Self.other)])
         defer { server.stop() }
         try show(harness, Self.feedList([("News", "Example News", harness.server.url(for: "/news.xml"))]))
         harness.controller.subscribe(to: server.url(for: "/other.xml"), into: nil)

@@ -119,7 +119,7 @@ struct ReleaseCheckTests {
 
     @Test("A release is read from the server")
     func readFromServer() async throws {
-        let server = try LocalFeedServer(routes: [
+        let server = try await LocalFeedServer.start(routes: [
             "/releases/latest": .init(body: Self.release(), contentType: "application/json"),
         ])
         defer { server.stop() }
@@ -133,7 +133,7 @@ struct ReleaseCheckTests {
     /// At launch this is ignored; from Check for Updates it is reported, because the reader asked.
     @Test("A server error is an error, not an answer")
     func serverErrorThrows() async throws {
-        let server = try LocalFeedServer(routes: [
+        let server = try await LocalFeedServer.start(routes: [
             "/limited": .init(status: 403, body: Self.release(), contentType: "application/json"),
         ])
         defer { server.stop() }
