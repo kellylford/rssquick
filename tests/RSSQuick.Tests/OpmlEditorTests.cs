@@ -160,6 +160,36 @@ public class OpmlEditorTests
         Assert.Null(folders[^1].Path);
     }
 
+    /// <summary>
+    /// A screen reader hears a ComboBox item by its ToString. A record's lists every field, which
+    /// is what the Folder list in Subscribe to Feed read out before this.
+    /// </summary>
+    [WpfFact]
+    public void A_folder_in_the_subscribe_list_is_announced_by_its_name()
+    {
+        var folders = OpmlEditor.Folders(Read(Bytes(List)).Roots);
+        var combo = new System.Windows.Controls.ComboBox
+        {
+            ItemsSource = folders,
+            DisplayMemberPath = nameof(FolderChoice.Name),
+        };
+        var window = new System.Windows.Window { Content = combo, ShowInTaskbar = false, WindowStyle = System.Windows.WindowStyle.None, Width = 1, Height = 1 };
+        try
+        {
+            window.Show();
+            combo.IsDropDownOpen = true;
+            combo.UpdateLayout();
+            var item = (System.Windows.Controls.ComboBoxItem)combo.ItemContainerGenerator.ContainerFromIndex(1)!;
+            var peer = System.Windows.Automation.Peers.UIElementAutomationPeer.CreatePeerForElement(item);
+
+            Assert.Equal("News / Wires", peer.GetName());
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
     [Fact]
     public void The_suggested_folder_is_the_one_the_reader_is_in()
     {
