@@ -25,7 +25,7 @@ public final class LocalFeedServer: @unchecked Sendable {
     }
 
     private let listener: NWListener
-    private let queue = DispatchQueue(label: "LocalFeedServer", attributes: .concurrent)
+    private let queue: DispatchQueue
     private let lock = NSLock()
 
     private var routes: [String: Route]
@@ -44,29 +44,45 @@ public final class LocalFeedServer: @unchecked Sendable {
     public init(routes: [String: Route]) throws {
         self.routes = routes
 
-        let parameters = NWParameters.tcp
-        parameters.requiredLocalEndpoint = .hostPort(host: .ipv4(.loopback), port: .any)
-        listener = try NWListener(using: parameters)
-
-        let ready = DispatchSemaphore(value: 0)
-
-        listener.stateUpdateHandler = { [weak self] state in
-            if case .ready = state {
-                self?.port = self?.listener.port?.rawValue ?? 0
-                ready.signal()
-            }
-        }
+        let queue = DispatchQueue(label: "LocalFeedServer", attributes: .concurrent)
+        self.queue = queue
+        let started = try Self.start(on: queue)
+        listener = started.listener
+        port = started.port
 
         listener.newConnectionHandler = { [weak self] connection in
             self?.accept(connection)
         }
+    }
 
-        listener.start(queue: queue)
+    /// A listener on a loopback port, ready, and the port.
+    ///
+    /// Tried more than once. With several suites each starting a server at the same moment, the
+    /// first listener to start in one of them could miss a single short deadline while the rest
+    /// of that suite's servers started instantly - six tests failing with `didNotStart` on every
+    /// run, all of them the first in their suite. A fresh listener after a longer wait starts.
+    /// Nothing connects until the initializer has returned the address, by which time the
+    /// server's own connection handler has replaced the placeholder this starts with.
+    private static func start(on queue: DispatchQueue) throws -> (listener: NWListener, port: UInt16) {
+        for _ in 0..<3 {
+            let parameters = NWParameters.tcp
+            parameters.requiredLocalEndpoint = .hostPort(host: .ipv4(.loopback), port: .any)
+            let listener = try NWListener(using: parameters)
 
-        guard ready.wait(timeout: .now() + 5) == .success else {
+            let ready = DispatchSemaphore(value: 0)
+            listener.stateUpdateHandler = { state in
+                if case .ready = state { ready.signal() }
+            }
+            // Accepted connections need somewhere to go until the server sets its own handler.
+            listener.newConnectionHandler = { connection in connection.cancel() }
+            listener.start(queue: queue)
+
+            if ready.wait(timeout: .now() + 10) == .success, let port = listener.port?.rawValue {
+                return (listener, port)
+            }
             listener.cancel()
-            throw Failure.didNotStart
         }
+        throw Failure.didNotStart
     }
 
     public enum Failure: Error { case didNotStart }
