@@ -98,8 +98,15 @@ extension MainWindowController {
 
         let folderLabel = NSTextField(labelWithString: "Folder:")
         let folderMenu = NSPopUpButton(frame: .zero, pullsDown: false)
-        folderMenu.addItems(withTitles: folders.map(\.name))
-        folderMenu.selectItem(at: folders.firstIndex(of: suggested) ?? 0)
+        // One item per choice, tagged with its place. addItems(withTitles:) drops a title it
+        // already has, so two folders with the same name would put every choice after them one
+        // off - and the feed into the wrong folder.
+        for (index, choice) in folders.enumerated() {
+            let item = NSMenuItem(title: choice.name, action: nil, keyEquivalent: "")
+            item.tag = index
+            folderMenu.menu?.addItem(item)
+        }
+        folderMenu.selectItem(withTag: folders.firstIndex(of: suggested) ?? 0)
         folderMenu.setAccessibilityLabel("Folder")
 
         let stack = NSStackView(views: [addressLabel, address, folderLabel, folderMenu])
@@ -122,7 +129,7 @@ extension MainWindowController {
             guard response == .alertFirstButtonReturn else { return }
             let text = address.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !text.isEmpty else { return }
-            let index = folderMenu.indexOfSelectedItem
+            let index = folderMenu.selectedTag()
             self?.subscribe(to: text, into: folders.indices.contains(index) ? folders[index] : nil)
         }
     }
@@ -147,6 +154,11 @@ extension MainWindowController {
 
         setStatus("Looking for a feed at \(address)…")
 
+        // The folder's path is a position in this list. If the list changes while the feed is
+        // being looked for - a feed removed, another list imported - the path would point
+        // somewhere else, or into a list the reader never meant to change.
+        let listAtStart = currentFeedList?.data
+
         subscribeTask = Task { [weak self] in
             let feed: DiscoveredFeed
             do {
@@ -157,6 +169,10 @@ extension MainWindowController {
                 return
             }
             guard !Task.isCancelled, let self else { return }
+            guard currentFeedList?.data == listAtStart else {
+                setStatus("Your feed list changed while RSS Quick was looking for \(feed.title), so it was not added. Subscribe again to add it")
+                return
+            }
             finishSubscribing(feed, into: folder)
         }
     }
@@ -305,8 +321,47 @@ extension MainWindowController {
             ? ""
             : " This feed list is now your default, so it opens every time RSS Quick starts."
 
+        let open = openFolders()
         show(list, isDefault: true)
+        reopen(open)
+
+        // Refresh must not bring back a feed that is no longer in the list.
+        if let loaded = currentlyLoadedFeed, !loaded.isCategory,
+           OpmlEditor.findFeed(list.document.roots, url: loaded.url) == nil {
+            currentlyLoadedFeed = nil
+        }
+
         return FeedListChange(list: list, defaultNote: note)
+    }
+
+    /// The names of the open folders, with the folders above them.
+    ///
+    /// By name rather than by item, because a change rebuilds every item. Without this, each
+    /// subscription or removal closed every folder, and a reader in a large tree lost their place.
+    /// iOS and Windows keep their open folders the same way.
+    func openFolders() -> Set<String> {
+        var open = Set<String>()
+        func walk(_ nodes: [FeedItem], _ prefix: String) {
+            for node in nodes where node.isCategory && outline.isItemExpanded(node) {
+                let name = prefix.isEmpty ? node.title : "\(prefix) / \(node.title)"
+                open.insert(name)
+                walk(node.children, name)
+            }
+        }
+        walk(roots, "")
+        return open
+    }
+
+    func reopen(_ open: Set<String>) {
+        func walk(_ nodes: [FeedItem], _ prefix: String) {
+            for node in nodes where node.isCategory {
+                let name = prefix.isEmpty ? node.title : "\(prefix) / \(node.title)"
+                guard open.contains(name) else { continue }
+                outline.expandItem(node)
+                walk(node.children, name)
+            }
+        }
+        walk(roots, "")
     }
 
     /// Selects and focuses a node anywhere in the tree, opening the folders above it.

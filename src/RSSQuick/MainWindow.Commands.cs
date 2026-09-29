@@ -119,6 +119,9 @@ namespace RSSReaderWPF
                 return;
             }
 
+            // Before BeginLoad, which empties the list and takes the focused row with it.
+            var hadHeadlineFocus = IsWithin(HeadlinesList, FocusManager.GetFocusedElement(this) as DependencyObject);
+
             var token = BeginLoad(new FeedItem { Title = query, IsCategory = true });
             _currentSearch = query;
             _viewModel.StatusMessage = HeadlineSearch.DescribeStart(query, feeds.Count);
@@ -129,7 +132,6 @@ namespace RSSReaderWPF
                 if (token.IsCancellationRequested) return;
 
                 var matches = HeadlineSearch.Filter(result.Articles, query);
-                var hadHeadlineFocus = IsWithin(HeadlinesList, FocusManager.GetFocusedElement(this) as DependencyObject);
 
                 ShowArticles(matches, HeadlineSearch.Describe(query, matches.Count, result));
 
@@ -195,6 +197,11 @@ namespace RSSReaderWPF
 
             _viewModel.StatusMessage = $"Looking for a feed at {address}...";
 
+            // The folder's path is a position in this list. If the list changes while the feed is
+            // being looked for - a feed removed, another list imported - the path would point
+            // somewhere else, or into a list the reader never meant to change.
+            var listAtStart = _currentFeedList?.Content;
+
             DiscoveredFeed feed;
             try
             {
@@ -211,6 +218,12 @@ namespace RSSReaderWPF
             }
 
             if (token.IsCancellationRequested) return;
+
+            if (!ReferenceEquals(_currentFeedList?.Content, listAtStart))
+            {
+                _viewModel.StatusMessage = $"Your feed list changed while RSS Quick was looking for {feed.Title}, so it was not added. Subscribe again to add it";
+                return;
+            }
 
             // Again, now the real address is known: a website's address leads to a feed that may
             // already be in the list under its own.
@@ -377,8 +390,58 @@ namespace RSSReaderWPF
                 ? string.Empty
                 : " This feed list is now your default, so it opens every time RSS Quick starts.";
 
-            ShowFeedList(list, isDefault: true);
+            var open = OpenFolders();
+            ShowFeedList(list, isDefault: true, announce: false);
+            Reopen(open);
+
+            // F5 must not bring back a feed that is no longer in the list.
+            if (_currentlyLoadedFeed is { IsCategory: false } loaded
+                && OpmlEditor.FindFeed(list.Document.Roots, loaded.Url) is null)
+                _currentlyLoadedFeed = null;
+
             return new FeedListChange(list, note);
+        }
+
+        /// <summary>The names of the open folders, with the folders above them.</summary>
+        /// <remarks>
+        /// By name rather than by node, because a change rebuilds every node. Without this, each
+        /// subscription or removal closed every folder, and a reader in a large tree lost their
+        /// place. iOS keeps its open folders the same way.
+        /// </remarks>
+        private HashSet<string> OpenFolders()
+        {
+            var open = new HashSet<string>(StringComparer.Ordinal);
+            void Walk(ItemsControl parent, string prefix)
+            {
+                for (var i = 0; i < parent.Items.Count; i++)
+                {
+                    if (parent.ItemContainerGenerator.ContainerFromIndex(i) is not TreeViewItem { IsExpanded: true } row
+                        || row.DataContext is not FeedItem item) continue;
+                    var name = prefix.Length == 0 ? item.Title : $"{prefix} / {item.Title}";
+                    open.Add(name);
+                    Walk(row, name);
+                }
+            }
+            Walk(FeedTree, string.Empty);
+            return open;
+        }
+
+        private void Reopen(HashSet<string> open)
+        {
+            void Walk(ItemsControl parent, string prefix)
+            {
+                parent.UpdateLayout();
+                for (var i = 0; i < parent.Items.Count; i++)
+                {
+                    if (parent.ItemContainerGenerator.ContainerFromIndex(i) is not TreeViewItem row
+                        || row.DataContext is not FeedItem { IsCategory: true } item) continue;
+                    var name = prefix.Length == 0 ? item.Title : $"{prefix} / {item.Title}";
+                    if (!open.Contains(name)) continue;
+                    row.IsExpanded = true;
+                    Walk(row, name);
+                }
+            }
+            if (open.Count > 0) Walk(FeedTree, string.Empty);
         }
 
         private static FeedItem? FindByPath(IEnumerable<FeedItem> roots, IReadOnlyList<int> path)

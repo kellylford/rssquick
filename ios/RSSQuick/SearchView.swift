@@ -16,8 +16,10 @@ struct SearchView: View {
     }
 
     @State private var query = ""
-    /// The search that was submitted, which is what runs. Changing it cancels the one before.
+    /// The search that was submitted, which is what runs. A new one cancels the one before.
     @State private var submitted: String?
+    /// Bumped by every press of Search, so the same words pressed again search again.
+    @State private var runs = 0
     @State private var phase = Phase.idle
     @State private var results: [ArticleItem] = []
     @State private var reading: ArticleItem?
@@ -29,9 +31,12 @@ struct SearchView: View {
             .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: "Words in a headline")
             .onSubmit(of: .search) {
                 let text = query.trimmingCharacters(in: .whitespacesAndNewlines)
-                if !HeadlineSearch.words(text).isEmpty { submitted = text }
+                if !HeadlineSearch.words(text).isEmpty {
+                    submitted = text
+                    runs += 1
+                }
             }
-            .task(id: submitted) { await run() }
+            .task(id: runs) { await run() }
             .fullScreenCover(item: $reading) { article in
                 if let url = HeadlinesView.readableURL(article.link) {
                     SafariView(url: url).ignoresSafeArea()

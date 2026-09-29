@@ -21,6 +21,9 @@ namespace RSSReaderWPF
 
         private readonly AppUpdater _updater;
 
+        /// <summary>The check in progress, so Check for Updates during the startup one joins it.</summary>
+        private Task<UpdateOffer?>? _checking;
+
         /// <param name="updater">Owned by <see cref="Program.Main"/>, which disposes it on exit.</param>
         public App(AppUpdater updater) => _updater = updater;
 
@@ -41,9 +44,19 @@ namespace RSSReaderWPF
         /// <summary>Asks now, and tells the window about anything newer.</summary>
         private async Task<UpdateOffer?> CheckNowAsync(MainWindow window)
         {
-            var offer = await _updater.CheckAsync();
+            var offer = await CheckOnceAsync();
             if (offer is not null && window.IsLoaded) window.ShowUpdate(offer, _updater.RestartAndUpdate);
             return offer;
+        }
+
+        /// <summary>
+        /// One check at a time. Two at once would have an installed copy download the same
+        /// update twice, into the same place.
+        /// </summary>
+        private Task<UpdateOffer?> CheckOnceAsync()
+        {
+            if (_checking is { IsCompleted: false } running) return running;
+            return _checking = _updater.CheckAsync();
         }
 
         /// <summary>
@@ -58,7 +71,7 @@ namespace RSSReaderWPF
             await Task.Delay(UpdateCheckDelay);
 
             // Back on the UI thread after each await: this started on it.
-            var offer = await _updater.CheckAsync();
+            var offer = await CheckOnceAsync();
             if (offer is null || !window.IsLoaded) return;
 
             window.ShowUpdate(offer, _updater.RestartAndUpdate);

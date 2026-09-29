@@ -70,10 +70,13 @@ namespace RSSReaderWPF.Services
         {
             var address = Normalize(input) ?? throw new UriFormatException($"{input} is not a web address.");
 
-            var payload = await FeedLoader.DownloadAsync(address, cancellationToken).ConfigureAwait(false);
-            if (TryReadFeed(payload, address) is { } feed) return feed;
+            // Where it ended up, not what was typed: "example.com" that redirects to
+            // www.example.com/blog/ has links relative to the blog, and the feed's own address is
+            // the one worth keeping.
+            var (payload, landed) = await FeedLoader.DownloadFromAsync(address, cancellationToken).ConfigureAwait(false);
+            if (TryReadFeed(payload, landed) is { } feed) return feed;
 
-            foreach (var link in FeedLinks(Decode(payload), address).Take(3))
+            foreach (var link in FeedLinks(Decode(payload), landed).Take(3))
             {
                 byte[] linked;
                 try
