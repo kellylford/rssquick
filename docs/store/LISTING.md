@@ -5,7 +5,7 @@ file. docs/STORE-PLAN.md has the rest of the submission.
 
 ## Product name
 
-RSS Quick
+RSSQuick (the reserved name; the package's display name must match it exactly)
 
 ## Short description
 
@@ -55,7 +55,7 @@ News & weather
 
 ## Privacy policy URL
 
-https://theideaplace.net/projects/rssquick/privacy.html
+https://theideaplace.net/projects/RSSQuick/privacy.html
 
 ## Website
 
@@ -63,7 +63,7 @@ https://github.com/kellylford/rssquick
 
 ## Support contact
 
-https://github.com/kellylford/rssquick/issues
+support@theideaplace.net (issues also at https://github.com/kellylford/rssquick/issues)
 
 ## Copyright
 
