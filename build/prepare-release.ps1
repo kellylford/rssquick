@@ -26,6 +26,17 @@ $repo = Split-Path -Parent $PSScriptRoot
 [System.IO.File]::WriteAllText((Join-Path $repo 'VERSION'), $Version, (New-Object System.Text.UTF8Encoding($false)))
 
 Write-Host "VERSION set to $Version."
+
+# The iOS marketing version, so local Xcode and CI builds report the same version. Release builds
+# take it from the tag anyway; this only stops it drifting in between. Both files, because the
+# committed .xcodeproj is what Xcode reads and project.yml is what regenerates it.
+foreach ($file in 'ios\project.yml', 'ios\RSSQuick.xcodeproj\project.pbxproj') {
+    $path = Join-Path $repo $file
+    $text = [System.IO.File]::ReadAllText($path)
+    $text = [regex]::Replace($text, '(MARKETING_VERSION[:=] ?)\d+\.\d+\.\d+', "`${1}$Version")
+    [System.IO.File]::WriteAllText($path, $text, (New-Object System.Text.UTF8Encoding($false)))
+}
+Write-Host "iOS MARKETING_VERSION set to $Version."
 Write-Host ''
 Write-Host 'Remaining steps:'
 Write-Host "  1. Add a [$Version] section to CHANGELOG.md."

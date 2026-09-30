@@ -159,7 +159,12 @@ foreach ($arch in $targets) {
     Write-Host ''
 }
 
-$bundle = Join-Path $artifacts "RSSQuick-$version.msixbundle"
+# Only a build of both architectures gets the plain name, the one to upload. A one-architecture
+# build (as -Install often is) is named for what it holds, so it can never overwrite the upload
+# with a bundle that leaves out most of Windows.
+if ($Architecture -eq 'both') { $bundleName = "RSSQuick-$version.msixbundle" }
+else { $bundleName = "RSSQuick-$version-$Architecture-only.msixbundle" }
+$bundle = Join-Path $artifacts $bundleName
 & $makeappx.FullName bundle /d $packages /p $bundle /bv $packageVersion /o
 if ($LASTEXITCODE -ne 0) { throw 'makeappx bundle failed.' }
 

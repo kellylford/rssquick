@@ -2,7 +2,10 @@
 
 **Date:** 2026-09-30
 **Status:** the code, the packaging and the privacy policy are done (Part 5 has the detail).
-What remains is trying the package with a screen reader, and Partner Center. The name **RSSQuick** is reserved in
+The Partner Center product is **RSSQuick**, an MSIX or PWA app, Store ID 9NVGDX3NP0SJ,
+and its identity is in `build/store/identity.json`. (It was first created as an "EXE or MSI app",
+which has no package identity and takes installer links instead of a package; the product type
+cannot be changed, so it was deleted and re-created.) The first submission is 1.4.0. The name **RSSQuick** is reserved in
 Partner Center. No release goes out until the Store package has been tried end to end, so the
 first Store submission and the next GitHub release are the same version.
 
@@ -43,7 +46,7 @@ that is not. `Services/PackageIdentity.IsPackaged` asks once.
 2. **Help, Check for Updates still answers.** Menu items are never disabled or hidden here (a
    reader arrowing through a menu should meet everything in it), so the item stays and says:
    "Windows keeps this copy of RSS Quick up to date through the Microsoft Store. This is
-   version 1.3.0".
+   version 1.4.0".
 3. **About says where it came from**: "Installed from the Microsoft Store."
 4. **No retiring the old Inno Setup install.** `PreviousInstall.Retire` only runs for a copy
    Velopack installed, which a packaged copy is not, but the check is made explicit so it can
@@ -101,7 +104,7 @@ at once, is the trap QuickMail's plan identified.
   secret; every package carries them.
 - **Manifest.** `build/store/AppxManifest.xml` is a template: a full-trust desktop app
   (`runFullTrust`), `internetClient`, Windows 10 1809 or later, display name "RSS Quick".
-- **Version.** MSIX needs four parts with the last one 0, so `VERSION` 1.3.0 becomes `1.3.0.0`.
+- **Version.** MSIX needs four parts with the last one 0, so `VERSION` 1.4.0 becomes `1.4.0.0`.
   The packaging script adds it; `VERSION` stays the only place a version is written. Every
   submission must carry a higher version than the last, which the one-version rule gives us.
 - **Logos.** Made at build time from the iOS app icon
@@ -152,8 +155,8 @@ the Store submission API can come after, if uploading by hand becomes a chore.
    publish `docs/privacy.html` to theideaplace.net and give Partner Center its URL; set up the
    listing from `docs/store/LISTING.md`; age rating
    questionnaire; screenshots.
-5. **Release**: `prepare-release.ps1 1.3.0`, tag, publish the GitHub draft, upload
-   `RSSQuick-1.3.0.msixbundle` to Partner Center, submit.
+5. **Release**: `prepare-release.ps1 1.4.0`, tag, publish the GitHub draft, upload
+   `RSSQuick-1.4.0.msixbundle` to Partner Center, submit.
 6. **After it is live**: a Store link in the README and on the projects page.
 
 ## Part 6 — The listing (Kelly's part)
