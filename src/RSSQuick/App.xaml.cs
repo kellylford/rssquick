@@ -35,6 +35,14 @@ namespace RSSReaderWPF
             MainWindow = window;
             window.Show();
 
+            // Windows updates a Store copy. Offering a download from GitHub as well would leave
+            // the reader with two copies, and the Store does not allow it.
+            if (PackageIdentity.IsPackaged)
+            {
+                window.UpdatedByStore = true;
+                return;
+            }
+
             // Help, Check for Updates asks the same question on demand.
             window.CheckForUpdates = () => CheckNowAsync(window);
 

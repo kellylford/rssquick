@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>RSS Quick Privacy Policy</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="What RSS Quick does, and does not do, with your information, on Windows, Mac, iPhone and iPad.">
+  <style>
+    :root {
+      --bg: #ffffff;
+      --fg: #111111;
+      --muted: #333333;
+      --link: #0b5fff;
+      --link-visited: #7a3ef0;
+      --border: #d0d7de;
+      --focus: #ffbf47;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0c0c0c;
+        --fg: #f5f5f5;
+        --muted: #d6d6d6;
+        --link: #79b8ff;
+        --link-visited: #b392f0;
+        --border: #30363d;
+        --focus: #ffd24d;
+      }
+    }
+    * { box-sizing: border-box; }
+    .skip-link {
+      position: absolute;
+      left: -9999px;
+      top: 0;
+      padding: .6rem 1rem;
+      background: var(--bg);
+      color: var(--link);
+      border: 1px solid var(--border);
+      z-index: 10;
+    }
+    .skip-link:focus { left: .5rem; top: .5rem; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+      line-height: 1.6;
+    }
+    a { color: var(--link); }
+    a:visited { color: var(--link-visited); }
+    a:focus-visible {
+      outline: 3px solid var(--focus);
+      outline-offset: 2px;
+    }
+    .container {
+      max-width: 880px;
+      margin: 0 auto;
+      padding: 1.25rem;
+    }
+    header {
+      padding: 1rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+    h1 {
+      font-size: clamp(1.5rem, 2.5vw + 1rem, 2rem);
+      margin: 0 0 .5rem 0;
+    }
+    .intro { color: var(--muted); margin: 0; }
+    section {
+      padding: 1rem 0;
+      border-top: 1px solid var(--border);
+    }
+    section:first-of-type { border-top: 0; }
+    h2 { font-size: 1.25rem; margin: 0 0 .5rem 0; }
+    p { margin: 0 0 .75rem 0; }
+    ul { margin: 0 0 .75rem 0; padding-left: 1.5rem; }
+    li { margin-bottom: .4rem; }
+    code { overflow-wrap: anywhere; }
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 1rem 0;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to main content</a>
+  <div class="container">
+    <header>
+      <h1>RSS Quick Privacy Policy</h1>
+      <p class="intro">Effective 30 September 2026. This policy covers RSS Quick for Windows, Mac, iPhone and iPad, however you got it.</p>
+    </header>
+
+    <main id="main">
+      <section aria-labelledby="short">
+        <h2 id="short">The short version</h2>
+        <p>RSS Quick collects nothing about you. It has no accounts, no analytics, no advertising and no tracking, and it never sends anything about you or your reading to its developer or anyone else.</p>
+        <p>It connects to the websites whose feeds you read, because that is how it gets the headlines. It keeps your feed list on your own device.</p>
+      </section>
+
+      <section aria-labelledby="connects">
+        <h2 id="connects">Who RSS Quick connects to</h2>
+        <ul>
+          <li><strong>The sites whose feeds you read.</strong> Opening a feed or folder, or searching all feeds, fetches each feed directly from the site that publishes it. That site sees an ordinary web request: your IP address, the time, the feed's address, and that the request came from RSS Quick. What the site does with that is governed by its own privacy policy.</li>
+          <li><strong>A site you subscribe to.</strong> When you subscribe by entering a web page's address rather than a feed's, RSS Quick fetches that page to find the feed it links to.</li>
+          <li><strong>GitHub, to check for a newer version.</strong> RSS Quick for Windows downloaded from GitHub, and RSS Quick for Mac, ask GitHub about the latest release a few seconds after starting, and the Windows installer downloads updates from GitHub. The request carries nothing about you beyond what any web request does. The Microsoft Store and App Store versions do not do this; the store keeps them up to date.</li>
+        </ul>
+        <p>Nothing else. There is no server run by RSS Quick's developer, so there is nowhere for information about you to go.</p>
+      </section>
+
+      <section aria-labelledby="articles">
+        <h2 id="articles">Reading an article</h2>
+        <p>On Windows and Mac, an article opens in your own web browser. On iPhone and iPad it opens in a Safari view inside the app. Either way, the article's site sees you as it would any visitor, and your browser's own settings and privacy policy apply.</p>
+      </section>
+
+      <section aria-labelledby="stored">
+        <h2 id="stored">What is kept on your device</h2>
+        <ul>
+          <li><strong>Your feed list,</strong> when you save one as your default or import one: an OPML file in RSS Quick's own folder on your device. It holds the names and addresses of the feeds you subscribe to.</li>
+          <li><strong>Your text size,</strong> on Mac only, in the app's preferences.</li>
+        </ul>
+        <p>Headlines and articles are not stored. They are fetched fresh each time and forgotten when you close the app. Cookies a site sets while its feed is fetched are held only while RSS Quick is open, and never saved.</p>
+        <p>Nothing kept on your device is sent anywhere. Removing RSS Quick from a store removes this data with it; with the Windows installer or portable copy, your saved list is in <code>%APPDATA%\RSSQuick</code>, and you can delete it there.</p>
+      </section>
+
+      <section aria-labelledby="children">
+        <h2 id="children">Children</h2>
+        <p>RSS Quick collects no information from anyone, of any age.</p>
+      </section>
+
+      <section aria-labelledby="changes">
+        <h2 id="changes">Changes</h2>
+        <p>If RSS Quick ever begins to handle information differently, this page will say so before that version is released, with a new effective date.</p>
+      </section>
+
+      <section aria-labelledby="contact">
+        <h2 id="contact">Questions</h2>
+        <p>RSS Quick is free, open source software by Kelly Ford. Ask a question or report a problem on <a href="https://github.com/kellylford/rssquick/issues">RSS Quick's GitHub issues page</a>, where you can also read every line of its source code.</p>
+      </section>
+    </main>
+
+    <footer>
+      <p><a href="https://theideaplace.net/projects/">More software projects from The Idea Place</a></p>
+    </footer>
+  </div>
+</body>
+</html>

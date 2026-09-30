@@ -35,7 +35,7 @@ The application lives in `src/RSSQuick/`:
 Models/         FeedItem, ArticleItem (with the FromSyndication factory)
 Services/       FeedLoader, FeedText, OpmlParser, OpmlEditor, FeedDiscovery,
                 HeadlineSearch, TextScale, SavedFeedList, ReleaseCheck,
-                AppUpdater (Velopack), PreviousInstall
+                AppUpdater (Velopack), PreviousInstall, PackageIdentity
 ViewModels/     MainViewModel, RelayCommand
 Converters.cs   IValueConverters, exposed as static Instance singletons and
                 referenced from XAML via {x:Static}
@@ -123,6 +123,14 @@ Installed copies read the feed from the latest *published* release. `release.yml
 Velopack replaces the whole program folder on update, so the `RSS.opml` beside the executable is always the shipped one; a reader's own list lives in `Default.opml`. Versions 1.1.0 and 1.2.0 were installed by Inno Setup, and `PreviousInstall.Retire` removes that copy on every start of an installed copy until it is gone — first keeping its `RSS.opml` if it was edited (as `Default.opml` when nothing is saved yet, otherwise beside it as `RSS-from-previous-install.opml`), because Inno's uninstaller deletes it. An all-users Inno install is left alone: removing it would need an administrator prompt.
 
 `RSSQUICK_UPDATE_FEED` points an installed copy at a folder of `vpk pack` output instead of GitHub; HOW-TO-BUILD.md has the steps for trying an update end to end.
+
+### The Microsoft Store package
+
+`docs/STORE-PLAN.md` is the plan and its status. `build/package-store.ps1` (`package.cmd store`) builds an unsigned MSIX per architecture, bundled as `artifacts/RSSQuick-<version>.msixbundle`, from `build/store/AppxManifest.xml` and the Partner Center identity in `build/store/identity.json`; the Store signs it. It is the same program published as loose files rather than single-file, so the Store's block-level updates can diff it. `makeappx` comes from the `Microsoft.Windows.SDK.BuildTools` NuGet package, and the logos from the iOS app icon. `-Install` registers the unpacked layout on this machine (Developer Mode) to try it.
+
+- **A Store copy never looks for updates.** `PackageIdentity.IsPackaged` is checked in App, which then sets `UpdatedByStore` instead of starting the check; Check for Updates and About say the Store keeps it current. Without the check, a Store copy is "not installed by Velopack" and falls into the portable path, offering a GitHub download.
+- **Everything saved goes in `%APPDATA%\RSSQuick`, as files, and nothing is written beside the program.** A package's install folder is read-only, and Windows redirects that one `%APPDATA%` folder consistently. Data scattered elsewhere, or in the registry, is where a packaged copy goes wrong.
+- **`docs/privacy.html` names every host RSS Quick connects to and everything it keeps.** It is published at theideaplace.net/projects/rssquick/privacy.html and is the Store's privacy policy. A change to what the app fetches or saves updates it, and its effective date, in the same pull request.
 
 ## The macOS port
 
