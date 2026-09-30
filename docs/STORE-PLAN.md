@@ -121,7 +121,7 @@ at once, is the trap QuickMail's plan identified.
 `build/package-store.ps1` does all of this, and `package.cmd store` runs it. With `-Install` it
 also registers this machine's architecture (ARM64 on the dev machine; Developer Mode, which is
 on), so the packaged app can be run and checked with a screen reader before anything goes to
-Microsoft. That copy is registered under a separate `.Dev` identity and named "RSS Quick (dev)",
+Microsoft. That copy is registered under a separate `.Dev` identity and named "RSSQuick (dev)",
 from its own folder, so it can never replace a real Store install and a rebuild does not pull
 the files out from under it.
 
@@ -162,7 +162,7 @@ the Store submission API can come after, if uploading by hand becomes a chore.
 new, and suggested answers for the age-rating questionnaire.
 
 - **Privacy policy URL.** Required:
-  `https://theideaplace.net/projects/rssquick/privacy.html`. Its source is `docs/privacy.html`
+  `https://theideaplace.net/projects/RSSQuick/privacy.html`. Its source is `docs/privacy.html`
   here, one policy for all three platforms. It says the app collects nothing and names every host
   the app connects to, so any change to what RSS Quick fetches or keeps has to update that page,
   and its effective date, in the same pull request.

@@ -22,7 +22,7 @@
 
 .PARAMETER Install
     Also register this machine's architecture, so the packaged app can be started from the Start
-    menu as "RSS Quick (dev)" and tried before anything goes to Microsoft. Needs Developer Mode.
+    menu as "RSSQuick (dev)" and tried before anything goes to Microsoft. Needs Developer Mode.
     It is registered from artifacts\store-installed under the identity's Name plus ".Dev", so it
     never replaces a real Store install and a later build does not delete its files. The script
     prints the command that removes it.
@@ -191,12 +191,12 @@ if ($Install) {
     $manifestPath = Join-Path $installed 'AppxManifest.xml'
     $manifest = [System.IO.File]::ReadAllText($manifestPath)
     $manifest = $manifest.Replace("Name=`"$($identity.Name)`"", "Name=`"$devName`"")
-    $manifest = $manifest.Replace('<DisplayName>RSS Quick</DisplayName>', '<DisplayName>RSS Quick (dev)</DisplayName>')
-    $manifest = $manifest.Replace('DisplayName="RSS Quick"', 'DisplayName="RSS Quick (dev)"')
+    $manifest = $manifest.Replace('<DisplayName>RSSQuick</DisplayName>', '<DisplayName>RSSQuick (dev)</DisplayName>')
+    $manifest = $manifest.Replace('DisplayName="RSSQuick"', 'DisplayName="RSSQuick (dev)"')
     [System.IO.File]::WriteAllText($manifestPath, $manifest)
 
     # Registered in place from the unpacked layout, which is what lets an unsigned package run.
     Add-AppxPackage -Register $manifestPath
-    Write-Host "Registered from $installed. Start RSS Quick (dev) from the Start menu."
+    Write-Host "Registered from $installed. Start RSSQuick (dev) from the Start menu."
     Write-Host "Remove it with: Get-AppxPackage $devName | Remove-AppxPackage"
 }

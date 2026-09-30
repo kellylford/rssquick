@@ -130,7 +130,7 @@ Velopack replaces the whole program folder on update, so the `RSS.opml` beside t
 
 - **A Store copy never looks for updates.** `PackageIdentity.IsPackaged` is checked in App, which then sets `UpdatedByStore` instead of starting the check; Check for Updates and About say the Store keeps it current. Without the check, a Store copy is "not installed by Velopack" and falls into the portable path, offering a GitHub download.
 - **Everything saved goes in `%APPDATA%\RSSQuick`, as files, and nothing is written beside the program.** A package's install folder is read-only, and Windows redirects new files written under `%APPDATA%` into the package's private folder while still letting it read files already there. Keeping everything in one folder keeps that behaviour the same for all of it; data scattered elsewhere, or in the registry, is where a packaged copy goes wrong.
-- **`docs/privacy.html` names every host RSS Quick connects to and everything it keeps.** It is published at theideaplace.net/projects/rssquick/privacy.html and is the Store's privacy policy. A change to what the app fetches or saves updates it, and its effective date, in the same pull request.
+- **`docs/privacy.html` names every host RSS Quick connects to and everything it keeps.** It is published at theideaplace.net/projects/RSSQuick/privacy.html and is the Store's privacy policy. A change to what the app fetches or saves updates it, and its effective date, in the same pull request.
 
 ## The macOS port
 

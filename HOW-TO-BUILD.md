@@ -83,7 +83,7 @@ To try the packaged app before submitting it, turn on Developer Mode in Windows 
 package.cmd store -Install
 ```
 
-RSS Quick (dev) then appears in the Start menu, running as a Store copy would: Help, Check for
+RSSQuick (dev) then appears in the Start menu, running as a Store copy would: Help, Check for
 Updates says the Store keeps it up to date. It runs from `artifacts\store-installed`, under its
 own identity, so it never replaces a real Store install and ordinary builds leave it alone;
 `-Install` again replaces it (close it first). The script prints the command that removes it.
