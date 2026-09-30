@@ -187,12 +187,20 @@ jobs:
       # The Microsoft Store bundle, for uploading to Partner Center by hand. After the draft
       # release, so a problem here cannot hold up the GitHub downloads, and never attached to the
       # release: it is unsigned until the Store signs it, so it would install for nobody.
-      # On a tag it must carry the real Partner Center identity. docs/STORE-PLAN.md.
+      # On a tag it must carry the real Partner Center identity; until build/store/identity.json
+      # has it, a tag skips this with a warning rather than failing a release whose GitHub
+      # downloads are already done. docs/STORE-PLAN.md.
       - name: Build the Microsoft Store bundle
         shell: pwsh
         run: |
           $require = @{}
-          if ('${{ github.ref }}' -like 'refs/tags/v*') { $require.RequireIdentity = $true }
+          if ('${{ github.ref }}' -like 'refs/tags/v*') {
+            if ((Get-Content build/store/identity.json -Raw) -match 'FROM-PARTNER-CENTER') {
+              Write-Host '::warning::No Microsoft Store bundle: build/store/identity.json still holds placeholders.'
+              exit 0
+            }
+            $require.RequireIdentity = $true
+          }
           ./build/package-store.ps1 -Architecture ${{ inputs.architecture || 'both' }} @require
 
       - name: Upload the Microsoft Store bundle
