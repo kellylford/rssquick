@@ -183,3 +183,20 @@ jobs:
             artifacts/releases/assets.win-arm64.json
             artifacts/releases/RELEASES
             artifacts/releases/RELEASES-win-arm64
+
+      # The Microsoft Store bundle, for uploading to Partner Center by hand. After the draft
+      # release, so a problem here cannot hold up the GitHub downloads, and never attached to the
+      # release: it is unsigned until the Store signs it, so it would install for nobody.
+      # On a tag it must carry the real Partner Center identity. docs/STORE-PLAN.md.
+      - name: Build the Microsoft Store bundle
+        shell: pwsh
+        run: |
+          $require = @{}
+          if ('${{ github.ref }}' -like 'refs/tags/v*') { $require.RequireIdentity = $true }
+          ./build/package-store.ps1 -Architecture ${{ inputs.architecture || 'both' }} @require
+
+      - name: Upload the Microsoft Store bundle
+        uses: actions/upload-artifact@v7
+        with:
+          name: rssquick-microsoft-store
+          path: artifacts/*.msixbundle

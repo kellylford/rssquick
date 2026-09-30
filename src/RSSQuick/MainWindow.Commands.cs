@@ -60,6 +60,14 @@ namespace RSSReaderWPF
             }
 
             var version = AppUpdater.CurrentVersion.ToString(3);
+            if (UpdatedByStore)
+            {
+                // Still here rather than hidden: menu items are never taken away, and this is
+                // where a reader looks to learn how their copy stays current.
+                _viewModel.StatusMessage =
+                    $"Windows keeps this copy of RSS Quick up to date through the Microsoft Store. This is version {version}";
+                return;
+            }
             if (CheckForUpdates is not { } check)
             {
                 _viewModel.StatusMessage = $"This copy of RSS Quick cannot check for updates. It is version {version}";
@@ -81,12 +89,15 @@ namespace RSSReaderWPF
 
         private void About_Click(object sender, RoutedEventArgs e)
         {
-            MessageBox.Show(this,
-                $"RSS Quick {AppUpdater.CurrentVersion.ToString(3)}\n\n"
-                + "An RSS reader built for screen reader and braille display users.\n\n"
-                + AppUpdater.RepositoryUrl,
-                "About RSS Quick", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show(this, AboutText, "About RSS Quick", MessageBoxButton.OK, MessageBoxImage.Information);
         }
+
+        /// <summary>What Help, About says. Separate so the tests can read it without a MessageBox.</summary>
+        internal string AboutText =>
+            $"RSS Quick {AppUpdater.CurrentVersion.ToString(3)}\n\n"
+            + "An RSS reader built for screen reader and braille display users.\n\n"
+            + (UpdatedByStore ? "Installed from the Microsoft Store.\n\n" : "")
+            + AppUpdater.RepositoryUrl;
 
         // ── search ──────────────────────────────────────────────────────────
 

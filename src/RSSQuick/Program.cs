@@ -22,9 +22,11 @@ namespace RSSReaderWPF
             VelopackApp.Build().Run();
 
             // Before the window reads the saved feed list, because retiring the old install can
-            // put one there.
+            // put one there. Never from a Store copy: Velopack did not install it, so IsInstalled
+            // is already false, but a Store app uninstalling other software must not be one
+            // assumption away.
             using var updater = new AppUpdater(UpdateFeedOverride());
-            if (updater.IsInstalled) PreviousInstall.Retire();
+            if (updater.IsInstalled && !PackageIdentity.IsPackaged) PreviousInstall.Retire();
 
             var app = new App(updater);
             app.InitializeComponent();

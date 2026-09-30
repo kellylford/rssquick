@@ -118,6 +118,12 @@ namespace RSSReaderWPF
         /// </summary>
         internal Func<Task<UpdateOffer?>>? CheckForUpdates { get; set; }
 
+        /// <summary>
+        /// True in a Microsoft Store copy, which Windows updates. Set by App, like
+        /// <see cref="CheckForUpdates"/>, so Help can say where updates come from.
+        /// </summary>
+        internal bool UpdatedByStore { get; set; }
+
         public MainWindow()
         {
             InitializeComponent();

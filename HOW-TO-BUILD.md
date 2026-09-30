@@ -66,6 +66,31 @@ between them, so the portable ZIP carries a signed program as well as the instal
 comments in `release.yml` and the *Packaging* section of CLAUDE.md for what the Azure side
 needs.
 
+## The Microsoft Store package
+
+```bash
+package.cmd store
+```
+
+That builds `artifacts/RSSQuick-<version>.msixbundle`, one MSIX package for each architecture
+bundled together, which is what Partner Center takes. It is unsigned: the Store signs what it
+publishes. The first run downloads Microsoft's SDK build tools (for `makeappx`) into
+`artifacts/tools`, so the Windows SDK does not need to be installed.
+
+To try the packaged app before submitting it, turn on Developer Mode in Windows Settings, then:
+
+```bash
+package.cmd store -Install
+```
+
+RSS Quick then appears in the Start menu, running as a Store copy would: Help, Check for Updates
+says the Store keeps it up to date. It runs from `artifacts\store`, so the next build replaces it.
+Remove it with `Get-AppxPackage *RSSQuick* | Remove-AppxPackage` in PowerShell.
+
+`build/store/identity.json` holds the package identity from Partner Center (*Product identity*).
+With its placeholders a package still installs locally with `-Install`; a release tag refuses
+to build the bundle until the real values are there. `docs/STORE-PLAN.md` has the whole plan.
+
 ## Why the packages are built this way
 
 **Both packages are self-contained**, meaning each one carries its own copy of the .NET runtime. That is why they are ~55 MB rather than ~400 KB.
