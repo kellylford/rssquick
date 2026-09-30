@@ -21,9 +21,11 @@
     x64, arm64, or both (the default).
 
 .PARAMETER Install
-    Also register this machine's architecture from its unpacked layout, so the packaged app can
-    be started from the Start menu and tried before anything goes to Microsoft. Needs Developer
-    Mode. Remove it afterwards with: Get-AppxPackage *RSSQuick* | Remove-AppxPackage
+    Also register this machine's architecture, so the packaged app can be started from the Start
+    menu as "RSS Quick (dev)" and tried before anything goes to Microsoft. Needs Developer Mode.
+    It is registered from artifacts\store-installed under the identity's Name plus ".Dev", so it
+    never replaces a real Store install and a later build does not delete its files. The script
+    prints the command that removes it.
 
 .PARAMETER RequireIdentity
     Fail unless build\store\identity.json holds the real values from Partner Center. The release
@@ -82,9 +84,14 @@ if (-not (Test-Path $tools)) {
     Write-Host "Fetching Microsoft.Windows.SDK.BuildTools $buildToolsVersion..."
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
     $download = "$tools.zip"
+    $unpacking = "$tools.partial"
     New-Item -ItemType Directory -Path (Split-Path $tools) -Force | Out-Null
+    if (Test-Path $unpacking) { Remove-Item $unpacking -Recurse -Force }
     Invoke-WebRequest "https://www.nuget.org/api/v2/package/Microsoft.Windows.SDK.BuildTools/$buildToolsVersion" -OutFile $download -UseBasicParsing
-    Expand-Archive $download $tools -Force
+    # Unpacked beside the real name and renamed into place, so an interrupted run leaves nothing
+    # a later run would mistake for a finished download.
+    Expand-Archive $download $unpacking -Force
+    Rename-Item $unpacking (Split-Path -Leaf $tools)
     Remove-Item $download
 }
 # The one built for this machine, so an ARM64 laptop does not run it under emulation.
@@ -165,9 +172,31 @@ if ($Install) {
     $layout = Join-Path $storeOut "layout-win-$hostArch"
     if (-not (Test-Path $layout)) { throw "-Install needs the $hostArch package; build it with -Architecture $hostArch or both." }
 
+    # The Appx cmdlets are Windows PowerShell's; pwsh 7 reaches them through a compatibility session.
+    if ($PSVersionTable.PSEdition -eq 'Core') { Import-Module Appx -UseWindowsPowerShell -WarningAction SilentlyContinue }
+
+    # Its own identity, so it can never replace a real Store install of RSS Quick on this machine,
+    # and "(dev)" in its name, so the two are told apart in the Start menu.
+    $devName = "$($identity.Name).Dev"
+    $installed = Join-Path $artifacts 'store-installed'
+
+    # Its own folder too, so the next build does not delete the files a registered copy runs from.
+    if (Get-Process RSSQuick -ErrorAction SilentlyContinue | Where-Object { $_.Path -like "$installed\*" }) {
+        throw 'The dev copy of RSS Quick is running. Close it, then run this again.'
+    }
+    Get-AppxPackage -Name $devName | Remove-AppxPackage
+    if (Test-Path $installed) { Remove-Item $installed -Recurse -Force }
+    Copy-Item $layout $installed -Recurse
+
+    $manifestPath = Join-Path $installed 'AppxManifest.xml'
+    $manifest = [System.IO.File]::ReadAllText($manifestPath)
+    $manifest = $manifest.Replace("Name=`"$($identity.Name)`"", "Name=`"$devName`"")
+    $manifest = $manifest.Replace('<DisplayName>RSS Quick</DisplayName>', '<DisplayName>RSS Quick (dev)</DisplayName>')
+    $manifest = $manifest.Replace('DisplayName="RSS Quick"', 'DisplayName="RSS Quick (dev)"')
+    [System.IO.File]::WriteAllText($manifestPath, $manifest)
+
     # Registered in place from the unpacked layout, which is what lets an unsigned package run.
-    Get-AppxPackage -Name $identity.Name | Remove-AppxPackage
-    Add-AppxPackage -Register (Join-Path $layout 'AppxManifest.xml')
-    Write-Host "Registered from $layout. Start RSS Quick from the Start menu."
-    Write-Host 'Remove it with: Get-AppxPackage *RSSQuick* | Remove-AppxPackage'
+    Add-AppxPackage -Register $manifestPath
+    Write-Host "Registered from $installed. Start RSS Quick (dev) from the Start menu."
+    Write-Host "Remove it with: Get-AppxPackage $devName | Remove-AppxPackage"
 }

@@ -83,13 +83,14 @@ To try the packaged app before submitting it, turn on Developer Mode in Windows 
 package.cmd store -Install
 ```
 
-RSS Quick then appears in the Start menu, running as a Store copy would: Help, Check for Updates
-says the Store keeps it up to date. It runs from `artifacts\store`, so the next build replaces it.
-Remove it with `Get-AppxPackage *RSSQuick* | Remove-AppxPackage` in PowerShell.
+RSS Quick (dev) then appears in the Start menu, running as a Store copy would: Help, Check for
+Updates says the Store keeps it up to date. It runs from `artifacts\store-installed`, under its
+own identity, so it never replaces a real Store install and ordinary builds leave it alone;
+`-Install` again replaces it (close it first). The script prints the command that removes it.
 
 `build/store/identity.json` holds the package identity from Partner Center (*Product identity*).
-With its placeholders a package still installs locally with `-Install`; a release tag refuses
-to build the bundle until the real values are there. `docs/STORE-PLAN.md` has the whole plan.
+With its placeholders a package still installs locally with `-Install`; a release tag skips the
+Store bundle, with a warning, until the real values are there. `docs/STORE-PLAN.md` has the whole plan.
 
 ## Why the packages are built this way
 

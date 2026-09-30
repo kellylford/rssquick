@@ -119,15 +119,20 @@ at once, is the trap QuickMail's plan identified.
   Windows SDK installed.
 
 `build/package-store.ps1` does all of this, and `package.cmd store` runs it. With `-Install` it
-also registers the x64 layout on this machine (Developer Mode, which is on), so the packaged app
-can be run and checked with a screen reader before anything goes to Microsoft.
+also registers this machine's architecture (ARM64 on the dev machine; Developer Mode, which is
+on), so the packaged app can be run and checked with a screen reader before anything goes to
+Microsoft. That copy is registered under a separate `.Dev` identity and named "RSS Quick (dev)",
+from its own folder, so it can never replace a real Store install and a rebuild does not pull
+the files out from under it.
 
 ## Part 4 — CI
 
 `release.yml` builds the bundle on every `v*` tag, alongside the other packages, and uploads it
 as a workflow artifact. It is **not** attached to the GitHub release: an unsigned MSIX will not
 install for anyone, and it would only confuse. On a tag the script requires real identity
-values, so a release cannot quietly produce a bundle Partner Center would reject.
+values, so a release cannot quietly produce a bundle Partner Center would reject. While
+`identity.json` still holds placeholders, a tag skips the bundle with a warning instead, so the
+GitHub release is never held up by the Store.
 
 The first submission is by hand, to read the certification report. Automating submission through
 the Store submission API can come after, if uploading by hand becomes a chore.
@@ -178,3 +183,6 @@ new, and suggested answers for the age-rating questionnaire.
    in its own change.
 3. **Q3.** Package size and whether differential updates earn their keep, from the first two
    Store versions. If they do not, the Store build can go back to single-file.
+4. **Q4.** Logos come in one size each, which certification accepts but Windows scales for the
+   taskbar and high-DPI Start. Sharper icons need the `targetsize-*` and `scale-200` variants and
+   a `resources.pri` from `makepri`. Worth doing once the first submission has passed.
