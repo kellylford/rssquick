@@ -19,8 +19,9 @@ articles open in your own web browser, where your reading setup already is.
   make it your default, so it opens every time RSS Quick starts.
 - **Opens articles in your browser.** There is no built-in web view to learn; the article opens
   wherever you normally read.
-- **Keeps itself up to date.** The Windows installer downloads new versions and installs them
-  when you close RSS Quick. The portable Windows copy and the Mac tell you when there is one.
+- **Keeps itself up to date.** Windows updates a copy from the Microsoft Store. The Windows
+  installer downloads new versions and installs them when you close RSS Quick. The portable
+  Windows copy and the Mac tell you when there is one.
 - **Keeps nothing about you.** No account, no tracking, no cache. Headlines are fetched fresh
   every time. The only things kept between runs are your default feed list and, on the Mac, your
   text size and window position.
@@ -59,7 +60,8 @@ are for installed copies to update themselves, and you do not need them.
 
 - **The Microsoft Store**: [RSSQuick in the Microsoft Store](https://apps.microsoft.com/detail/9NFGQ354JDG5).
   The simplest choice: no download warnings, and Windows keeps it up to date. It is the same app
-  as the installer, listed in the Store as RSSQuick.
+  as the installer, listed in the Store as RSSQuick, but installed separately: it never checks
+  GitHub for updates.
 - **The installer**, `RSSQuick-<version>-setup-win-x64.exe`: puts RSS Quick in the Start Menu,
   installs for your account only so there is no administrator prompt, and keeps itself up to
   date.
@@ -72,7 +74,8 @@ Choose the file ending in **x64** for almost any PC, and the one ending in **arm
 ARM device such as a Surface Pro X or a Snapdragon laptop. Both carry their own copy of .NET, so
 there is nothing else to install.
 
-The Windows downloads are code-signed, so Windows knows who they come from. A newly signed
+The Microsoft Store signs the Store copy. The GitHub downloads are code-signed, so Windows knows
+who they come from. A newly signed
 program can still be unfamiliar to Windows for a while; if it says "Windows protected your PC",
 activate the **More info** link, then the **Run anyway** button that appears.
 
