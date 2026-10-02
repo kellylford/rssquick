@@ -159,12 +159,10 @@ the Store submission API can come after, if uploading by hand becomes a chore.
    the app starts; the starter list or the saved default opens; Check for Updates and About say
    Store; Make This My Default saves and survives a restart; Export and Import work; an article
    opens in the browser. Also record where `Default.opml` was read from and written to (Part 2).
-4. **Kelly, in Partner Center**: copy the three identity values into `build/store/identity.json`;
-   publish `docs/privacy.html` to theideaplace.net and give Partner Center its URL; set up the
-   listing from `docs/store/LISTING.md`; age rating
-   questionnaire; screenshots.
-5. **Release**: `prepare-release.ps1 1.4.0`, tag, publish the GitHub draft, upload
-   `RSSQuick-1.4.0.msixbundle` to Partner Center, submit.
+4. **Partner Center** — done: identity in `build/store/identity.json`; `docs/privacy.html` published
+   at theideaplace.net; listing, age ratings and screenshot entered from `docs/store/LISTING.md`.
+5. **Release** — done: 1.4.0 released on GitHub and TestFlight on 2026-10-01; the Store bundle,
+   built from the `v1.4.0` tag, submitted on 2026-10-02 with publishing held for Publish now.
 6. **After it is live**: a Store link in the README and on the projects page.
 
 ## Part 6 — The listing (Kelly's part)
