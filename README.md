@@ -57,6 +57,9 @@ are for installed copies to update themselves, and you do not need them.
 
 ### Windows 10 and 11
 
+- **The Microsoft Store**: [RSSQuick in the Microsoft Store](https://apps.microsoft.com/detail/9NFGQ354JDG5).
+  The simplest choice: no download warnings, and Windows keeps it up to date. It is the same app
+  as the installer, listed in the Store as RSSQuick.
 - **The installer**, `RSSQuick-<version>-setup-win-x64.exe`: puts RSS Quick in the Start Menu,
   installs for your account only so there is no administrator prompt, and keeps itself up to
   date.
@@ -186,8 +189,11 @@ Every command is also in the menu bar, where VoiceOver and Help's search can fin
 
 ## Staying up to date
 
-A few seconds after it starts, RSS Quick asks GitHub whether there is a newer version.
+A few seconds after it starts, RSS Quick asks GitHub whether there is a newer version, except
+when it came from the Microsoft Store.
 
+- **Windows, from the Microsoft Store:** Windows updates it, like any Store app. RSS Quick does
+  not check GitHub, and Help, Check for Updates says the Store keeps it up to date.
 - **Windows, installed:** the new version downloads in the background and installs when you
   close RSS Quick. The status bar says when it is ready, and the **Restart and Update** button
   (Alt+U) installs it straight away if you would rather not wait.
