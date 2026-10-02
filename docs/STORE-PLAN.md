@@ -1,13 +1,21 @@
 # Microsoft Store — Plan
 
 **Date:** 2026-09-30
-**Status:** the code, the packaging and the privacy policy are done (Part 5 has the detail).
-The Partner Center product is **RSSQuick**, an MSIX or PWA app, Store ID 9NVGDX3NP0SJ,
-and its identity is in `build/store/identity.json`. (It was first created as an "EXE or MSI app",
-which has no package identity and takes installer links instead of a package; the product type
-cannot be changed, so it was deleted and re-created.) The first submission is 1.4.0. The name **RSSQuick** is reserved in
-Partner Center. No release goes out until the Store package has been tried end to end, so the
-first Store submission and the next GitHub release are the same version.
+**Status (2026-10-02):** 1.4.0 is in certification, publishing held until Publish now. It is the
+same 1.4.0 released on GitHub and TestFlight on 2026-10-01, packaged from the `v1.4.0` tag.
+The Partner Center product is **RSSQuick**, an MSIX or PWA app, Store ID **9NFGQ354JDG5**, and its
+identity is in `build/store/identity.json`.
+
+Three things learned getting there, so they are not relearned:
+
+- **Create the product as "MSIX or PWA app".** An "EXE or MSI app" has no package identity and
+  takes installer links, not a package, and a product's type cannot be changed.
+- **The publisher display name comes from the account.** It was changed from "Kelly's Corner" to
+  Kelly Ford under Account settings → Legal info → Contact info, and took about a day to reach the
+  product's identity page. The package's `PublisherDisplayName` must then match it.
+- **The package Name's prefix (`4055KellysCorner`) belongs to the developer account** and never
+  changes, even for a product deleted and created again after the rename. It appears only in
+  folder names and developer tools, never on the Store page, Start menu or Installed apps.
 
 QuickMail's `docs/planning/microsoft-store-msix-plan.md` is the house reference for this, and
 most of what made it hard there does not apply here: RSS Quick has no saved passwords, no
