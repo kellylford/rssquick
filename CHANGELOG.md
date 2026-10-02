@@ -8,9 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Added
 - **Search All Feeds**, on Windows, Mac, iPhone and iPad. Press / (or Ctrl+F, Command-F, or the
-  magnifying glass) and type a few words: RSS Quick fetches every feed in your list and shows the
-  headlines containing all of them, in the headline or the feed's name, ignoring case and
-  accents. F5 runs the search again, and Escape stops it.
+  Search All Feeds button, shown as a magnifying glass, on iPhone and iPad) and type a few words:
+  RSS Quick fetches every feed in your list and shows the headlines containing all of them, in
+  the headline or the feed's name, ignoring case and accents. F5 runs the search again, and
+  Escape stops it.
 - **Subscribe to a feed** by its address or by its website's, which RSS Quick searches for the
   feed it links to, into the folder of your choice. **Remove Feed** takes one out again. Either
   saves your feed list as your default at once, so nothing is lost when RSS Quick closes.
