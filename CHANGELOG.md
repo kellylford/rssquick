@@ -4,12 +4,9 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.4.0] - 2026-09-30
+## [1.4.0] - 2026-10-01
 
 ### Added
-- **RSS Quick is in the Microsoft Store**, for x64 and ARM64 Windows. Windows keeps a Store copy
-  up to date, so Help, Check for Updates says so rather than looking for one itself. The installer
-  and portable ZIP from GitHub carry on exactly as before.
 - **Search All Feeds**, on Windows, Mac, iPhone and iPad. Press / (or Ctrl+F, Command-F, or the
   magnifying glass) and type a few words: RSS Quick fetches every feed in your list and shows the
   headlines containing all of them, in the headline or the feed's name, ignoring case and
