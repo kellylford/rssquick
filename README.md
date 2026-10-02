@@ -120,8 +120,8 @@ and RSS Quick says so.
 
 ### Searching
 
-**Search All Feeds** (**/** or Ctrl+F on Windows, **/** or Command-F on the Mac, the magnifying
-glass on iPhone and iPad) fetches every feed in your list and shows the headlines containing all
+**Search All Feeds** (**/** or Ctrl+F on Windows, **/** or Command-F on the Mac, the Search All
+Feeds button, shown as a magnifying glass, on iPhone and iPad) fetches every feed in your list and shows the headlines containing all
 the words you type, in the headline or in the feed's name, ignoring case and accents. "bbc storm"
 finds the BBC's storm stories. RSS Quick keeps no copy of any feed, so a search fetches them all,
 the way loading a folder does; Escape stops it, and F5 runs it again.
