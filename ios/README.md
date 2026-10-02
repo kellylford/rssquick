@@ -34,8 +34,8 @@ loader with its per-feed failure reporting. Those are tested by `macos/Tests` (`
 - **Tapping a folder expands it.** That is what a disclosure row does everywhere on iOS. Loading
   every feed in a folder, which Enter does on Windows, is the **Show all headlines** VoiceOver
   action (swipe up or down on the folder) or a long press.
-- **Search All Feeds is its own screen**, behind the magnifying glass in the toolbar (Command-F
-  from a hardware keyboard), rather than a key: there is no / key to press on a touch screen. It
+- **Search All Feeds is its own screen**, behind the Search All Feeds button in the toolbar, shown
+  as a magnifying glass (Command-F from a hardware keyboard), rather than a key: there is no / key to press on a touch screen. It
   uses the system search field, and a search starts when Search is pressed, not on every letter,
   because each one fetches every feed.
 - **Subscribe to Feed and Export Feed List are in the ••• menu.** Subscribe is a sheet that stays
