@@ -1,8 +1,10 @@
 # Microsoft Store — Plan
 
 **Date:** 2026-09-30
-**Status (2026-10-02):** 1.4.0 is in certification, publishing held until Publish now. It is the
-same 1.4.0 released on GitHub and TestFlight on 2026-10-01, packaged from the `v1.4.0` tag.
+**Status:** live. 1.4.0 passed certification and was published on 2026-10-02:
+https://apps.microsoft.com/detail/9NFGQ354JDG5. It is the same 1.4.0 released on GitHub and
+TestFlight on 2026-10-01, packaged from the `v1.4.0` tag. From the next version on, a `v*` tag's
+release workflow builds the Store bundle too; uploading it to a new submission is by hand.
 The Partner Center product is **RSSQuick**, an MSIX or PWA app, Store ID **9NFGQ354JDG5**, and its
 identity is in `build/store/identity.json`.
 

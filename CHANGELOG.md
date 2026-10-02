@@ -7,6 +7,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [1.4.0] - 2026-10-01
 
 ### Added
+- **RSS Quick is in the Microsoft Store**, as RSSQuick, for x64 and ARM64 Windows. Windows keeps a
+  Store copy up to date, so Help, Check for Updates says so rather than looking for one itself. The
+  installer and portable ZIP from GitHub carry on exactly as before.
 - **Search All Feeds**, on Windows, Mac, iPhone and iPad. Press / (or Ctrl+F, Command-F, or the
   Search All Feeds button, shown as a magnifying glass, on iPhone and iPad) and type a few words:
   RSS Quick fetches every feed in your list and shows the headlines containing all of them, in
