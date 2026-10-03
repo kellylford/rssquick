@@ -2,7 +2,7 @@
 
 **Date:** 2026-09-30
 **Status:** live. 1.4.0 passed certification and was published on 2026-10-02:
-https://apps.microsoft.com/detail/9NFGQ354JDG5. It is the same 1.4.0 released on GitHub and
+https://apps.microsoft.com/detail/9nfgq354jdg5?hl=en-US&gl=US. It is the same 1.4.0 released on GitHub and
 TestFlight on 2026-10-01, packaged from the `v1.4.0` tag. From the next version on, a `v*` tag's
 release workflow builds the Store bundle too; uploading it to a new submission is by hand.
 The Partner Center product is **RSSQuick**, an MSIX or PWA app, Store ID **9NFGQ354JDG5**, and its
