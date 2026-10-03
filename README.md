@@ -58,7 +58,7 @@ are for installed copies to update themselves, and you do not need them.
 
 ### Windows 10 and 11
 
-- **The Microsoft Store**: [RSSQuick in the Microsoft Store](https://apps.microsoft.com/detail/9NFGQ354JDG5).
+- **The Microsoft Store**: [RSSQuick in the Microsoft Store](https://apps.microsoft.com/detail/9nfgq354jdg5?hl=en-US&gl=US).
   The simplest choice: no download warnings, and Windows keeps it up to date. It is the same app
   as the installer, listed in the Store as RSSQuick, but installed separately: it never checks
   GitHub for updates.
