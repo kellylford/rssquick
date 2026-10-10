@@ -21,7 +21,7 @@ public sealed class ReleaseCheckTests
         string asset = "RSSQuick-1.3.0-portable-win-x64.zip",
         bool draft = false,
         bool prerelease = false,
-        string page = "https://github.com/kellylford/rssquick/releases/tag/v1.3.0") => $$"""
+        string page = "https://github.com/TheIdeaPlace/rssquick/releases/tag/v1.3.0") => $$"""
         {
           "tag_name": "{{tag}}",
           "html_url": "{{page}}",
@@ -43,7 +43,7 @@ public sealed class ReleaseCheckTests
 
         Assert.NotNull(release);
         Assert.Equal(new Version(1, 3, 0), release.Version);
-        Assert.Equal("https://github.com/kellylford/rssquick/releases/tag/v1.3.0", release.Page.AbsoluteUri);
+        Assert.Equal("https://github.com/TheIdeaPlace/rssquick/releases/tag/v1.3.0", release.Page.AbsoluteUri);
     }
 
     [Fact]

@@ -140,8 +140,8 @@ macOS, and Apple rejects App Store builds made on one. Both are driven by
 ```bash
 # Keychain Access -> login -> My Certificates -> "Apple Distribution: Kelly Ford (P887QF74N8)"
 # (it must have a private key under it) -> Export -> dist.p12, with a password.
-base64 -i dist.p12 | gh secret set IOS_DIST_CERT_P12 -R kellylford/rssquick
-gh secret set IOS_DIST_CERT_PASSWORD -R kellylford/rssquick   # paste the export password
+base64 -i dist.p12 | gh secret set IOS_DIST_CERT_P12 -R TheIdeaPlace/rssquick
+gh secret set IOS_DIST_CERT_PASSWORD -R TheIdeaPlace/rssquick   # paste the export password
 rm dist.p12
 ```
 

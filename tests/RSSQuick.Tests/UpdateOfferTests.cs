@@ -16,7 +16,7 @@ namespace RSSQuick.Tests;
 public class UpdateOfferTests
 {
     private static readonly UpdateOffer Downloaded =
-        new("1.3.0", new Uri("https://github.com/kellylford/rssquick/releases/tag/v1.3.0"), ReadyToInstall: true);
+        new("1.3.0", new Uri("https://github.com/TheIdeaPlace/rssquick/releases/tag/v1.3.0"), ReadyToInstall: true);
 
     private static readonly UpdateOffer Available = Downloaded with { ReadyToInstall = false };
 

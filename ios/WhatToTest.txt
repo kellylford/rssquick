@@ -22,4 +22,4 @@ What to try
 - Import an OPML file exported from another feed reader, and make it your default.
 - Try it with a braille display, and with larger text sizes.
 
-Tell us what you find with the Send Beta Feedback option in TestFlight, or at https://github.com/kellylford/rssquick/issues. Anything about VoiceOver, braille or reading is especially welcome. You do not need to know the cause; what you heard, or could not reach, is the useful part.
+Tell us what you find with the Send Beta Feedback option in TestFlight, or at https://github.com/TheIdeaPlace/rssquick/issues. Anything about VoiceOver, braille or reading is especially welcome. You do not need to know the cause; what you heard, or could not reach, is the useful part.

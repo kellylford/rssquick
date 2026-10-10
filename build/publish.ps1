@@ -147,7 +147,7 @@ in its status bar and offers the download page.
 RSS.opml in this folder is the feed list loaded at startup. Replace it with your own,
 or use the "Import OPML File" button to load a different one.
 
-Source and issues: https://github.com/kellylford/rssquick
+Source and issues: https://github.com/TheIdeaPlace/rssquick
 "@ | Set-Content -Path (Join-Path $outDir 'README-PORTABLE.txt') -Encoding UTF8
     }
 

@@ -34,7 +34,7 @@ namespace RSSReaderWPF.Services
     /// </remarks>
     public sealed class AppUpdater : IDisposable
     {
-        public const string RepositoryUrl = "https://github.com/kellylford/rssquick";
+        public const string RepositoryUrl = "https://github.com/TheIdeaPlace/rssquick";
 
         private readonly UpdateManager? _manager;
 

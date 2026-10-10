@@ -17,4 +17,4 @@
    - If .NET 8.0 Runtime is missing, you’ll be prompted to install it
 
 ## Feedback & Contributions
-- Found a bug? Have an idea? Visit the [GitHub Issues page](https://github.com/kellylford/rssquick/issues) to get involved!
+- Found a bug? Have an idea? Visit the [GitHub Issues page](https://github.com/TheIdeaPlace/rssquick/issues) to get involved!

@@ -52,7 +52,7 @@ focus lands and what the status bar says, so it does not quietly break.
 
 ## Download
 
-Everything is on the [Releases page](https://github.com/kellylford/rssquick/releases). Each
+Everything is on the [Releases page](https://github.com/TheIdeaPlace/rssquick/releases). Each
 release also carries files ending in `.nupkg` and `.json` and a file called `RELEASES`; those
 are for installed copies to update themselves, and you do not need them.
 
@@ -217,10 +217,10 @@ for all users, in Program Files, is left for you to remove from Installed Apps.
 
 ## Found a problem?
 
-Please open an [accessibility issue](https://github.com/kellylford/rssquick/issues/new/choose)
+Please open an [accessibility issue](https://github.com/TheIdeaPlace/rssquick/issues/new/choose)
 for anything to do with a screen reader, braille display, magnifier or keyboard use. You do not
 need to work out the cause; describing what you heard, or what you could not reach, is the
-useful part. Bugs and ideas are welcome on the [issue tracker](https://github.com/kellylford/rssquick/issues)
+useful part. Bugs and ideas are welcome on the [issue tracker](https://github.com/TheIdeaPlace/rssquick/issues)
 too. Security issues go through the [security policy](SECURITY.md).
 
 ## Building from source
