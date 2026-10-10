@@ -52,6 +52,6 @@ Two details that have caused real bugs and are easy to reintroduce:
 
 ## Reporting bugs
 
-Use the [issue templates](https://github.com/kellylford/rssquick/issues/new/choose). There is a dedicated accessibility template; please use it for anything involving a screen reader, braille display, magnifier, or keyboard-only use. Those are treated as bugs rather than enhancements, and you do not need to work out the cause — describing what you heard or could not reach is the useful part.
+Use the [issue templates](https://github.com/TheIdeaPlace/rssquick/issues/new/choose). There is a dedicated accessibility template; please use it for anything involving a screen reader, braille display, magnifier, or keyboard-only use. Those are treated as bugs rather than enhancements, and you do not need to work out the cause — describing what you heard or could not reach is the useful part.
 
 Security issues go through [SECURITY.md](SECURITY.md) instead, not the public tracker.

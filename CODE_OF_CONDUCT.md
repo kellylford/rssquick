@@ -4,4 +4,4 @@ This project follows the [Contributor Covenant](https://www.contributor-covenant
 
 By taking part you agree to keep this a welcoming, respectful place for everyone, whatever their background or level of experience.
 
-To report a concern, contact Kelly Ford through a private GitHub message or through the [issue tracker](https://github.com/kellylford/rssquick/issues).
+To report a concern, contact Kelly Ford through a private GitHub message or through the [issue tracker](https://github.com/TheIdeaPlace/rssquick/issues).

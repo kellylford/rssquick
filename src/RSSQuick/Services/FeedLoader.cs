@@ -72,7 +72,7 @@ namespace RSSReaderWPF.Services
             };
 
             // Some publishers reject requests with no User-Agent, or serve them a challenge page.
-            client.DefaultRequestHeaders.UserAgent.ParseAdd("RSSQuick/1.1 (+https://github.com/kellylford/rssquick)");
+            client.DefaultRequestHeaders.UserAgent.ParseAdd("RSSQuick/1.1 (+https://github.com/TheIdeaPlace/rssquick)");
             client.DefaultRequestHeaders.Accept.ParseAdd("application/rss+xml, application/atom+xml, application/xml;q=0.9, text/xml;q=0.9, */*;q=0.5");
 
             return client;

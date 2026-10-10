@@ -198,7 +198,7 @@ def fit_whats_new(text, limit=4000):
     """
     if len(text) <= limit:
         return text
-    more = "\n\nThe full list is in CHANGELOG.md at https://github.com/kellylford/rssquick"
+    more = "\n\nThe full list is in CHANGELOG.md at https://github.com/TheIdeaPlace/rssquick"
     cut = text[: limit - len(more)]
     last_bullet = cut.rfind("\n- ")
     if last_bullet > 0:

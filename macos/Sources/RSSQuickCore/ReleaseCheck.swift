@@ -27,7 +27,7 @@ public struct AvailableRelease: Sendable, Equatable {
 /// The Windows version is `src/RSSQuick/Services/ReleaseCheck.cs`. The two answer the same
 /// questions, and their tests should change together.
 public enum ReleaseCheck {
-    public static let latestReleaseAPI = URL(string: "https://api.github.com/repos/kellylford/rssquick/releases/latest")!
+    public static let latestReleaseAPI = URL(string: "https://api.github.com/repos/TheIdeaPlace/rssquick/releases/latest")!
 
     /// The end of the disk image's name, which `build/make-dmg.sh` gives every release.
     public static let macAssetSuffix = "-macos.dmg"
@@ -40,7 +40,7 @@ public enum ReleaseCheck {
         configuration.urlCache = nil
         configuration.httpAdditionalHeaders = [
             // GitHub's API refuses requests with no User-Agent.
-            "User-Agent": "RSSQuick (+https://github.com/kellylford/rssquick)",
+            "User-Agent": "RSSQuick (+https://github.com/TheIdeaPlace/rssquick)",
             "Accept": "application/vnd.github+json",
         ]
         return URLSession(configuration: configuration)

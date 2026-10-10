@@ -42,7 +42,7 @@
          script reads it, and it lands in the executable's file version from here. -->
     <_VersionFromFile>$([System.IO.File]::ReadAllText('$(MSBuildThisFileDirectory)VERSION'))</_VersionFromFile>
     <VersionPrefix>$(_VersionFromFile.Trim())</VersionPrefix>
-    <RepositoryUrl>https://github.com/kellylford/rssquick</RepositoryUrl>
+    <RepositoryUrl>https://github.com/TheIdeaPlace/rssquick</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
   </PropertyGroup>
 

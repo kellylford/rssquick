@@ -74,7 +74,7 @@ REQUIREMENTS
 
   macOS 13 Ventura or newer, on either Apple silicon or Intel.
 
-https://github.com/kellylford/rssquick
+https://github.com/TheIdeaPlace/rssquick
 READ
 
 rm -f "$dmg"

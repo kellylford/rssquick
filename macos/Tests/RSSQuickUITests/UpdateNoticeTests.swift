@@ -12,7 +12,7 @@ import RSSQuickCore
 struct UpdateNoticeTests {
     private static let release = AvailableRelease(
         version: "1.3.0",
-        page: URL(string: "https://github.com/kellylford/rssquick/releases/tag/v1.3.0")!)
+        page: URL(string: "https://github.com/TheIdeaPlace/rssquick/releases/tag/v1.3.0")!)
 
     private static let notice =
         "RSS Quick 1.3.0 is available. Download RSS Quick 1.3.0 in the RSS Quick menu opens its page"

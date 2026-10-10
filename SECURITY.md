@@ -4,7 +4,7 @@
 
 **Please do not open a public GitHub issue for a security vulnerability.**
 
-Use GitHub's private vulnerability reporting: on the [Security tab](https://github.com/kellylford/rssquick/security) of this repository, choose **Report a vulnerability**. If you cannot use that, send a private message to [@kellylford](https://github.com/kellylford) on GitHub.
+Use GitHub's private vulnerability reporting: on the [Security tab](https://github.com/TheIdeaPlace/rssquick/security) of this repository, choose **Report a vulnerability**. If you cannot use that, send a private message to [@kellylford](https://github.com/kellylford) on GitHub.
 
 Please include:
 

@@ -15,7 +15,7 @@ struct ReleaseCheckTests {
         asset: String = "RSSQuick-1.3.0-macos.dmg",
         draft: Bool = false,
         prerelease: Bool = false,
-        page: String = "https://github.com/kellylford/rssquick/releases/tag/v1.3.0"
+        page: String = "https://github.com/TheIdeaPlace/rssquick/releases/tag/v1.3.0"
     ) -> String {
         """
         {
@@ -43,7 +43,7 @@ struct ReleaseCheckTests {
 
         #expect(found == AvailableRelease(
             version: "1.3.0",
-            page: URL(string: "https://github.com/kellylford/rssquick/releases/tag/v1.3.0")!))
+            page: URL(string: "https://github.com/TheIdeaPlace/rssquick/releases/tag/v1.3.0")!))
     }
 
     @Test("The release that is running is not offered")

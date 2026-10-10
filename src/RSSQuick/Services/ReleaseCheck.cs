@@ -30,7 +30,7 @@ namespace RSSReaderWPF.Services
     public static class ReleaseCheck
     {
         public static readonly Uri LatestReleaseApi =
-            new("https://api.github.com/repos/kellylford/rssquick/releases/latest");
+            new("https://api.github.com/repos/TheIdeaPlace/rssquick/releases/latest");
 
         private static readonly HttpClient Http = CreateClient();
 
@@ -38,7 +38,7 @@ namespace RSSReaderWPF.Services
         {
             var client = new HttpClient { Timeout = TimeSpan.FromSeconds(15) };
             // GitHub's API refuses requests with no User-Agent.
-            client.DefaultRequestHeaders.UserAgent.ParseAdd("RSSQuick (+https://github.com/kellylford/rssquick)");
+            client.DefaultRequestHeaders.UserAgent.ParseAdd("RSSQuick (+https://github.com/TheIdeaPlace/rssquick)");
             client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
             return client;
         }

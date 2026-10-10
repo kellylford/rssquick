@@ -59,11 +59,11 @@ https://theideaplace.net/projects/RSSQuick/privacy.html
 
 ## Website
 
-https://github.com/kellylford/rssquick
+https://github.com/TheIdeaPlace/rssquick
 
 ## Support contact
 
-support@theideaplace.net (issues also at https://github.com/kellylford/rssquick/issues)
+support@theideaplace.net (issues also at https://github.com/TheIdeaPlace/rssquick/issues)
 
 ## Copyright
 
