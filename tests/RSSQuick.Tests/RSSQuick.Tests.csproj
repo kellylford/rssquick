@@ -13,7 +13,7 @@
 
   <ItemGroup>
     <PackageReference Include="coverlet.collector" Version="10.1.0" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.11.0" />
     <!-- No xunit.runner.visualstudio: that is the VSTest adapter, which Microsoft.Testing.Platform
          does not use and warns about (MTP0001). -->
     <PackageReference Include="xunit.v3" Version="4.0.2" />
