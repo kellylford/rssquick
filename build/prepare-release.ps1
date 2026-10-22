@@ -33,7 +33,7 @@ Write-Host "VERSION set to $Version."
 foreach ($file in 'ios\project.yml', 'ios\RSSQuick.xcodeproj\project.pbxproj') {
     $path = Join-Path $repo $file
     $text = [System.IO.File]::ReadAllText($path)
-    $text = [regex]::Replace($text, '(MARKETING_VERSION[:=] ?)\d+\.\d+\.\d+', "`${1}$Version")
+    $text = [regex]::Replace($text, '(MARKETING_VERSION ?[:=] ?)\d+\.\d+\.\d+', "`${1}$Version")
     [System.IO.File]::WriteAllText($path, $text, (New-Object System.Text.UTF8Encoding($false)))
 }
 Write-Host "iOS MARKETING_VERSION set to $Version."
