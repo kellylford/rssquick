@@ -28,6 +28,14 @@ namespace RSSReaderWPF
             set { _title = value; OnPropertyChanged(); }
         }
 
+        /// <summary>The title alone.</summary>
+        /// <remarks>
+        /// Load-bearing: where WPF has no item container to ask, such as a row scrolled out of a
+        /// virtualized list, it names the item for a screen reader by its ToString, which would
+        /// otherwise be the class name. The XAML binds the name too; this is the fallback.
+        /// </remarks>
+        public override string ToString() => Title;
+
         public string Link
         {
             get => _link;

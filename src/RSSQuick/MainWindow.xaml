@@ -123,6 +123,11 @@
                              is not one by default, so taking IsTabStop off the TreeView alone
                              dropped the whole panel out of the tab ring. -->
                         <Setter Property="IsTabStop" Value="True"/>
+                        <!-- A TreeViewItem whose header is a data object is named by that object's
+                             ToString, which here is the class name: screen readers said
+                             "RSSReaderWPF.FeedItem" for every feed and folder. The text shown by
+                             the template below is not used, so the name has to be set. -->
+                        <Setter Property="AutomationProperties.Name" Value="{Binding Title}"/>
                     </Style>
                 </TreeView.ItemContainerStyle>
                 <TreeView.ItemTemplate>
