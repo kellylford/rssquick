@@ -5,7 +5,8 @@
 https://apps.microsoft.com/detail/9nfgq354jdg5?hl=en-US&gl=US. It is the same 1.4.0 released on GitHub and
 TestFlight on 2026-10-01, packaged from the `v1.4.0` tag. From the next version on, a `v*` tag's
 release workflow builds the Store bundle too, and `store-submit.yml` submits it through the Store
-submission API once the Partner Center credentials are in place (below); until then, by hand.
+submission API when the GitHub release is published, once the Partner Center credentials are in
+place (below); until then, by hand.
 The Partner Center product is **RSSQuick**, an MSIX or PWA app, Store ID **9NFGQ354JDG5**, and its
 identity is in `build/store/identity.json`.
 
@@ -154,12 +155,19 @@ it can only update a product that has been published once.
 ### Submitting through the API
 
 `.github/workflows/store-submit.yml` uses the Microsoft Store Developer CLI (`msstore`), which
-calls the Store submission API. `release.yml` runs it after the Windows job on every tag that ships
-Windows: it downloads that run's bundle, uploads it into a draft submission, sets "What's new in
-this version" from the version's CHANGELOG section (without the line about other platforms, which
-means nothing in the Store), and commits it for certification. Run it by hand from the Actions tab
-with a release run's id and version to submit a bundle built earlier. Without the credentials it
+calls the Store submission API. It runs when a GitHub release is published, not when the tag is
+pushed: the draft is there so the build is checked with a screen reader first, and the Store waits
+for the same check. It skips a release that does not ship on Windows, finds the `release.yml` run
+that built the tag, uploads that run's bundle into a draft submission, sets "What's new in this
+version" from the version's CHANGELOG section (from its first `###` heading, so not the line about
+other platforms), and commits it for certification. The Store copy goes live when certification
+passes. Run it by hand from the Actions tab with a tag to submit again. Without the credentials it
 skips with a notice, and the bundle is still an artifact of the release run to upload by hand.
+
+A submission still in certification blocks the next one: `msstore` replaces a pending submission
+by deleting it, which Partner Center refuses during certification. Wait for it, or cancel it in
+Partner Center, then run the workflow by hand. `msstore` is pinned to v0.4.3: earlier versions
+wrapped their JSON output and broke reading it.
 
 The credentials, made once in Partner Center:
 

@@ -1,52 +1,42 @@
 name: Microsoft Store Submission
 
-# Submits the Store bundle a release run built to Partner Center, and commits it for
-# certification, through the Microsoft Store Developer CLI (msstore), which calls the Store
-# submission API. Certification then takes hours to days; Partner Center emails when it is done.
+# Submits a release's Microsoft Store bundle to Partner Center and commits it for certification,
+# through the Microsoft Store Developer CLI (msstore), which calls the Store submission API.
+# Certification then takes hours to days, and the Store copy goes live when it passes.
 #
-# release.yml calls this after the Windows package job on every tag that ships Windows. It can
-# also be run by hand from the Actions tab with the id of a release run, which is how a bundle
-# from before this workflow existed gets submitted.
+# It runs when a GitHub release is published, not when the tag is pushed. release.yml makes a
+# draft on purpose, so the build is checked with a screen reader before anyone gets it; the Store
+# waits for the same check. It finds the release.yml run that built the tag and submits that run's
+# rssquick-microsoft-store bundle. A release that does not ship on Windows (RELEASE-PLATFORMS) is
+# skipped. It can also be run by hand from the Actions tab with a tag.
+#
+# A release published by the workflow's own GITHUB_TOKEN would not start this, but releases are
+# published by a person (or with their gh token), which does.
+#
+# A submission already in certification blocks a new one: msstore replaces a pending submission
+# by deleting it, which Partner Center refuses while it is being certified. Wait for it to finish,
+# or cancel it in Partner Center, then run this again by hand.
 #
 # Repository secrets (one-time setup, docs/STORE-PLAN.md "Submitting through the API"):
 #   PARTNER_CENTER_TENANT_ID, PARTNER_CENTER_CLIENT_ID, PARTNER_CENTER_CLIENT_SECRET
 #       The Microsoft Entra application added to Partner Center with the Manager role, and a key.
 #   PARTNER_CENTER_SELLER_ID
 #       Partner Center, Account settings, Legal info: the Seller ID.
-# Until they are all set, this skips with a notice rather than failing the release.
+# Until they are all set, this skips with a notice.
 
 on:
-  workflow_call:
-    inputs:
-      run_id:
-        type: string
-        required: true
-      version:
-        type: string
-        required: true
-    secrets:
-      PARTNER_CENTER_TENANT_ID:
-        required: false
-      PARTNER_CENTER_SELLER_ID:
-        required: false
-      PARTNER_CENTER_CLIENT_ID:
-        required: false
-      PARTNER_CENTER_CLIENT_SECRET:
-        required: false
+  release:
+    types: [published]
   workflow_dispatch:
     inputs:
-      run_id:
-        description: 'The id of the release run whose rssquick-microsoft-store bundle to submit'
-        type: string
-        required: true
-      version:
-        description: 'The version in that bundle, such as 1.4.1 (its CHANGELOG section becomes "What''s new")'
+      tag:
+        description: 'The release tag to submit, such as v1.4.1'
         type: string
         required: true
 
 permissions:
   contents: read
-  actions: read   # download the bundle from another run
+  actions: read   # find the release run, and download its bundle
 
 # One submission at a time: a second would replace the first's draft.
 concurrency:
@@ -58,85 +48,138 @@ jobs:
     runs-on: windows-latest
     env:
       PRODUCT_ID: 9NFGQ354JDG5
+      TAG: ${{ github.event.release.tag_name || inputs.tag }}
       TENANT_ID: ${{ secrets.PARTNER_CENTER_TENANT_ID }}
       SELLER_ID: ${{ secrets.PARTNER_CENTER_SELLER_ID }}
       CLIENT_ID: ${{ secrets.PARTNER_CENTER_CLIENT_ID }}
       CLIENT_SECRET: ${{ secrets.PARTNER_CENTER_CLIENT_SECRET }}
+      GH_TOKEN: ${{ github.token }}
     steps:
-      - name: Check the Partner Center credentials
-        id: creds
+      - name: Check the tag and the Partner Center credentials
+        id: check
         shell: pwsh
         run: |
+          if ($env:TAG -notmatch '^v(\d+\.\d+\.\d+)$') { throw "'$env:TAG' is not a release tag such as v1.4.1." }
+          "version=$($Matches[1])" >> $env:GITHUB_OUTPUT
           $missing = @('TENANT_ID', 'SELLER_ID', 'CLIENT_ID', 'CLIENT_SECRET') | Where-Object { -not [Environment]::GetEnvironmentVariable($_) }
           if ($missing) {
-            Write-Host "::notice::Not submitted to the Microsoft Store: the PARTNER_CENTER_* secrets are not all set ($($missing -join ', ')). Upload the rssquick-microsoft-store bundle by hand, or see docs/STORE-PLAN.md."
+            Write-Host "::notice::Not submitted to the Microsoft Store: the PARTNER_CENTER_* secrets are not all set ($($missing -join ', ')). Upload the release run's rssquick-microsoft-store bundle by hand, or see docs/STORE-PLAN.md."
             "ready=false" >> $env:GITHUB_OUTPUT
           } else {
             "ready=true" >> $env:GITHUB_OUTPUT
           }
 
       - uses: actions/checkout@v7
-        if: steps.creds.outputs.ready == 'true'
+        if: steps.check.outputs.ready == 'true'
+        with:
+          ref: ${{ env.TAG }}
+
+      # Everything that can be checked before anything reaches Partner Center: that the tag ships
+      # Windows, which run built it, and the "What's new" text. A failure here leaves no half-made
+      # draft behind.
+      - name: Prepare
+        id: prep
+        if: steps.check.outputs.ready == 'true'
+        shell: pwsh
+        env:
+          VERSION: ${{ steps.check.outputs.version }}
+        run: |
+          # The same rule as build/release-platforms.sh: no file, or an empty one, means all three.
+          $listed = if (Test-Path RELEASE-PLATFORMS) { @((Get-Content RELEASE-PLATFORMS -Raw) -split '\s+' | Where-Object { $_ }) } else { @() }
+          if ($listed.Count -gt 0 -and $listed -notcontains 'windows') {
+            Write-Host "::notice::$env:TAG does not ship on Windows (RELEASE-PLATFORMS), so there is nothing for the Store."
+            "go=false" >> $env:GITHUB_OUTPUT
+            exit 0
+          }
+
+          $run = gh run list --repo $env:GITHUB_REPOSITORY --workflow release.yml --branch $env:TAG --status success --limit 1 --json databaseId --jq '.[0].databaseId'
+          if (-not $run) { throw "No successful release.yml run built $env:TAG." }
+          "run=$run" >> $env:GITHUB_OUTPUT
+
+          # The version's CHANGELOG section from its first ### heading on: the paragraph above that
+          # says which platforms the release is for, which means nothing in the Store. Plain text,
+          # with markdown marks and links removed and wrapped lines joined, cut at the last whole
+          # line that fits the Store's limit.
+          $lines = Get-Content CHANGELOG.md
+          $start = [Array]::FindIndex($lines, [Predicate[string]] { param($l) $l.StartsWith("## [$env:VERSION]") })
+          if ($start -lt 0) { throw "CHANGELOG.md has no [$env:VERSION] section." }
+          $section = @(); $seenHeading = $false
+          foreach ($l in $lines[($start + 1)..($lines.Count - 1)]) {
+            if ($l.StartsWith('## [')) { break }
+            if ($l.StartsWith('### ')) { $seenHeading = $true }
+            if ($seenHeading) { $section += $l }
+          }
+          $text = ($section -join "`n") -replace '(?m)^#+ ', '' -replace '\*\*', '' -replace '`', '' -replace '\[([^\]]+)\]\([^)]+\)', '$1' -replace '\n +', ' '
+          $notes = ''
+          foreach ($line in ($text.Trim() -split "`n")) {
+            $next = if ($notes) { "$notes`n$line" } else { $line }
+            if ($next.Length -gt 1500) { break }
+            $notes = $next
+          }
+          if (-not $notes) { throw "CHANGELOG.md's [$env:VERSION] section has nothing under a ### heading." }
+          Set-Content -Path "$env:RUNNER_TEMP\whats-new.txt" -Value $notes -Encoding utf8
+          Write-Host $notes
+          "go=true" >> $env:GITHUB_OUTPUT
 
       - name: Download the Store bundle
-        if: steps.creds.outputs.ready == 'true'
+        if: steps.prep.outputs.go == 'true'
         uses: actions/download-artifact@v7
         with:
           name: rssquick-microsoft-store
-          run-id: ${{ inputs.run_id }}
+          run-id: ${{ steps.prep.outputs.run }}
           github-token: ${{ github.token }}
           path: store
 
+      # Pinned: before 0.4.1, msstore wrapped its JSON output at 80 columns, which broke reading it.
       - name: Set up the Microsoft Store Developer CLI
-        if: steps.creds.outputs.ready == 'true'
-        uses: microsoft/microsoft-store-apppublisher@v1.1
+        if: steps.prep.outputs.go == 'true'
+        uses: microsoft/microsoft-store-apppublisher@v1.4
+        with:
+          version: v0.4.3
 
       - name: Sign in to Partner Center
-        if: steps.creds.outputs.ready == 'true'
+        if: steps.prep.outputs.go == 'true'
         shell: pwsh
-        run: msstore reconfigure --tenantId $env:TENANT_ID --sellerId $env:SELLER_ID --clientId $env:CLIENT_ID --clientSecret $env:CLIENT_SECRET
+        run: |
+          msstore reconfigure --tenantId $env:TENANT_ID --sellerId $env:SELLER_ID --clientId $env:CLIENT_ID --clientSecret $env:CLIENT_SECRET
+          if ($LASTEXITCODE) { throw "Signing in to Partner Center failed ($LASTEXITCODE). An expired key is the usual cause: docs/STORE-PLAN.md." }
 
-      # Upload into a draft first, so "What's new in this version" can be set before it goes to
-      # certification. publish recreates the draft from the last published submission, so it has
-      # to come before the metadata edit, not after.
+      # Into a draft first, so "What's new" can be set before it goes to certification. publish
+      # recreates the draft from the last published submission, so it comes before the edit.
       - name: Upload the bundle
-        if: steps.creds.outputs.ready == 'true'
+        if: steps.prep.outputs.go == 'true'
         shell: pwsh
+        env:
+          VERSION: ${{ steps.check.outputs.version }}
         run: |
           $bundle = Get-ChildItem store -Filter *.msixbundle | Select-Object -First 1
           if (-not $bundle) { throw 'The rssquick-microsoft-store artifact holds no .msixbundle.' }
-          if ($bundle.Name -notlike "*-${{ inputs.version }}.msixbundle") {
-            throw "The bundle is $($bundle.Name), not version ${{ inputs.version }}."
-          }
-          msstore publish store -i $bundle.FullName -id $env:PRODUCT_ID --noCommit
-          if ($LASTEXITCODE) { throw "msstore publish failed ($LASTEXITCODE)." }
+          if ($bundle.Name -ne "RSSQuick-$env:VERSION.msixbundle") { throw "The bundle is $($bundle.Name), not RSSQuick-$env:VERSION.msixbundle." }
+          msstore publish $bundle.FullName -id $env:PRODUCT_ID --noCommit
+          if ($LASTEXITCODE) { throw "msstore publish failed ($LASTEXITCODE). If a submission is already in certification, wait for it or cancel it in Partner Center." }
 
-      # The version's CHANGELOG section, as plain text, minus its heading. The Store shows it under
-      # "What's new in this version", for every language the listing has.
+      # The listing is English only. If another language is added, it needs its own text.
       - name: Set "What's new in this version"
-        if: steps.creds.outputs.ready == 'true'
+        if: steps.prep.outputs.go == 'true'
         shell: pwsh
         run: |
-          $version = '${{ inputs.version }}'
-          $lines = Get-Content CHANGELOG.md
-          $start = [Array]::FindIndex($lines, [Predicate[string]] { param($l) $l.StartsWith("## [$version]") })
-          if ($start -lt 0) { throw "CHANGELOG.md has no [$version] section." }
-          $section = @()
-          foreach ($l in $lines[($start + 1)..($lines.Count - 1)]) { if ($l.StartsWith('## [')) { break }; $section += $l }
-          # "1.4.1 is a Windows-only release. The Mac..." means nothing in the Store, which only has Windows.
-          $section = $section | Where-Object { $_ -notmatch '-only release|is a release for .* only|have not changed,|has not changed,|and stay at \d' }
-          $notes = (($section -join "`n") -replace '(?m)^#+ ', '' -replace '\*\*', '' -replace '`', '' -replace '\n +', ' ').Trim()
-          if ($notes.Length -gt 1500) { $notes = $notes.Substring(0, 1497) + '...' }
-
-          $submission = msstore submission get $env:PRODUCT_ID | Out-String | ConvertFrom-Json
-          foreach ($listing in $submission.Listings.PSObject.Properties) { $listing.Value.BaseListing.ReleaseNotes = $notes }
-          msstore submission update $env:PRODUCT_ID ($submission | ConvertTo-Json -Depth 100 -Compress)
+          $json = msstore submission get $env:PRODUCT_ID | Out-String
+          if ($LASTEXITCODE) { throw "msstore submission get failed ($LASTEXITCODE)." }
+          $submission = $json | ConvertFrom-Json
+          $notes = Get-Content "$env:RUNNER_TEMP\whats-new.txt" -Raw
+          $listings = @($submission.Listings.PSObject.Properties)
+          if (-not $listings) { throw 'The submission has no listings to put "What''s new" in.' }
+          foreach ($listing in $listings) { $listing.Value.BaseListing.ReleaseNotes = $notes.Trim() }
+          # Through a file: a whole submission can be longer than a Windows command line allows.
+          $payload = "$env:RUNNER_TEMP\submission.json"
+          $submission | ConvertTo-Json -Depth 100 | Set-Content -Path $payload -Encoding utf8
+          msstore submission update $env:PRODUCT_ID --payload $payload
           if ($LASTEXITCODE) { throw "msstore submission update failed ($LASTEXITCODE)." }
 
       - name: Commit the submission for certification
-        if: steps.creds.outputs.ready == 'true'
+        if: steps.prep.outputs.go == 'true'
         shell: pwsh
         run: |
           msstore submission publish $env:PRODUCT_ID
           if ($LASTEXITCODE) { throw "msstore submission publish failed ($LASTEXITCODE)." }
-          msstore submission status $env:PRODUCT_ID
+          Write-Host "::notice::$env:TAG is in Microsoft Store certification. Partner Center emails when it passes, and the Store copy goes live then."
