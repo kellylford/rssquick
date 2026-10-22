@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text.Json;
@@ -93,14 +94,10 @@ namespace RSSReaderWPF.Services
 
                 // Newest by version, not by position: the list is in order of creation, and a
                 // patch can be cut after a later version's tag.
-                AvailableRelease? newest = null;
-                foreach (var release in root.EnumerateArray())
-                {
-                    if (ParseRelease(release, current, assetSuffix) is { } found
-                        && (newest is null || found.Version > newest.Version))
-                        newest = found;
-                }
-                return newest;
+                return root.EnumerateArray()
+                    .Select(release => ParseRelease(release, current, assetSuffix))
+                    .OfType<AvailableRelease>()
+                    .MaxBy(found => found.Version);
             }
             catch (JsonException)
             {
