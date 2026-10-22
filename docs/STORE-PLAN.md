@@ -171,17 +171,23 @@ wrapped their JSON output and broke reading it.
 
 The credentials, made once in Partner Center:
 
-1. **Account settings → Tenants**: the Partner Center account must have a Microsoft Entra tenant.
-   Associate the existing one (the tenant Azure Artifact Signing already uses), or create one.
-2. **Account settings → User management → Microsoft Entra applications → Add Microsoft Entra
-   application**. Create a new one (or pick an existing app registration) and give it the
-   **Manager** role.
-3. Open the application there: copy the **Tenant ID** and **Client ID**, then **Add new key** and
-   copy the **Key**. It is shown once.
-4. **Account settings → Legal info** (Developer tab): copy the **Seller ID**.
+1. **Tenants**, https://partner.microsoft.com/dashboard/account/v3/tenantmanagement: the Partner
+   Center account must have a Microsoft Entra tenant. Associate the existing one (the tenant Azure
+   Artifact Signing already uses), or create one.
+2. **User management**, https://partner.microsoft.com/dashboard/account/v3/usermanagement: the
+   **Microsoft Entra applications** tab, then **Add Microsoft Entra application**. Create a new one
+   (or pick an existing app registration) and give it the **Manager** role.
+3. Still in User management, open the application: copy the **Tenant ID** and **Client ID**, then
+   **Add new key** and copy the **Key**. It is shown once.
+4. **Legal info**, https://partner.microsoft.com/dashboard/account/v3/organization/legalinfo: the
+   **Developer** tab, under Publisher IDs, has the **Seller ID**.
 5. Store them as repository secrets, from the repository folder, pasting each value when asked:
    `gh secret set PARTNER_CENTER_TENANT_ID`, `gh secret set PARTNER_CENTER_CLIENT_ID`,
    `gh secret set PARTNER_CENTER_CLIENT_SECRET`, `gh secret set PARTNER_CENTER_SELLER_ID`.
+   Or on GitHub: https://github.com/TheIdeaPlace/rssquick/settings/secrets/actions, **New
+   repository secret**, once for each.
+
+All of these are also under the gear icon at the top right of Partner Center, **Account settings**.
 
 The key expires (Partner Center offers one or two years). When it does, the job fails at
 "Sign in to Partner Center": add a new key and replace `PARTNER_CENTER_CLIENT_SECRET`.
