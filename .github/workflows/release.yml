@@ -16,7 +16,39 @@ permissions:
   id-token: write   # the OIDC token azure/login exchanges for Azure credentials, for signing
 
 jobs:
+  # Which platforms this release ships on (RELEASE-PLATFORMS, written by build/prepare-release.ps1),
+  # and the draft release itself. The draft is made here rather than by the Windows job because a
+  # Mac-only or iPhone-only fix skips that job entirely, and the release still needs its notes,
+  # opening with which platforms it is for. Run by hand, Windows always builds and no draft is made.
+  notes:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      ship: ${{ steps.read.outputs.ship }}
+    steps:
+      - uses: actions/checkout@v7
+      - id: read
+        run: |
+          if [ "${{ github.event_name }}" != push ]; then ship=true; else ship="$(build/release-platforms.sh ships windows)"; fi
+          echo "ship=$ship" >> "$GITHUB_OUTPUT"
+          [ "$ship" = true ] || echo "::notice::This release does not ship on Windows (RELEASE-PLATFORMS), so nothing is built here."
+          build/release-platforms.sh notes "${GITHUB_REF_NAME#v}" > "$RUNNER_TEMP/opening.md"
+          cat "$RUNNER_TEMP/opening.md"
+
+      # generate_release_notes adds the merged pull requests after this opening line, which is
+      # empty for a release on all three platforms.
+      - name: Create draft release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v3
+        with:
+          draft: true
+          generate_release_notes: true
+          body_path: ${{ runner.temp }}/opening.md
+
   package:
+    needs: notes
+    if: needs.notes.outputs.ship == 'true'
     runs-on: windows-latest
     # Runs in the `azure-signing` environment so the OIDC token's subject is
     # repo:TheIdeaPlace@340125137/rssquick@1046409088:environment:azure-signing (numeric-id form; moved from kellylford on 2026-10-10), which is what the Azure federated
@@ -166,12 +198,12 @@ jobs:
       # assets.*.json and RELEASES*. It includes the previous version's full package fetched
       # above, which has to go too - the feed lists it. fail_on_unmatched_files, so a change in
       # what vpk writes fails the release instead of publishing one installed copies cannot read.
-      - name: Create draft release
+      # The draft already exists, with its notes, from the notes job; this adds the files.
+      - name: Attach to the draft release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v3
         with:
           draft: true
-          generate_release_notes: true
           fail_on_unmatched_files: true
           files: |
             artifacts/*.zip

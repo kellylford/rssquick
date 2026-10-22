@@ -6,7 +6,8 @@ name: iOS TestFlight Release
 # Beta App Review.
 #
 # It runs on the same v* tag as release.yml and macos-release.yml, so the iPhone and iPad version
-# goes out with the same version number as Windows and the Mac - VERSION, as everywhere else. It
+# goes out with the same version number as Windows and the Mac - VERSION, as everywhere else -
+# unless RELEASE-PLATFORMS leaves iOS out: a fix for another platform sends testers nothing. It
 # can also be run by hand from the Actions tab, for the version VERSION holds on the branch run.
 #
 # Built here rather than on the Mac on purpose: GitHub's runners are on released macOS and Xcode,
@@ -51,7 +52,24 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # Which platforms this release ships on: RELEASE-PLATFORMS, written by build/prepare-release.ps1.
+  # A fix ships only where something changed, so a tag can skip this platform entirely. Run by
+  # hand, it always builds.
+  platforms:
+    runs-on: ubuntu-latest
+    outputs:
+      ship: ${{ steps.read.outputs.ship }}
+    steps:
+      - uses: actions/checkout@v7
+      - id: read
+        run: |
+          if [ "${{ github.event_name }}" != push ]; then ship=true; else ship="$(build/release-platforms.sh ships ios)"; fi
+          echo "ship=$ship" >> "$GITHUB_OUTPUT"
+          [ "$ship" = true ] || echo "::notice::This release does not ship on ios (RELEASE-PLATFORMS), so nothing is built here."
+
   build-upload:
+    needs: platforms
+    if: needs.platforms.outputs.ship == 'true'
     runs-on: macos-latest
     timeout-minutes: 120
 

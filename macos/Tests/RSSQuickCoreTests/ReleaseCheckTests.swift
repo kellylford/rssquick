@@ -15,7 +15,8 @@ struct ReleaseCheckTests {
         asset: String = "RSSQuick-1.3.0-macos.dmg",
         draft: Bool = false,
         prerelease: Bool = false,
-        page: String = "https://github.com/TheIdeaPlace/rssquick/releases/tag/v1.3.0"
+        page: String = "https://github.com/TheIdeaPlace/rssquick/releases/tag/v1.3.0",
+        otherAsset: String = "RSSQuick-1.3.0-portable-win-x64.zip"
     ) -> String {
         """
         {
@@ -25,7 +26,7 @@ struct ReleaseCheckTests {
           "prerelease": \(prerelease),
           "assets": [
             { "name": "\(asset)" },
-            { "name": "RSSQuick-1.3.0-portable-win-x64.zip" }
+            { "name": "\(otherAsset)" }
           ]
         }
         """
@@ -115,17 +116,61 @@ struct ReleaseCheckTests {
         #expect(Self.parse(json) == nil)
     }
 
+    // MARK: A list of releases
+
+    private static func list(_ releases: String...) -> String {
+        "[" + releases.joined(separator: ",") + "]"
+    }
+
+    /// A fix can ship on one platform alone. Here a Windows-only 1.4.3 is the latest release, and
+    /// the Mac-only 1.4.2 before it is the one this copy needs.
+    @Test("A later release for another platform does not hide one for this copy")
+    func laterReleaseForAnotherPlatform() {
+        let json = Self.list(
+            Self.release(tag: "v1.4.3", asset: "RSSQuick-1.4.3-portable-win-x64.zip", otherAsset: "notes.txt",
+                         page: "https://github.com/TheIdeaPlace/rssquick/releases/tag/v1.4.3"),
+            Self.release(tag: "v1.4.2", asset: "RSSQuick-1.4.2-macos.dmg", otherAsset: "notes.txt",
+                         page: "https://github.com/TheIdeaPlace/rssquick/releases/tag/v1.4.2"))
+
+        #expect(Self.parse(json)?.version == "1.4.2")
+    }
+
+    @Test("The newest version in the list wins, whatever its position")
+    func newestWins() {
+        let json = Self.list(
+            Self.release(tag: "v1.3.1", asset: "RSSQuick-1.3.1-macos.dmg"),
+            Self.release(tag: "v1.4.0", asset: "RSSQuick-1.4.0-macos.dmg"),
+            Self.release(tag: "v1.3.0"))
+
+        #expect(Self.parse(json)?.version == "1.4.0")
+    }
+
+    @Test("A list with nothing newer for this copy is nothing")
+    func listWithNothingNewer() {
+        let json = Self.list(
+            Self.release(tag: "v1.5.0", asset: "RSSQuick-1.5.0-portable-win-x64.zip", otherAsset: "notes.txt"),
+            Self.release(tag: "v1.4.0", draft: true),
+            Self.release(tag: "v1.1.0"))
+
+        #expect(Self.parse(json) == nil)
+    }
+
+    @Test("The check reads the list of releases, not only the latest")
+    func readsTheList() {
+        #expect(ReleaseCheck.releasesAPI.path.hasSuffix("/releases"))
+    }
+
     // MARK: Over the network
 
     @Test("A release is read from the server")
     func readFromServer() async throws {
         let server = try await LocalFeedServer.start(routes: [
-            "/releases/latest": .init(body: Self.release(), contentType: "application/json"),
+            "/releases": .init(body: Self.list(Self.release(tag: "v1.2.1"), Self.release()), contentType: "application/json"),
         ])
         defer { server.stop() }
 
         let found = try await ReleaseCheck.check(
-            api: URL(string: server.url(for: "/releases/latest"))!, current: Self.running)
+            api: URL(string: server.url(for: "/releases"))!, current: Self.running)
 
         #expect(found?.version == "1.3.0")
     }
