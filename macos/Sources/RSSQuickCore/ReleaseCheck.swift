@@ -24,10 +24,17 @@ public struct AvailableRelease: Sendable, Equatable {
 /// tag, but a fix for one can go out alone, and telling a Mac user about a release with nothing in
 /// it for them sends them to a page they cannot use.
 ///
+/// So it reads the list of recent releases rather than only the latest one. A Windows-only 1.4.3
+/// published after a Mac-only 1.4.2 is the latest release, and a Mac still on 1.4.0 that looked
+/// only at it would never hear about 1.4.2.
+///
 /// The Windows version is `src/RSSQuick/Services/ReleaseCheck.cs`. The two answer the same
 /// questions, and their tests should change together.
 public enum ReleaseCheck {
-    public static let latestReleaseAPI = URL(string: "https://api.github.com/repos/TheIdeaPlace/rssquick/releases/latest")!
+    /// The ten newest releases. Drafts appear only to an authenticated caller. Ten, because each
+    /// release's entry lists every file on it, about 36 KB apiece, and this is fetched at every
+    /// launch; fixes on three platforms are never ten releases apart.
+    public static let releasesAPI = URL(string: "https://api.github.com/repos/TheIdeaPlace/rssquick/releases?per_page=10")!
 
     /// The end of the disk image's name, which `build/make-dmg.sh` gives every release.
     public static let macAssetSuffix = "-macos.dmg"
@@ -46,8 +53,8 @@ public enum ReleaseCheck {
         return URLSession(configuration: configuration)
     }()
 
-    /// The release at `api`, if it is newer than `current` and carries an asset whose name ends
-    /// with `assetSuffix`.
+    /// The newest release listed at `api` that is newer than `current` and carries an asset whose
+    /// name ends with `assetSuffix`.
     ///
     /// - Returns: nil when there is nothing newer for this copy.
     /// - Throws: When the question could not be answered - no network, a GitHub outage, a rate
@@ -55,7 +62,7 @@ public enum ReleaseCheck {
     ///   for and the next launch asks again; Check for Updates says so, because the reader asked.
     ///   The Windows version has no Check for Updates, so it returns null for both.
     public static func check(
-        api: URL = latestReleaseAPI, current: String, assetSuffix: String = macAssetSuffix
+        api: URL = releasesAPI, current: String, assetSuffix: String = macAssetSuffix
     ) async throws -> AvailableRelease? {
         let (data, response) = try await session.data(from: api)
         guard let http = response as? HTTPURLResponse else { throw URLError(.badServerResponse) }
@@ -63,11 +70,30 @@ public enum ReleaseCheck {
         return parse(data, current: current, assetSuffix: assetSuffix)
     }
 
-    /// Reads a GitHub release document. Everything `check` decides, without the network.
+    /// Reads a GitHub list of releases, or a single release. Everything `check` decides, without
+    /// the network.
     public static func parse(_ data: Data, current: String, assetSuffix: String) -> AvailableRelease? {
-        guard let release = try? JSONDecoder().decode(Release.self, from: data) else { return nil }
+        if let release = try? JSONDecoder().decode(Release.self, from: data) {
+            return parse(release, current: current, assetSuffix: assetSuffix)
+        }
+        guard let list = try? JSONDecoder().decode([Release].self, from: data) else { return nil }
 
-        // /releases/latest never returns either, but a document from anywhere else might.
+        // Newest by version, not by position: the list is in order of creation, and a patch can be
+        // cut after a later version's tag.
+        var newest: (numbers: [Int], release: AvailableRelease)?
+        for release in list {
+            guard let found = parse(release, current: current, assetSuffix: assetSuffix),
+                  let numbers = version(fromTag: found.version) else { continue }
+            if newest == nil || newest!.numbers.lexicographicallyPrecedes(numbers) {
+                newest = (numbers, found)
+            }
+        }
+        return newest?.release
+    }
+
+    private static func parse(_ release: Release, current: String, assetSuffix: String) -> AvailableRelease? {
+        // A draft is listed only for an authenticated caller, and a prerelease is not for
+        // everyone; neither is offered.
         if release.draft == true || release.prerelease == true { return nil }
 
         guard let tag = release.tag_name, let published = Self.version(fromTag: tag),

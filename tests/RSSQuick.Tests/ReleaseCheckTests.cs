@@ -21,7 +21,8 @@ public sealed class ReleaseCheckTests
         string asset = "RSSQuick-1.3.0-portable-win-x64.zip",
         bool draft = false,
         bool prerelease = false,
-        string page = "https://github.com/TheIdeaPlace/rssquick/releases/tag/v1.3.0") => $$"""
+        string page = "https://github.com/TheIdeaPlace/rssquick/releases/tag/v1.3.0",
+        string otherAsset = "RSSQuick-1.3.0-macos.dmg") => $$"""
         {
           "tag_name": "{{tag}}",
           "html_url": "{{page}}",
@@ -29,7 +30,7 @@ public sealed class ReleaseCheckTests
           "prerelease": {{(prerelease ? "true" : "false")}},
           "assets": [
             { "name": "{{asset}}" },
-            { "name": "RSSQuick-1.3.0-macos.dmg" }
+            { "name": "{{otherAsset}}" }
           ]
         }
         """;
@@ -109,13 +110,59 @@ public sealed class ReleaseCheckTests
     public void Anything_else_is_nothing_rather_than_an_error(string json) =>
         Assert.Null(ReleaseCheck.Parse(json, Running, Zip));
 
+    // ── a list of releases ──────────────────────────────────────────────────
+
+    private static string List(params string[] releases) => "[" + string.Join(",", releases) + "]";
+
+    /// <summary>
+    /// A fix can ship on one platform alone. Here a Mac-only 1.4.3 is the latest release, and
+    /// the Windows-only 1.4.2 before it is the one this copy needs.
+    /// </summary>
+    [Fact]
+    public void A_later_release_for_another_platform_does_not_hide_one_for_this_copy()
+    {
+        var json = List(
+            Release(tag: "v1.4.3", asset: "RSSQuick-1.4.3-macos.dmg", otherAsset: "notes.txt",
+                page: "https://github.com/TheIdeaPlace/rssquick/releases/tag/v1.4.3"),
+            Release(tag: "v1.4.2", asset: "RSSQuick-1.4.2-portable-win-x64.zip", otherAsset: "notes.txt",
+                page: "https://github.com/TheIdeaPlace/rssquick/releases/tag/v1.4.2"));
+
+        Assert.Equal(new Version(1, 4, 2), ReleaseCheck.Parse(json, Running, Zip)?.Version);
+    }
+
+    [Fact]
+    public void The_newest_version_in_the_list_wins_whatever_its_position()
+    {
+        var json = List(
+            Release(tag: "v1.3.1", asset: "RSSQuick-1.3.1-portable-win-x64.zip"),
+            Release(tag: "v1.4.0", asset: "RSSQuick-1.4.0-portable-win-x64.zip"),
+            Release(tag: "v1.3.0"));
+
+        Assert.Equal(new Version(1, 4, 0), ReleaseCheck.Parse(json, Running, Zip)?.Version);
+    }
+
+    [Fact]
+    public void A_list_with_nothing_newer_for_this_copy_is_nothing()
+    {
+        var json = List(
+            Release(tag: "v1.5.0", asset: "RSSQuick-1.5.0-macos.dmg", otherAsset: "notes.txt"),
+            Release(tag: "v1.4.0", draft: true),
+            Release(tag: "v1.1.0"));
+
+        Assert.Null(ReleaseCheck.Parse(json, Running, Zip));
+    }
+
+    [Fact]
+    public void The_check_reads_the_list_of_releases_not_only_the_latest() =>
+        Assert.EndsWith("/releases", ReleaseCheck.ReleasesApi.AbsolutePath);
+
     // ── over the network ────────────────────────────────────────────────────
 
     [Fact]
     public async Task A_release_is_read_from_the_server()
     {
         using var server = new LocalFeedServer();
-        var api = server.Serve("/releases/latest", Release(), contentType: "application/json");
+        var api = server.Serve("/releases", List(Release(tag: "v1.2.1"), Release()), contentType: "application/json");
 
         var release = await ReleaseCheck.CheckAsync(api, Running, Zip, TestContext.Current.CancellationToken);
 
@@ -124,10 +171,19 @@ public sealed class ReleaseCheckTests
 
     /// <summary>What GitHub answers for a repository with no published release yet.</summary>
     [Fact]
+    public async Task No_releases_is_nothing()
+    {
+        using var server = new LocalFeedServer();
+        var empty = server.Serve("/releases", "[]", contentType: "application/json");
+
+        Assert.Null(await ReleaseCheck.CheckAsync(empty, Running, Zip, TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
     public async Task A_server_error_is_nothing_rather_than_an_error()
     {
         using var server = new LocalFeedServer();
-        var missing = server.Serve("/releases/latest", """{ "message": "Not Found" }""", HttpStatusCode.NotFound, "application/json");
+        var missing = server.Serve("/releases", """{ "message": "Not Found" }""", HttpStatusCode.NotFound, "application/json");
         var limited = server.Serve("/limited", Release(), HttpStatusCode.Forbidden, "application/json");
 
         Assert.Null(await ReleaseCheck.CheckAsync(missing, Running, Zip, TestContext.Current.CancellationToken));
@@ -138,7 +194,7 @@ public sealed class ReleaseCheckTests
     public async Task No_server_is_nothing_rather_than_an_error()
     {
         var server = new LocalFeedServer();
-        var gone = server.Missing("/releases/latest");
+        var gone = server.Missing("/releases");
         server.Dispose();
 
         Assert.Null(await ReleaseCheck.CheckAsync(gone, Running, Zip, TestContext.Current.CancellationToken));

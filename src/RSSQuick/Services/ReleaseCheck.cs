@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text.Json;
@@ -24,13 +25,21 @@ namespace RSSReaderWPF.Services
     /// macOS are released from the same tag, but a fix for one can go out alone, and telling a
     /// Mac user about a release with nothing in it for them sends them to a page they cannot
     /// use.</para>
+    /// <para>So it reads the list of recent releases rather than only the latest one. A
+    /// Windows-only 1.4.3 published after a Mac-only 1.4.2 is the latest release, and a Mac
+    /// still on 1.4.0 that looked only at it would never hear about 1.4.2.</para>
     /// <para>The macOS version is <c>macos/Sources/RSSQuickCore/ReleaseCheck.swift</c>. The two
     /// answer the same questions, and their tests should change together.</para>
     /// </remarks>
     public static class ReleaseCheck
     {
-        public static readonly Uri LatestReleaseApi =
-            new("https://api.github.com/repos/TheIdeaPlace/rssquick/releases/latest");
+        /// <summary>
+        /// The ten newest releases. Drafts appear only to an authenticated caller. Ten, because
+        /// each release's entry lists every file on it, about 36 KB apiece, and this is fetched
+        /// at every start; fixes on three platforms are never ten releases apart.
+        /// </summary>
+        public static readonly Uri ReleasesApi =
+            new("https://api.github.com/repos/TheIdeaPlace/rssquick/releases?per_page=10");
 
         private static readonly HttpClient Http = CreateClient();
 
@@ -44,8 +53,9 @@ namespace RSSReaderWPF.Services
         }
 
         /// <summary>
-        /// The release at <paramref name="api"/>, if it is newer than <paramref name="current"/>
-        /// and carries an asset whose name ends with <paramref name="assetSuffix"/>.
+        /// The newest release listed at <paramref name="api"/> that is newer than
+        /// <paramref name="current"/> and carries an asset whose name ends with
+        /// <paramref name="assetSuffix"/>.
         /// </summary>
         /// <returns>
         /// Null when there is nothing newer — and also when the question could not be answered.
@@ -70,8 +80,8 @@ namespace RSSReaderWPF.Services
         }
 
         /// <summary>
-        /// Reads a GitHub release document. Everything <see cref="CheckAsync"/> decides, without
-        /// the network.
+        /// Reads a GitHub list of releases, or a single release. Everything
+        /// <see cref="CheckAsync"/> decides, without the network.
         /// </summary>
         public static AvailableRelease? Parse(string json, Version current, string assetSuffix)
         {
@@ -79,28 +89,42 @@ namespace RSSReaderWPF.Services
             {
                 using var document = JsonDocument.Parse(json);
                 var root = document.RootElement;
-                if (root.ValueKind != JsonValueKind.Object) return null;
+                if (root.ValueKind == JsonValueKind.Object) return ParseRelease(root, current, assetSuffix);
+                if (root.ValueKind != JsonValueKind.Array) return null;
 
-                // /releases/latest never returns either, but a document from anywhere else might.
-                if (IsTrue(root, "draft") || IsTrue(root, "prerelease")) return null;
-
-                if (!root.TryGetProperty("tag_name", out var tag) || tag.ValueKind != JsonValueKind.String) return null;
-                if (!root.TryGetProperty("html_url", out var page) || page.ValueKind != JsonValueKind.String) return null;
-
-                if (TryParseTag(tag.GetString()!) is not { } version) return null;
-                if (version <= Normalize(current)) return null;
-                // Opened in the reader's browser, so only ever a page on GitHub.
-                if (!Uri.TryCreate(page.GetString(), UriKind.Absolute, out var pageUri)
-                    || pageUri.Scheme != Uri.UriSchemeHttps
-                    || !string.Equals(pageUri.Host, "github.com", StringComparison.OrdinalIgnoreCase)) return null;
-                if (!HasAsset(root, assetSuffix)) return null;
-
-                return new AvailableRelease(version, pageUri);
+                // Newest by version, not by position: the list is in order of creation, and a
+                // patch can be cut after a later version's tag.
+                return root.EnumerateArray()
+                    .Select(release => ParseRelease(release, current, assetSuffix))
+                    .OfType<AvailableRelease>()
+                    .MaxBy(found => found.Version);
             }
             catch (JsonException)
             {
                 return null;
             }
+        }
+
+        private static AvailableRelease? ParseRelease(JsonElement root, Version current, string assetSuffix)
+        {
+            if (root.ValueKind != JsonValueKind.Object) return null;
+
+            // A draft is listed only for an authenticated caller, and a prerelease is not for
+            // everyone; neither is offered.
+            if (IsTrue(root, "draft") || IsTrue(root, "prerelease")) return null;
+
+            if (!root.TryGetProperty("tag_name", out var tag) || tag.ValueKind != JsonValueKind.String) return null;
+            if (!root.TryGetProperty("html_url", out var page) || page.ValueKind != JsonValueKind.String) return null;
+
+            if (TryParseTag(tag.GetString()!) is not { } version) return null;
+            if (version <= Normalize(current)) return null;
+            // Opened in the reader's browser, so only ever a page on GitHub.
+            if (!Uri.TryCreate(page.GetString(), UriKind.Absolute, out var pageUri)
+                || pageUri.Scheme != Uri.UriSchemeHttps
+                || !string.Equals(pageUri.Host, "github.com", StringComparison.OrdinalIgnoreCase)) return null;
+            if (!HasAsset(root, assetSuffix)) return null;
+
+            return new AvailableRelease(version, pageUri);
         }
 
         /// <summary>"v1.3.0" or "1.3.0" to a three-part version; anything else to null.</summary>

@@ -168,6 +168,15 @@ behaviour, not code, so parity is kept by discipline: a feature that lands on on
 menu bar instead of a button — say so in that platform's README rather than leaving the gap
 unexplained.
 
+**Fixes are the exception: a fix ships only where it is needed.** MAJOR.MINOR is the product, the
+same features on all three; a fix release (x.y.z) goes out on the platforms it fixes and no
+others, so nobody is sent an update with nothing in it. The patch counter is shared, so every
+number is one release (a Windows fix 1.4.1, a later Mac fix 1.4.2). `build/prepare-release.ps1
+<x.y.z> -Platforms windows` writes `RELEASE-PLATFORMS`; each release workflow skips itself if its
+platform is not listed, `build/release-platforms.sh` opens the release notes with "RSS Quick 1.4.1
+is a Windows-only release...", and `ReleaseCheck` on both sides reads the recent releases for the
+newest one with its own download. WORKFLOW.md's Versioning section is the rule in full.
+
 The pattern that makes this cheap: put the logic in `Services/` on Windows and in
 `macos/Sources/RSSQuickCore` for both Apple platforms, keep the two side by side in shape and
 name, and give them matching tests that point at each other. `SavedFeedList` is the example —
@@ -194,10 +203,10 @@ affects both Apple platforms and is tested by `macos/Tests`. The project is gene
 and the `.xcodeproj` is committed as well, the same arrangement Scores uses. Run `xcodegen` in
 `ios/` after editing `project.yml` — and after adding a file to `RSSQuickCore`, because the committed
 project lists every source file and a new one is otherwise missing from the iOS build. A `v*` tag also runs
-`.github/workflows/ios-release.yml`, which builds on a GitHub Mac, uploads with the next unused build
+`.github/workflows/ios-release.yml` (unless `RELEASE-PLATFORMS` leaves iOS out), which builds on a GitHub Mac, uploads with the next unused build
 number, and sends the build to the "External" TestFlight group (external testers, public link) for
 Beta App Review,
-so all three platforms ship the same version. `ios/scripts/asc.py` does the App Store Connect side,
+so all three platforms ship the same feature version. `ios/scripts/asc.py` does the App Store Connect side,
 and `ios-testflight-status.yml` reports it read-only - use that rather than guessing what Apple has.
 `ios/scripts/release-testflight.sh <build>` still uploads from the Mac by hand. Read `ios/README.md` first: it lists where iOS deliberately differs from
 the desktop versions, and it has the one-time App Store Connect setup.

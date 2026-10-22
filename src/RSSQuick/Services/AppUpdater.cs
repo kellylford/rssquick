@@ -118,7 +118,7 @@ namespace RSSReaderWPF.Services
             }
 
             var release = await ReleaseCheck.CheckAsync(
-                ReleaseCheck.LatestReleaseApi, CurrentVersion, PortableAssetSuffix, _lifetime.Token).ConfigureAwait(false);
+                ReleaseCheck.ReleasesApi, CurrentVersion, PortableAssetSuffix, _lifetime.Token).ConfigureAwait(false);
             return release is null
                 ? null
                 : new UpdateOffer(release.Version.ToString(3), release.Page, ReadyToInstall: false);

@@ -14,7 +14,25 @@ permissions:
   contents: write   # attach the disk image to the draft release
 
 jobs:
+  # Which platforms this release ships on: RELEASE-PLATFORMS, written by build/prepare-release.ps1.
+  # A fix ships only where something changed, so a tag can skip this platform entirely - and so
+  # can a run by hand on a tag, so redoing a release cannot add a platform it left out. Run by
+  # hand on a branch, it always builds.
+  platforms:
+    runs-on: ubuntu-latest
+    outputs:
+      ship: ${{ steps.read.outputs.ship }}
+    steps:
+      - uses: actions/checkout@v7
+      - id: read
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then ship="$(build/release-platforms.sh ships macos)"; else ship=true; fi
+          echo "ship=$ship" >> "$GITHUB_OUTPUT"
+          [ "$ship" = true ] || echo "::notice::This release does not ship on macos (RELEASE-PLATFORMS), so nothing is built here."
+
   package:
+    needs: platforms
+    if: needs.platforms.outputs.ship == 'true'
     # Pinned rather than macos-latest. The Swift package declares swift-tools-version 6.0, so the
     # runner's Xcode is a build dependency, and a silent image bump is not something a release
     # workflow should discover on the day of a release.
@@ -105,11 +123,9 @@ jobs:
       # artefacts want opening with VoiceOver before anyone downloads them, and the release notes
       # want reading before they go out.
       #
-      # No generate_release_notes here, unlike release.yml. Both workflows fire on the same tag,
-      # and whichever writes the body second wins; only one of them should be claiming to author
-      # it. release.yml is that one. In practice it also gets there first - this job spends most
-      # of its time waiting on Apple's notary service - so the draft already exists by now and
-      # this only adds a file to it.
+      # No notes here. release.yml's notes job writes them, on every tag, including a Mac-only
+      # one, and gets there first - this job spends most of its time waiting on Apple's notary
+      # service - so the draft already exists by now and this only adds a file to it.
       - name: Attach to the draft release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v3

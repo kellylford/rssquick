@@ -97,8 +97,12 @@ at the repository root.
 
 ### Each release: from GitHub
 
-Pushing a `v*` tag releases all three platforms at the same version. `.github/workflows/ios-release.yml`
-runs beside the Windows and macOS release workflows, on a GitHub-hosted Mac:
+A feature release (x.y.0) ships on all three platforms at the same version; a fix (x.y.z) ships
+only on the platforms it fixes, so testers are never sent a build with nothing in it.
+`RELEASE-PLATFORMS`, written by `build/prepare-release.ps1 -Platforms`, says which, and
+WORKFLOW.md's Versioning section has the rule. When a tag includes iOS,
+`.github/workflows/ios-release.yml` runs beside the Windows and macOS release workflows, on a
+GitHub-hosted Mac:
 
 1. It builds with the version from `VERSION`.
 2. It asks App Store Connect for the highest build number it has ever seen, and uses one more.
