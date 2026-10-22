@@ -1,0 +1,142 @@
+name: Microsoft Store Submission
+
+# Submits the Store bundle a release run built to Partner Center, and commits it for
+# certification, through the Microsoft Store Developer CLI (msstore), which calls the Store
+# submission API. Certification then takes hours to days; Partner Center emails when it is done.
+#
+# release.yml calls this after the Windows package job on every tag that ships Windows. It can
+# also be run by hand from the Actions tab with the id of a release run, which is how a bundle
+# from before this workflow existed gets submitted.
+#
+# Repository secrets (one-time setup, docs/STORE-PLAN.md "Submitting through the API"):
+#   PARTNER_CENTER_TENANT_ID, PARTNER_CENTER_CLIENT_ID, PARTNER_CENTER_CLIENT_SECRET
+#       The Microsoft Entra application added to Partner Center with the Manager role, and a key.
+#   PARTNER_CENTER_SELLER_ID
+#       Partner Center, Account settings, Legal info: the Seller ID.
+# Until they are all set, this skips with a notice rather than failing the release.
+
+on:
+  workflow_call:
+    inputs:
+      run_id:
+        type: string
+        required: true
+      version:
+        type: string
+        required: true
+    secrets:
+      PARTNER_CENTER_TENANT_ID:
+        required: false
+      PARTNER_CENTER_SELLER_ID:
+        required: false
+      PARTNER_CENTER_CLIENT_ID:
+        required: false
+      PARTNER_CENTER_CLIENT_SECRET:
+        required: false
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: 'The id of the release run whose rssquick-microsoft-store bundle to submit'
+        type: string
+        required: true
+      version:
+        description: 'The version in that bundle, such as 1.4.1 (its CHANGELOG section becomes "What''s new")'
+        type: string
+        required: true
+
+permissions:
+  contents: read
+  actions: read   # download the bundle from another run
+
+# One submission at a time: a second would replace the first's draft.
+concurrency:
+  group: store-submit
+  cancel-in-progress: false
+
+jobs:
+  submit:
+    runs-on: windows-latest
+    env:
+      PRODUCT_ID: 9NFGQ354JDG5
+      TENANT_ID: ${{ secrets.PARTNER_CENTER_TENANT_ID }}
+      SELLER_ID: ${{ secrets.PARTNER_CENTER_SELLER_ID }}
+      CLIENT_ID: ${{ secrets.PARTNER_CENTER_CLIENT_ID }}
+      CLIENT_SECRET: ${{ secrets.PARTNER_CENTER_CLIENT_SECRET }}
+    steps:
+      - name: Check the Partner Center credentials
+        id: creds
+        shell: pwsh
+        run: |
+          $missing = @('TENANT_ID', 'SELLER_ID', 'CLIENT_ID', 'CLIENT_SECRET') | Where-Object { -not [Environment]::GetEnvironmentVariable($_) }
+          if ($missing) {
+            Write-Host "::notice::Not submitted to the Microsoft Store: the PARTNER_CENTER_* secrets are not all set ($($missing -join ', ')). Upload the rssquick-microsoft-store bundle by hand, or see docs/STORE-PLAN.md."
+            "ready=false" >> $env:GITHUB_OUTPUT
+          } else {
+            "ready=true" >> $env:GITHUB_OUTPUT
+          }
+
+      - uses: actions/checkout@v7
+        if: steps.creds.outputs.ready == 'true'
+
+      - name: Download the Store bundle
+        if: steps.creds.outputs.ready == 'true'
+        uses: actions/download-artifact@v7
+        with:
+          name: rssquick-microsoft-store
+          run-id: ${{ inputs.run_id }}
+          github-token: ${{ github.token }}
+          path: store
+
+      - name: Set up the Microsoft Store Developer CLI
+        if: steps.creds.outputs.ready == 'true'
+        uses: microsoft/microsoft-store-apppublisher@v1.1
+
+      - name: Sign in to Partner Center
+        if: steps.creds.outputs.ready == 'true'
+        shell: pwsh
+        run: msstore reconfigure --tenantId $env:TENANT_ID --sellerId $env:SELLER_ID --clientId $env:CLIENT_ID --clientSecret $env:CLIENT_SECRET
+
+      # Upload into a draft first, so "What's new in this version" can be set before it goes to
+      # certification. publish recreates the draft from the last published submission, so it has
+      # to come before the metadata edit, not after.
+      - name: Upload the bundle
+        if: steps.creds.outputs.ready == 'true'
+        shell: pwsh
+        run: |
+          $bundle = Get-ChildItem store -Filter *.msixbundle | Select-Object -First 1
+          if (-not $bundle) { throw 'The rssquick-microsoft-store artifact holds no .msixbundle.' }
+          if ($bundle.Name -notlike "*-${{ inputs.version }}.msixbundle") {
+            throw "The bundle is $($bundle.Name), not version ${{ inputs.version }}."
+          }
+          msstore publish store -i $bundle.FullName -id $env:PRODUCT_ID --noCommit
+          if ($LASTEXITCODE) { throw "msstore publish failed ($LASTEXITCODE)." }
+
+      # The version's CHANGELOG section, as plain text, minus its heading. The Store shows it under
+      # "What's new in this version", for every language the listing has.
+      - name: Set "What's new in this version"
+        if: steps.creds.outputs.ready == 'true'
+        shell: pwsh
+        run: |
+          $version = '${{ inputs.version }}'
+          $lines = Get-Content CHANGELOG.md
+          $start = [Array]::FindIndex($lines, [Predicate[string]] { param($l) $l.StartsWith("## [$version]") })
+          if ($start -lt 0) { throw "CHANGELOG.md has no [$version] section." }
+          $section = @()
+          foreach ($l in $lines[($start + 1)..($lines.Count - 1)]) { if ($l.StartsWith('## [')) { break }; $section += $l }
+          # "1.4.1 is a Windows-only release. The Mac..." means nothing in the Store, which only has Windows.
+          $section = $section | Where-Object { $_ -notmatch '-only release|is a release for .* only|have not changed,|has not changed,|and stay at \d' }
+          $notes = (($section -join "`n") -replace '(?m)^#+ ', '' -replace '\*\*', '' -replace '`', '' -replace '\n +', ' ').Trim()
+          if ($notes.Length -gt 1500) { $notes = $notes.Substring(0, 1497) + '...' }
+
+          $submission = msstore submission get $env:PRODUCT_ID | Out-String | ConvertFrom-Json
+          foreach ($listing in $submission.Listings.PSObject.Properties) { $listing.Value.BaseListing.ReleaseNotes = $notes }
+          msstore submission update $env:PRODUCT_ID ($submission | ConvertTo-Json -Depth 100 -Compress)
+          if ($LASTEXITCODE) { throw "msstore submission update failed ($LASTEXITCODE)." }
+
+      - name: Commit the submission for certification
+        if: steps.creds.outputs.ready == 'true'
+        shell: pwsh
+        run: |
+          msstore submission publish $env:PRODUCT_ID
+          if ($LASTEXITCODE) { throw "msstore submission publish failed ($LASTEXITCODE)." }
+          msstore submission status $env:PRODUCT_ID

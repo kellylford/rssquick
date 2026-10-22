@@ -27,10 +27,12 @@ jobs:
       contents: write
     outputs:
       ship: ${{ steps.read.outputs.ship }}
+      version: ${{ steps.read.outputs.version }}
     steps:
       - uses: actions/checkout@v7
       - id: read
         run: |
+          echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
           if [[ "$GITHUB_REF" == refs/tags/v* ]]; then ship="$(build/release-platforms.sh ships windows)"; else ship=true; fi
           echo "ship=$ship" >> "$GITHUB_OUTPUT"
           [ "$ship" = true ] || echo "::notice::This release does not ship on Windows (RELEASE-PLATFORMS), so nothing is built here."
@@ -250,3 +252,17 @@ jobs:
         with:
           name: rssquick-microsoft-store
           path: artifacts/*.msixbundle
+
+  # Submit the Store bundle to Partner Center for certification. Skips with a notice until the
+  # PARTNER_CENTER_* secrets exist; store-submit.yml says how to make them.
+  store:
+    needs: [notes, package]
+    if: startsWith(github.ref, 'refs/tags/v') && needs.notes.outputs.ship == 'true'
+    permissions:
+      contents: read
+      actions: read
+    uses: ./.github/workflows/store-submit.yml
+    with:
+      run_id: ${{ github.run_id }}
+      version: ${{ needs.notes.outputs.version }}
+    secrets: inherit

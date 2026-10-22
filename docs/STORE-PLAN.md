@@ -4,7 +4,8 @@
 **Status:** live. 1.4.0 passed certification and was published on 2026-10-02:
 https://apps.microsoft.com/detail/9nfgq354jdg5?hl=en-US&gl=US. It is the same 1.4.0 released on GitHub and
 TestFlight on 2026-10-01, packaged from the `v1.4.0` tag. From the next version on, a `v*` tag's
-release workflow builds the Store bundle too; uploading it to a new submission is by hand.
+release workflow builds the Store bundle too, and `store-submit.yml` submits it through the Store
+submission API once the Partner Center credentials are in place (below); until then, by hand.
 The Partner Center product is **RSSQuick**, an MSIX or PWA app, Store ID **9NFGQ354JDG5**, and its
 identity is in `build/store/identity.json`.
 
@@ -147,8 +148,35 @@ values, so a release cannot quietly produce a bundle Partner Center would reject
 `identity.json` still holds placeholders, a tag skips the bundle with a warning instead, so the
 GitHub release is never held up by the Store.
 
-The first submission is by hand, to read the certification report. Automating submission through
-the Store submission API can come after, if uploading by hand becomes a chore.
+The first submission was by hand, to read the certification report, which the API requires anyway:
+it can only update a product that has been published once.
+
+### Submitting through the API
+
+`.github/workflows/store-submit.yml` uses the Microsoft Store Developer CLI (`msstore`), which
+calls the Store submission API. `release.yml` runs it after the Windows job on every tag that ships
+Windows: it downloads that run's bundle, uploads it into a draft submission, sets "What's new in
+this version" from the version's CHANGELOG section (without the line about other platforms, which
+means nothing in the Store), and commits it for certification. Run it by hand from the Actions tab
+with a release run's id and version to submit a bundle built earlier. Without the credentials it
+skips with a notice, and the bundle is still an artifact of the release run to upload by hand.
+
+The credentials, made once in Partner Center:
+
+1. **Account settings → Tenants**: the Partner Center account must have a Microsoft Entra tenant.
+   Associate the existing one (the tenant Azure Artifact Signing already uses), or create one.
+2. **Account settings → User management → Microsoft Entra applications → Add Microsoft Entra
+   application**. Create a new one (or pick an existing app registration) and give it the
+   **Manager** role.
+3. Open the application there: copy the **Tenant ID** and **Client ID**, then **Add new key** and
+   copy the **Key**. It is shown once.
+4. **Account settings → Legal info** (Developer tab): copy the **Seller ID**.
+5. Store them as repository secrets, from the repository folder, pasting each value when asked:
+   `gh secret set PARTNER_CENTER_TENANT_ID`, `gh secret set PARTNER_CENTER_CLIENT_ID`,
+   `gh secret set PARTNER_CENTER_CLIENT_SECRET`, `gh secret set PARTNER_CENTER_SELLER_ID`.
+
+The key expires (Partner Center offers one or two years). When it does, the job fails at
+"Sign in to Partner Center": add a new key and replace `PARTNER_CENTER_CLIENT_SECRET`.
 
 ## Part 5 — Order of work
 
