@@ -131,8 +131,9 @@ RSS Quick, with VoiceOver on, and confirming there is no security prompt anywher
 ### In CI
 
 `.github/workflows/macos-release.yml` runs the same scripts on a `macos-15` runner, on a `v*` tag
-or on demand, and attaches the image to the same draft release the Windows job uses. It needs
-five repository secrets:
+or on demand, and attaches the image to the draft release that `release.yml`'s notes job creates.
+A tag whose `RELEASE-PLATFORMS` leaves the Mac out (a fix for another platform) builds nothing
+here; WORKFLOW.md's Versioning section has the rule. It needs five repository secrets:
 
 | Secret | Is |
 |---|---|

@@ -31,8 +31,10 @@ public struct AvailableRelease: Sendable, Equatable {
 /// The Windows version is `src/RSSQuick/Services/ReleaseCheck.cs`. The two answer the same
 /// questions, and their tests should change together.
 public enum ReleaseCheck {
-    /// The newest releases, newest first. Drafts appear only to an authenticated caller.
-    public static let releasesAPI = URL(string: "https://api.github.com/repos/TheIdeaPlace/rssquick/releases?per_page=30")!
+    /// The ten newest releases. Drafts appear only to an authenticated caller. Ten, because each
+    /// release's entry lists every file on it, about 36 KB apiece, and this is fetched at every
+    /// launch; fixes on three platforms are never ten releases apart.
+    public static let releasesAPI = URL(string: "https://api.github.com/repos/TheIdeaPlace/rssquick/releases?per_page=10")!
 
     /// The end of the disk image's name, which `build/make-dmg.sh` gives every release.
     public static let macAssetSuffix = "-macos.dmg"

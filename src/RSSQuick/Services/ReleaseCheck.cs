@@ -32,9 +32,13 @@ namespace RSSReaderWPF.Services
     /// </remarks>
     public static class ReleaseCheck
     {
-        /// <summary>The newest releases, newest first. Drafts appear only to an authenticated caller.</summary>
+        /// <summary>
+        /// The ten newest releases. Drafts appear only to an authenticated caller. Ten, because
+        /// each release's entry lists every file on it, about 36 KB apiece, and this is fetched
+        /// at every start; fixes on three platforms are never ten releases apart.
+        /// </summary>
         public static readonly Uri ReleasesApi =
-            new("https://api.github.com/repos/TheIdeaPlace/rssquick/releases?per_page=30");
+            new("https://api.github.com/repos/TheIdeaPlace/rssquick/releases?per_page=10");
 
         private static readonly HttpClient Http = CreateClient();
 

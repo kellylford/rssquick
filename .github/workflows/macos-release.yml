@@ -15,8 +15,9 @@ permissions:
 
 jobs:
   # Which platforms this release ships on: RELEASE-PLATFORMS, written by build/prepare-release.ps1.
-  # A fix ships only where something changed, so a tag can skip this platform entirely. Run by
-  # hand, it always builds.
+  # A fix ships only where something changed, so a tag can skip this platform entirely - and so
+  # can a run by hand on a tag, so redoing a release cannot add a platform it left out. Run by
+  # hand on a branch, it always builds.
   platforms:
     runs-on: ubuntu-latest
     outputs:
@@ -25,7 +26,7 @@ jobs:
       - uses: actions/checkout@v7
       - id: read
         run: |
-          if [ "${{ github.event_name }}" != push ]; then ship=true; else ship="$(build/release-platforms.sh ships macos)"; fi
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then ship="$(build/release-platforms.sh ships macos)"; else ship=true; fi
           echo "ship=$ship" >> "$GITHUB_OUTPUT"
           [ "$ship" = true ] || echo "::notice::This release does not ship on macos (RELEASE-PLATFORMS), so nothing is built here."
 

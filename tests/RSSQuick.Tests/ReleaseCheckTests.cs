@@ -171,10 +171,19 @@ public sealed class ReleaseCheckTests
 
     /// <summary>What GitHub answers for a repository with no published release yet.</summary>
     [Fact]
+    public async Task No_releases_is_nothing()
+    {
+        using var server = new LocalFeedServer();
+        var empty = server.Serve("/releases", "[]", contentType: "application/json");
+
+        Assert.Null(await ReleaseCheck.CheckAsync(empty, Running, Zip, TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
     public async Task A_server_error_is_nothing_rather_than_an_error()
     {
         using var server = new LocalFeedServer();
-        var missing = server.Serve("/releases/latest", """{ "message": "Not Found" }""", HttpStatusCode.NotFound, "application/json");
+        var missing = server.Serve("/releases", """{ "message": "Not Found" }""", HttpStatusCode.NotFound, "application/json");
         var limited = server.Serve("/limited", Release(), HttpStatusCode.Forbidden, "application/json");
 
         Assert.Null(await ReleaseCheck.CheckAsync(missing, Running, Zip, TestContext.Current.CancellationToken));
@@ -185,7 +194,7 @@ public sealed class ReleaseCheckTests
     public async Task No_server_is_nothing_rather_than_an_error()
     {
         var server = new LocalFeedServer();
-        var gone = server.Missing("/releases/latest");
+        var gone = server.Missing("/releases");
         server.Dispose();
 
         Assert.Null(await ReleaseCheck.CheckAsync(gone, Running, Zip, TestContext.Current.CancellationToken));

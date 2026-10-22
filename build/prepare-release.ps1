@@ -27,14 +27,19 @@ param(
     [ValidatePattern('^\d+\.\d+\.\d+$')]
     [string] $Version,
 
-    [ValidateSet('windows', 'macos', 'ios')]
+    # Not a ValidateSet: powershell -File passes "windows,macos" as one string, so the list is
+    # split and checked below instead.
     [string[]] $Platforms = @('windows', 'macos', 'ios')
 )
 
 $ErrorActionPreference = 'Stop'
 
 $all = 'windows', 'macos', 'ios'
-$Platforms = @($all | Where-Object { $Platforms -contains $_ })
+$asked = @($Platforms | ForEach-Object { $_ -split '[,\s]+' } | Where-Object { $_ } | ForEach-Object { $_.ToLowerInvariant() })
+foreach ($p in $asked) {
+    if ($all -notcontains $p) { throw "'$p' is not a platform. Use windows, macos or ios." }
+}
+$Platforms = @($all | Where-Object { $asked -contains $_ })
 if ($Version.EndsWith('.0') -and $Platforms.Count -ne $all.Count) {
     throw "$Version is a feature release, and a feature release ships on all three platforms. Only a fix (x.y.z, z above 0) can ship on some of them."
 }
@@ -65,10 +70,12 @@ if ($Platforms -contains 'ios') {
 # No byte-order mark, for the same reason as VERSION: build/release-platforms.sh reads it in bash.
 [System.IO.File]::WriteAllText((Join-Path $repo 'RELEASE-PLATFORMS'), ($Platforms -join ' '), (New-Object System.Text.UTF8Encoding($false)))
 $names = @{ windows = 'Windows'; macos = 'Mac'; ios = 'iPhone and iPad' }
+$shipping = @($Platforms | ForEach-Object { $names[$_] })
+$shipping = if ($shipping.Count -gt 1) { ($shipping[0..($shipping.Count - 2)] -join ', ') + ' and ' + $shipping[-1] } else { $shipping[0] }
 if ($Platforms.Count -eq $all.Count) {
     Write-Host 'RELEASE-PLATFORMS: all three platforms.'
 } else {
-    Write-Host "RELEASE-PLATFORMS: $(($Platforms | ForEach-Object { $names[$_] }) -join ', ') only. The other workflows will skip this tag,"
+    Write-Host "RELEASE-PLATFORMS: $shipping only. The other workflows will skip this tag,"
     Write-Host 'and the release notes will open by saying which platforms it is for.'
 }
 
@@ -78,7 +85,7 @@ if ($Platforms.Count -eq $all.Count) {
     Write-Host "  1. Add a [$Version] section to CHANGELOG.md."
 } else {
     Write-Host "  1. Add a [$Version] section to CHANGELOG.md, headed with the platforms, such as"
-    Write-Host "     ## [$Version] - <date> - $(($Platforms | ForEach-Object { $names[$_] }) -join ', ') only"
+    Write-Host "     ## [$Version] - <date> - $shipping only"
 }
 Write-Host '  2. Run the tests:            build.cmd test'
 Write-Host '  3. Build the artefacts:      package.cmd'

@@ -19,7 +19,8 @@ jobs:
   # Which platforms this release ships on (RELEASE-PLATFORMS, written by build/prepare-release.ps1),
   # and the draft release itself. The draft is made here rather than by the Windows job because a
   # Mac-only or iPhone-only fix skips that job entirely, and the release still needs its notes,
-  # opening with which platforms it is for. Run by hand, Windows always builds and no draft is made.
+  # opening with which platforms it is for. Run by hand on a branch, Windows always builds and no
+  # draft is made; on a tag, RELEASE-PLATFORMS decides, as for a push.
   notes:
     runs-on: ubuntu-latest
     permissions:
@@ -30,21 +31,30 @@ jobs:
       - uses: actions/checkout@v7
       - id: read
         run: |
-          if [ "${{ github.event_name }}" != push ]; then ship=true; else ship="$(build/release-platforms.sh ships windows)"; fi
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then ship="$(build/release-platforms.sh ships windows)"; else ship=true; fi
           echo "ship=$ship" >> "$GITHUB_OUTPUT"
           [ "$ship" = true ] || echo "::notice::This release does not ship on Windows (RELEASE-PLATFORMS), so nothing is built here."
           build/release-platforms.sh notes "${GITHUB_REF_NAME#v}" > "$RUNNER_TEMP/opening.md"
           cat "$RUNNER_TEMP/opening.md"
+          downloads=false
+          for p in windows macos; do if [ "$(build/release-platforms.sh ships $p)" = true ]; then downloads=true; fi; done
+          echo "downloads=$downloads" >> "$GITHUB_OUTPUT"
 
-      # generate_release_notes adds the merged pull requests after this opening line, which is
-      # empty for a release on all three platforms.
+      # The opening line, then GitHub's list of merged pull requests. Only when there is no draft
+      # yet: re-running this job, or re-tagging after a VERSION mismatch, must not append the list
+      # a second time or replace notes someone has already edited. An iPhone-only fix gets no
+      # GitHub release at all - there would be nothing on it to download - and the changelog
+      # records it.
       - name: Create draft release
-        if: startsWith(github.ref, 'refs/tags/v')
-        uses: softprops/action-gh-release@v3
-        with:
-          draft: true
-          generate_release_notes: true
-          body_path: ${{ runner.temp }}/opening.md
+        if: startsWith(github.ref, 'refs/tags/v') && steps.read.outputs.downloads == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            echo "::notice::The release for $GITHUB_REF_NAME already exists; its notes are left as they are."
+          else
+            gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --draft               --title "$GITHUB_REF_NAME" --generate-notes --notes-file "$RUNNER_TEMP/opening.md"
+          fi
 
   package:
     needs: notes

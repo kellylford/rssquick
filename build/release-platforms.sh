@@ -52,6 +52,8 @@ case "${1:-}" in
       *) only="a release for $(join "${shipped[@]}") only" ;;
     esac
     if [ ${#unchanged[@]} -eq 1 ]; then rest="version has"; else rest="versions have"; fi
-    echo "**RSS Quick $2 is $only.** The $(join "${unchanged[@]}") $rest not changed, so there is nothing new to install there." ;;
+    line="**RSS Quick $2 is $only.** The $(join "${unchanged[@]}") $rest not changed, so there is nothing new to install there."
+    if has ios; then line="$line The iPhone and iPad version comes through TestFlight."; fi
+    echo "$line" ;;
   *) echo "usage: $0 ships <platform> | notes <version>" >&2; exit 2 ;;
 esac

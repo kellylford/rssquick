@@ -127,10 +127,10 @@ struct ReleaseCheckTests {
     @Test("A later release for another platform does not hide one for this copy")
     func laterReleaseForAnotherPlatform() {
         let json = Self.list(
-            Self.release(tag: "v1.4.3", asset: "RSSQuick-1.4.3-portable-win-x64.zip", otherAsset: "notes.txt",
-                         page: "https://github.com/TheIdeaPlace/rssquick/releases/tag/v1.4.3"),
-            Self.release(tag: "v1.4.2", asset: "RSSQuick-1.4.2-macos.dmg", otherAsset: "notes.txt",
-                         page: "https://github.com/TheIdeaPlace/rssquick/releases/tag/v1.4.2"))
+            Self.release(tag: "v1.4.3", asset: "RSSQuick-1.4.3-portable-win-x64.zip",
+                         page: "https://github.com/TheIdeaPlace/rssquick/releases/tag/v1.4.3", otherAsset: "notes.txt"),
+            Self.release(tag: "v1.4.2", asset: "RSSQuick-1.4.2-macos.dmg",
+                         page: "https://github.com/TheIdeaPlace/rssquick/releases/tag/v1.4.2", otherAsset: "notes.txt"))
 
         #expect(Self.parse(json)?.version == "1.4.2")
     }
@@ -173,6 +173,19 @@ struct ReleaseCheckTests {
             api: URL(string: server.url(for: "/releases"))!, current: Self.running)
 
         #expect(found?.version == "1.3.0")
+    }
+
+    /// What GitHub answers for a repository with no published release yet.
+    @Test("No releases is nothing")
+    func noReleases() async throws {
+        let server = try await LocalFeedServer.start(routes: [
+            "/releases": .init(body: "[]", contentType: "application/json"),
+        ])
+        defer { server.stop() }
+
+        let found = try await ReleaseCheck.check(api: URL(string: server.url(for: "/releases"))!, current: Self.running)
+
+        #expect(found == nil)
     }
 
     /// At launch this is ignored; from Check for Updates it is reported, because the reader asked.
