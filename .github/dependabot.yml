@@ -36,3 +36,19 @@ updates:
       - kellylford
     assignees:
       - kellylford
+
+  # macos/Package.swift, the Mac app. It has no package dependencies yet, so
+  # today this finds nothing; it is here so that anything added later is
+  # watched from the day it lands. Grouped so a week's changes arrive as one
+  # PR, matching the other ecosystems.
+  - package-ecosystem: swift
+    directory: "/macos"
+    schedule:
+      interval: weekly
+      day: monday
+    commit-message:
+      prefix: deps
+    groups:
+      swift:
+        patterns:
+          - "*"
