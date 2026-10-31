@@ -123,7 +123,7 @@ jobs:
 
       - name: Download the Store bundle
         if: steps.prep.outputs.go == 'true'
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: rssquick-microsoft-store
           run-id: ${{ steps.prep.outputs.run }}
